@@ -32,30 +32,19 @@ definitions:
       A physical institutional resource such as computers, equipment,
       furniture, or rooms that can be allocated for official use.
 
-  Institutional_Asset:
-    description: >
-      An asset owned by the institution and managed through the system
-      for allocation, tracking, and maintenance.
 
   Asset_Request:
     description: >
       A formal request raised by a user to obtain an institutional asset
       for a specific purpose.
 
-  Resource_Request:
-    description: >
-      A digital request submitted to obtain institutional resources,
-      which follows approval rules.
-
+  
   Allocation:
     description: >
       The process of assigning an approved asset to a user or office
       for official use.
 
-  Asset_Allocation:
-    description: >
-      The recorded assignment of an asset, including details of
-      user, office, and allocation duration.
+
 
   Allocation_History:
     description: >
@@ -77,10 +66,7 @@ definitions:
       The process of forwarding a request to higher authority when
       office-level approval is not sufficient.
 
-  Office_Asset_Inventory:
-    description: >
-      A list of assets assigned to a specific office along with their
-      current availability status.
+
 
   Asset_Availability_Status:
     description: >
@@ -107,15 +93,9 @@ definitions:
       A system-generated record that tracks approvals, allocations,
       escalations, and maintenance actions for accountability.
 
-  Role_Based_Access:
-    description: >
-      A security mechanism that controls what actions users can
-      perform based on their assigned roles.
 
-  Login_Process:
-    description: >
-      The authentication process through which users access the system
-      using valid credentials.
+
+ 
 
 
       
