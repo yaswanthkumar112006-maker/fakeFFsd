@@ -3,53 +3,30 @@ project_name: Asset & Resource Allocation Management System
 
 definitions:
 
-  User:
-    description: >
-      A person who uses the system to request assets or resources.
-      The user can check request status, receive allocation updates,
-      report asset problems, and track issue resolution.
-
-  Staff:
-    description: >
-      A staff member responsible for day-to-day asset operations.
-      This role includes adding assets, updating details, allocating
-      assets to users or offices, and recording maintenance work.
-      The staff role is purely operational.
-
-  Office_Admin:
+ Office_Admin:
     description: >
       An office-level authority who reviews asset requests from users.
       The office admin can approve or reject requests and escalate
       them to the Higher Authority when needed.
 
-  Higher_Authority:
+Higher_Authority:
     description: >
       A senior authority responsible for handling escalated requests.
       This role focuses on approvals, monitoring request history,
       and overall supervision without performing operational tasks.
 
-  System_Admin:
+System_Admin:
     description: >
       A system-level administrator who manages users, roles, and access.
       This role controls permissions, manages offices, and maintains
       system audit records.
 
-  Asset:
+Asset:
     description: >
       Any organizational resource such as computers, equipment, or
       infrastructure that can be allocated, tracked, and maintained.
 
-  Asset_Request:
-    description: >
-      A request raised by a user to obtain or use an asset, which goes
-      through approval and allocation steps.
 
-  Asset_Maintenance:
-    description: >
-      The process of maintaining or repairing assets and recording
-      maintenance details in the system.
+      
 
-  Login_Process:
-    description: >
-      The process where a user enters login credentials and, after
-      verification, is redirected to the correct dashboard.
+
