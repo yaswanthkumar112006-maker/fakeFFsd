@@ -1,30 +1,121 @@
-
 project_name: Asset & Resource Allocation Management System
 
 definitions:
 
- Office_Admin:
+  User:
     description: >
-      An office-level authority who reviews asset requests from users.
-      The office admin can approve or reject requests and escalate
-      them to the Higher Authority when needed.
+      A member of the institution who requests assets or resources
+      for official academic or administrative work.
 
-Higher_Authority:
+  Staff:
     description: >
-      A senior authority responsible for handling escalated requests.
-      This role focuses on approvals, monitoring request history,
-      and overall supervision without performing operational tasks.
+      Personnel responsible for day-to-day handling of assets such as
+      registering assets, allocating them after approval, and maintaining them.
 
-System_Admin:
+  Office_Admin:
     description: >
-      A system-level administrator who manages users, roles, and access.
-      This role controls permissions, manages offices, and maintains
-      system audit records.
+      An office-level authority who reviews asset requests, approves or
+      rejects them, and escalates requests when necessary.
 
-Asset:
+  Higher_Authority:
     description: >
-      Any organizational resource such as computers, equipment, or
-      infrastructure that can be allocated, tracked, and maintained.
+      A senior authority responsible for handling escalated requests
+      and providing final approvals and overall supervision.
+
+  System_Admin:
+    description: >
+      The administrator who manages users, roles, permissions, offices,
+      and overall system configuration.
+
+  Asset:
+    description: >
+      A physical institutional resource such as computers, equipment,
+      furniture, or rooms that can be allocated for official use.
+
+  Institutional_Asset:
+    description: >
+      An asset owned by the institution and managed through the system
+      for allocation, tracking, and maintenance.
+
+  Asset_Request:
+    description: >
+      A formal request raised by a user to obtain an institutional asset
+      for a specific purpose.
+
+  Resource_Request:
+    description: >
+      A digital request submitted to obtain institutional resources,
+      which follows approval rules.
+
+  Allocation:
+    description: >
+      The process of assigning an approved asset to a user or office
+      for official use.
+
+  Asset_Allocation:
+    description: >
+      The recorded assignment of an asset, including details of
+      user, office, and allocation duration.
+
+  Allocation_History:
+    description: >
+      A record that stores past and present allocation details of assets
+      for tracking and accountability.
+
+  Request_Workflow:
+    description: >
+      The approval flow through which asset requests move from user
+      to office admin and higher authority.
+
+  Approval_Limit:
+    description: >
+      A defined boundary that determines whether a request can be
+      approved at office level or must be escalated.
+
+  Escalation:
+    description: >
+      The process of forwarding a request to higher authority when
+      office-level approval is not sufficient.
+
+  Office_Asset_Inventory:
+    description: >
+      A list of assets assigned to a specific office along with their
+      current availability status.
+
+  Asset_Availability_Status:
+    description: >
+      The current state of an asset such as available, allocated,
+      under maintenance, or retired.
+
+  Maintenance:
+    description: >
+      The process of repairing or servicing assets to keep them
+      functional and usable.
+
+  Maintenance_Log:
+    description: >
+      A record that stores details of asset maintenance activities
+      including issues and actions taken.
+
+  Asset_Issue_Report:
+    description: >
+      A report raised when an allocated asset becomes damaged or
+      does not function properly.
+
+  Audit_Log:
+    description: >
+      A system-generated record that tracks approvals, allocations,
+      escalations, and maintenance actions for accountability.
+
+  Role_Based_Access:
+    description: >
+      A security mechanism that controls what actions users can
+      perform based on their assigned roles.
+
+  Login_Process:
+    description: >
+      The authentication process through which users access the system
+      using valid credentials.
 
 
       
