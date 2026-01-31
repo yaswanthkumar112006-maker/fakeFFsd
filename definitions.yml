@@ -83,6 +83,10 @@ definitions:
       A system-generated record that tracks approvals, allocations,
       escalations, and maintenance actions for accountability.
 
+  Serial_Number:
+     description: >
+       A unique number given to each asset to identify information about it.
+
 
 
  
