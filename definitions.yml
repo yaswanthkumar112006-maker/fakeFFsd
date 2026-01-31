@@ -2,16 +2,6 @@ project_name: Asset & Resource Allocation Management System
 
 definitions:
 
-  User:
-    description: >
-      A member of the institution who requests assets or resources
-      for official academic or administrative work.
-
-  Staff:
-    description: >
-      Personnel responsible for day-to-day handling of assets such as
-      registering assets, allocating them after approval, and maintaining them.
-
   Office_Admin:
     description: >
       An office-level authority who reviews asset requests, approves or
