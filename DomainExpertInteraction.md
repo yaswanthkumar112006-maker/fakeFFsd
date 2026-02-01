@@ -39,7 +39,7 @@ The system helps streamline asset requests, approvals, allocation, and maintenan
 | Request | Formal demand raised by a user for an asset |
 | Escalation | Forwarding a request to higher authority |
 | Maintenance | Repair or servicing of an asset |
-
+| Serial Number|Unique number given to each asset.|
 ---
 
 ## Actors and Responsibilities
@@ -51,7 +51,7 @@ The system helps streamline asset requests, approvals, allocation, and maintenan
 | Office Admin | Reviews and approves requests, escalates when required |
 | Higher Authority | Approves escalated or high-value requests |
 | System Admin | Manages users, roles, permissions, and audit logs |
-| Serial Number|Unique number given to each asset.|
+
 
 ---
 
