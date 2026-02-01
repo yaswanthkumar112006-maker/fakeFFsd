@@ -5,26 +5,26 @@ The goal of this project is to develop a centralized web-based system that enabl
 
 # Identified Actors    :
 
-# 1. User
+#  User
 
-# 2. Staff
+#  Staff
 
-# 3. Office Admin
+#  Office Admin
 
-# 4. Higher Authority
+#  Higher Authority
 
-# 5. System Admin
+#  System Admin
 
-Planned Features by Actor
+# Planned Features by Actor
 
-# 1. User  :
+#  User  :
 - Submit asset/resource requests
 - View request status
 - Receive allocation notifications
 - Report asset-related issues
 - Track issue resolution progress
 
-# 2. Staff  :
+#  Staff  :
 - Add new assets to the system
 - Update asset details
 - Allocate assets to users
@@ -34,20 +34,20 @@ Planned Features by Actor
 - View office-wise asset availability
 - Focused strictly on operational responsibilities
 
-# 3. Office Admin :
+#  Office Admin :
 - View user-submitted requests
 - Approve or reject requests
 - Escalate requests to Higher Authority when required
 - View request status and history
 - Monitor office-wise asset availability
 
-# 4. Higher Authority :
+#  Higher Authority :
 - View escalated requests
 - Approve or reject high-level requests
 - View complete request history
 - Track overall request status
 
-# 5. System Admin  :
+#  System Admin  :
 - Assign roles and permissions
 - Enable or disable user access
 - Add, update, or delete users
