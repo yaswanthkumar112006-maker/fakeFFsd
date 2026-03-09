@@ -1,61 +1,214 @@
-# Problem Statement :  Asset & Resource Allocation Management System
+# Problem Statement : Asset & Resource Allocation Management System
 
-Organizations often rely on manual or fragmented systems for managing assets and resources such as computers, equipment, and office infrastructure. This leads to inefficient utilization, lack of transparency, delayed approvals, and poor tracking of asset allocation and maintenance.
-The goal of this project is to develop a centralized web-based system that enables efficient tracking, allocation, approval, and maintenance of organizational assets while providing clear role-based access and accountability.
+Organizations often allocate & manage assets such as laptops, projectors, routers, and other equipment using manual methods. This can lead to poor tracking, delayed approvals, and inefficient resource utilization.
 
-# Identified Actors    :
+This project provides a **centralized web-based system** to allocate & manage the complete lifecycle of organizational resources with **role-based dashboards**.
 
-## User
-A User represents any individual within the organization who requires assets or resources to perform their duties. The User interacts with the system primarily to request resources, receive updates related to their requests, and communicate issues with allocated assets. This role focuses on utilization rather than management or control.
+---
 
-## Staff
-Staff members are responsible for the day-to-day operational handling of assets. They ensure that assets are properly recorded, maintained, and allocated according to approved decisions. This role operates at the execution level and maintains accurate system records related to assets.
+# System Overview
 
-## Office Admin
-The Office Admin acts as an intermediate authority between Users and higher-level decision-makers. This role oversees requests within a specific office, ensures compliance with organizational procedures, and forwards requests that require higher authorization.
+The system manages the full lifecycle of resources:
 
-## Higher Authority
-The Higher Authority represents the top-level decision-making role in the system. This role is responsible for reviewing escalated requests, ensuring policy compliance, and providing final authorization. It does not perform operational or maintenance tasks.
+- Resource Request
+- Approval Process
+- Resource Allocation
+- Maintenance Management
+- Resource Return
+- Scrap Management
+- Procurement Management
 
-## System Admin
-The System Admin is responsible for system-level configuration, access control, and security management. This role manages users, roles, permissions, and ensures the reliability, integrity, and proper functioning of the system.
+---
 
+# User Roles
 
-# Planned Features by Actor
+The system supports five roles:
 
-## User  :
-- Submit asset/resource requests
-- View request status
-- Receive allocation notifications
-- Report asset-related issues
-- Track issue resolution progress
+1. **Requester** – Requests resources and manages allocated assets  
+2. **Department Head** – Approves requests and monitors department resources  
+3. **Registrar** – Approves procurement requests  
+4. **Staff** – Handles allocation, procurement, maintenance, and returns  
+5. **System Admin** – Manages users, departments, and permissions  
 
-## Staff  :
-- Add new assets to the system
-- Update asset details
-- Allocate assets to users
-- Record allocation details
-- Perform asset maintenance
-- Record maintenance history
-- View office-wise asset availability
-- Focused strictly on operational responsibilities
+---
 
-## Office Admin :
-- View user-submitted requests
-- Approve or reject requests
-- Escalate requests to Higher Authority when required
-- View request status and history
-- Monitor office-wise asset availability
+# Dashboards
 
-## Higher Authority :
-- View escalated requests
-- Approve or reject high-level requests
-- View complete request history
-- Track overall request status
+## Requester Dashboard
 
-## System Admin  :
-- Assign roles and permissions
-- Enable or disable user access
-- Add, update, or delete users
-- Create and manage offices
-- Maintain system audit logs
+### Request Resource
+Users can request resources by selecting:
+
+- Department
+- Resource Type
+- Quantity
+- Reason
+
+If the resource is not available, users can **request a new resource**.  
+Each request generates a **Request ID** and is sent to the Department Head.
+
+### My Requests
+Users can track all requests with statuses:
+
+- Pending
+- Approved
+- Rejected
+- Allocated
+
+When allocated, the user confirms receipt and the resource appears in **My Resources**.
+
+### My Resources
+Shows all currently allocated resources.
+
+Users can:
+- **Return Resource**
+- **Request Maintenance**
+
+Possible resource statuses:
+- Allocated
+- Maintenance Requested
+- Under Maintenance
+- Repaired
+- Scrap
+
+---
+
+# Department Head Dashboard
+
+### Incoming Requests
+Review resource requests from department users.
+
+Actions:
+- **Accept** → Forward to Staff for allocation  
+- **Reject** → Notify Requestor  
+
+### Department Resources
+View all department resources with:
+
+- Search
+- Quantity tracking
+- Allocation details
+- Maintenance history
+
+### Resource Analytics
+Displays department statistics:
+
+- Total Resources
+- Available Resources
+- Allocated Resources
+- Resources Under Maintenance
+- Scrap Resources
+- Monthly Request Trends
+- Most Requested Resources
+
+### Stock Monitoring
+Monitors resource stock levels using threshold values.
+
+Stock categories:
+
+- **Safe Stock** – Quantity above threshold  
+- **Near Threshold** – Quantity close to threshold  
+- **Low Stock** – Quantity below threshold  
+
+Actions:
+- **Edit Threshold** – Change minimum stock level  
+- **Send Procurement Request** – Request additional resources
+
+### Procurement Requests
+Department Heads can request new resources by specifying:
+
+- Resource Type
+- Quantity
+
+Status tracking:
+- Pending
+- Accepted
+- Rejected
+
+---
+
+# Registrar Dashboard
+
+The Registrar manages procurement approvals.
+
+### Procurement Requests
+Actions:
+- **Accept** → Creates procurement task for staff  
+- **Reject** → Notify Department Head
+
+### Requests Overview
+View procurement requests with filters:
+
+- Pending
+- Accepted
+- Rejected
+- Department
+
+### System Analytics
+Displays system-wide statistics such as:
+
+- Requests per department
+- Monthly request trends
+- High-demand departments
+- Total resources
+
+---
+
+# Staff Dashboard
+
+Staff manage operational tasks including allocation, procurement, and maintenance.
+
+### Allocation Requests
+Assign resources to approved requests with support for **partial allocation**.
+
+### Procurement Tasks
+After registrar approval, staff complete procurement by entering:
+
+- Vendor Name
+- Invoice Number
+- Purchase Date
+- Warranty Details
+
+Purchased resources are then **registered in the system**.
+
+### Manage Resources
+Staff can:
+- Add resources
+- Edit resource details
+- View resource information
+
+### Maintenance Management
+Staff process maintenance requests:
+
+- Accept / Reject request
+- Mark as Repaired
+- Mark as Scrap
+
+### Return Management
+Staff inspect returned resources and mark them as:
+
+- Available
+- Scrap
+
+---
+
+# System Admin Dashboard
+
+The System Admin manages system configuration.
+
+### User Management
+- Add users
+- Edit users
+- Assign roles
+- Assign departments
+
+### Department Management
+- Add departments
+- Edit departments
+- Delete departments
+- Assign department heads
+
+### Role & Permission Control
+Define which features each role can access.
+
+---
