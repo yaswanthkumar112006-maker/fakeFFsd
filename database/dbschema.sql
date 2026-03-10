@@ -35,9 +35,8 @@ CREATE TABLE USERS (
 
 CREATE TABLE RESOURCE_TYPES (
     resource_type_id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
-    type_name VARCHAR(100) NOT NULL,
+    type_name VARCHAR(100) NOT NULL UNIQUE,
     department_id INT NOT NULL,
-    UNIQUE(type_name, department_id),
     FOREIGN KEY (department_id) REFERENCES DEPARTMENTS(department_id)
 );
 
@@ -65,14 +64,12 @@ CREATE TABLE PROCUREMENT_REQUESTS (
 CREATE TABLE PROCUREMENT_ITEMS (
     procurement_item_id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
     procurement_id INT NOT NULL,
-    resource_type_id INT NOT NULL,
     quantity INT NOT NULL,
     vendor_name VARCHAR(100) NULL,
     invoice_number VARCHAR(100) UNIQUE,
     purchase_date DATE NULL,
     warranty VARCHAR(50) NULL,
-    FOREIGN KEY (procurement_id) REFERENCES PROCUREMENT_REQUESTS(procurement_id),
-    FOREIGN KEY (resource_type_id) REFERENCES RESOURCE_TYPES(resource_type_id)
+    FOREIGN KEY (procurement_id) REFERENCES PROCUREMENT_REQUESTS(procurement_id)
 );
 
 CREATE TABLE RESOURCES (
@@ -80,7 +77,6 @@ CREATE TABLE RESOURCES (
     resource_code VARCHAR(50) UNIQUE,
     procurement_item_id INT NULL,
     resource_type_id INT NOT NULL,
-    department_id INT NOT NULL,
     serial_number VARCHAR(100) UNIQUE,
     manufacturer VARCHAR(100) NULL,
     model VARCHAR(100) NULL,
@@ -89,8 +85,7 @@ CREATE TABLE RESOURCES (
     status VARCHAR(50) NOT NULL,
     created_date DATETIME NOT NULL,
     FOREIGN KEY (procurement_item_id) REFERENCES PROCUREMENT_ITEMS(procurement_item_id),
-    FOREIGN KEY (resource_type_id) REFERENCES RESOURCE_TYPES(resource_type_id),
-    FOREIGN KEY (department_id) REFERENCES DEPARTMENTS(department_id)
+    FOREIGN KEY (resource_type_id) REFERENCES RESOURCE_TYPES(resource_type_id)
 );
 
 CREATE TABLE REQUESTS (
@@ -112,14 +107,12 @@ CREATE TABLE ALLOCATIONS (
     allocation_id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
     request_id INT NOT NULL,
     resource_id INT NOT NULL,
-    allocated_to INT NOT NULL,
     allocated_by INT NOT NULL,
     allocation_date DATE NULL,
     status VARCHAR(20) NOT NULL,
     UNIQUE(resource_id, status),
     FOREIGN KEY (request_id) REFERENCES REQUESTS(request_id),
     FOREIGN KEY (resource_id) REFERENCES RESOURCES(resource_id),
-    FOREIGN KEY (allocated_to) REFERENCES USERS(user_id),
     FOREIGN KEY (allocated_by) REFERENCES USERS(user_id)
 );
 
@@ -169,7 +162,6 @@ CREATE TABLE NOTIFICATIONS (
     message TEXT NOT NULL,
     type VARCHAR(50) NULL,
     related_id INT NULL,
-    is_read BOOLEAN NOT NULL DEFAULT FALSE,
     created_at DATETIME NOT NULL,
     FOREIGN KEY (user_id) REFERENCES USERS(user_id)
 );
