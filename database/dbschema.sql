@@ -108,9 +108,10 @@ CREATE TABLE ALLOCATIONS (
     request_id INT NOT NULL,
     resource_id INT NOT NULL,
     allocated_by INT NOT NULL,
+    allocated_to INT NOT NULL,
     allocation_date DATE NULL,
     status VARCHAR(20) NOT NULL,
-    UNIQUE(resource_id, status),
+    FOREIGN KEY(allocated_to) REFERENCES USERS(user_id),
     FOREIGN KEY (request_id) REFERENCES REQUESTS(request_id),
     FOREIGN KEY (resource_id) REFERENCES RESOURCES(resource_id),
     FOREIGN KEY (allocated_by) REFERENCES USERS(user_id)
