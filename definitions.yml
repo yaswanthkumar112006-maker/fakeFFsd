@@ -1,97 +1,142 @@
-project_name: Asset & Resource Allocation Management System
-
 definitions:
-
-  Office_Admin:
-    description: >
-      An office-level authority who reviews asset requests, approves or
-      rejects them, and escalates requests when necessary.
-
-  Higher_Authority:
-    description: >
-      A senior authority responsible for handling escalated requests
-      and providing final approvals and overall supervision.
-
-  System_Admin:
-    description: >
-      The administrator who manages users, roles, permissions, offices,
-      and overall system configuration.
 
   Asset:
     description: >
-      A physical institutional resource such as computers, equipment,
-      furniture, or rooms that can be allocated for official use.
+      A physical resource such as computers, equipment, furniture, or rooms
+      that can be tracked, allocated, maintained, and returned in the system.
 
-
-  Asset_Request:
+  Resource:
     description: >
-      A formal request raised by a user to obtain an institutional asset
-      for a specific purpose.
+      Any item or facility available in the system inventory that can be
+      requested and allocated to users.
 
-  
+  Inventory:
+    description: >
+      A centralized collection of all resources and assets managed by the system,
+      including their status, location, and lifecycle history.
+
+  Request:
+    description: >
+      A formal submission made by a requester to obtain a resource from the system.
+
+  RequestStatus:
+    description: >
+      The current state of a request during the workflow.
+    values:
+      - Pending
+      - Approved
+      - Rejected
+      - Allocated
+      - Completed
+
   Allocation:
     description: >
-      The process of assigning an approved asset to a user or office
-      for official use.
+      The assignment of a specific resource to an approved request
+      along with allocation details and history.
 
-
-
-  Allocation_History:
+  AllocationStatus:
     description: >
-      A record that stores past and present allocation details of assets
-      for tracking and accountability.
+      Indicates the current allocation state of a resource.
+    values:
+      - Allocated
+      - Returned
+      - Cancelled
 
-  Request_Workflow:
+  ProcurementRequest:
     description: >
-      The approval flow through which asset requests move from user
-      to office admin and higher authority.
+      A request created when required resources are unavailable
+      in inventory and need to be purchased.
 
-  Approval_Limit:
+  ProcurementStatus:
     description: >
-      A defined boundary that determines whether a request can be
-      approved at office level or must be escalated.
+      The approval state of a procurement request.
+    values:
+      - Pending
+      - Approved
+      - Rejected
+      - Completed
 
-  Escalation:
+  MaintenanceRequest:
     description: >
-      The process of forwarding a request to higher authority when
-      office-level approval is not sufficient.
+      A report submitted for repairing or inspecting a resource
+      that is damaged or malfunctioning.
 
-
-
-  Asset_Availability_Status:
+  MaintenanceStatus:
     description: >
-      The current state of an asset such as available, allocated,
-      under maintenance, or retired.
+      The current state of maintenance activities for a resource.
+    values:
+      - Reported
+      - UnderInspection
+      - Repaired
+      - Scrapped
 
-  Maintenance:
+  ReturnRequest:
     description: >
-      The process of repairing or servicing assets to keep them
-      functional and usable.
+      A request submitted when a user returns an allocated resource
+      back to the inventory.
 
-  Maintenance_Log:
+  ReturnStatus:
     description: >
-      A record that stores details of asset maintenance activities
-      including issues and actions taken.
+      Indicates the condition or outcome after resource inspection.
+    values:
+      - Returned
+      - Damaged
+      - Scrapped
 
-  Asset_Issue_Report:
+  User:
     description: >
-      A report raised when an allocated asset becomes damaged or
-      does not function properly.
+      A person who interacts with the system to perform operations
+      such as requesting resources, approving requests, or managing inventory.
 
-  Audit_Log:
+  Role:
     description: >
-      A system-generated record that tracks approvals, allocations,
-      escalations, and maintenance actions for accountability.
+      A classification assigned to users that defines their permissions
+      and system responsibilities.
 
-  Serial_Number:
-     description: >
-       A unique number given to each asset to identify information about it.
+  Permission:
+    description: >
+      A specific authorization that determines what actions a user
+      can perform in the system.
 
+  Department:
+    description: >
+      An organizational unit that manages resources and users
+      within a specific area of responsibility.
 
+  DepartmentHead:
+    description: >
+      A user assigned to manage and approve requests within a department.
 
- 
+  Staff:
+    description: >
+      Operational personnel responsible for managing resources,
+      inventory updates, allocation, and maintenance.
 
+  Registrar:
+    description: >
+      A senior authority responsible for reviewing and approving
+      procurement requests.
 
-      
+  SystemAdmin:
+    description: >
+      A user responsible for managing users, departments,
+      system configurations, and logs.
 
+  AuditLog:
+    description: >
+      A system record that stores actions performed by users
+      such as requests, approvals, allocations, and updates.
 
+  Notification:
+    description: >
+      A system-generated alert sent to users when important
+      events occur such as request approval or resource allocation.
+
+  ResourceStatus:
+    description: >
+      Indicates the availability and lifecycle stage of a resource.
+    values:
+      - Available
+      - Allocated
+      - Maintenance
+      - Scrap
