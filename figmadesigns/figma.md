@@ -1,1 +1,1 @@
-https://www.figma.com/design/Q1XwDu0YwhfP0DTxkJR8zJ/ResoX?node-id=969-85&t=q2PHllyObBTFp3B8-1
+https://www.figma.com/proto/Q1XwDu0YwhfP0DTxkJR8zJ/ResoX?node-id=430-974&t=mWgmYCD3bXPNs5KR-1&scaling=min-zoom&content-scaling=fixed&page-id=1%3A258&starting-point-node-id=430%3A974&show-proto-sidebar=1
