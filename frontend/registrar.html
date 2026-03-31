@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ResourceX - Registrar Dashboard</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+    <div class="app-container">
+        
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="logo-container">
+                <div class="logo-icon">R</div>
+                <div class="logo-text">ResourceX</div>
+            </div>
+
+            <ul class="nav-menu">
+                <li class="nav-item active" data-target="procurement-approvals-view">
+                    <span class="icon">💼</span> Procurement Approvals
+                </li>
+                <li class="nav-item" data-target="sys-overview-view">
+                    <span class="icon">👁️</span> Global Requests Overview
+                </li>
+                <li class="nav-item" data-target="sys-analytics-view">
+                    <span class="icon">📊</span> System Analytics
+                </li>
+            </ul>
+
+            <div class="user-profile-widget">
+                <div class="user-avatar">
+                    <img src="https://i.pravatar.cc/150?img=9" alt="User">
+                </div>
+                <div class="user-info">
+                    <span class="user-name">Dr. Eleanor Vance</span>
+                    <span class="user-role">University Registrar</span>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Wrapper -->
+        <div class="main-wrapper">
+            <header class="top-header">
+                <div class="search-bar">
+                    <span style="color:#94a3b8">🔍</span>
+                    <input type="text" placeholder="Search system...">
+                </div>
+                <div class="header-actions">
+                    <button class="btn-danger" style="background:transparent; color:#b91c1c; border:1px solid #b91c1c; padding:0.4rem 0.8rem; font-size:0.75rem" onclick="regApp.logout()">Logout</button>
+                    <button class="icon-btn">🔔</button>
+                    <button class="icon-btn">⚙️</button>
+                </div>
+            </header>
+
+            <main class="content-area">
+
+                <!-- 1. Procurement Approvals View -->
+                <div id="procurement-approvals-view" class="view-section active">
+                    <h1 class="page-title">Registrar Dashboard</h1>
+                    <p class="page-subtitle">Overview of procurement requests across the university.</p>
+
+                    <!-- Stats Row -->
+                    <div class="stats-grid" style="grid-template-columns: repeat(4, 1fr);">
+                        <div class="stat-card">
+                            <div class="stat-title">Total Procurement</div>
+                            <div class="stat-value-row">
+                                <div class="stat-value" id="dash-proc-total">0</div>
+                                <span style="font-size:1.5rem">🛒</span>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-title" style="color:#d97706">Pending</div>
+                            <div class="stat-value-row">
+                                <div class="stat-value" style="color:#d97706" id="dash-proc-pending">0</div>
+                                <span style="font-size:1.5rem">⏳</span>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-title" style="color:#16a34a">Accepted</div>
+                            <div class="stat-value-row">
+                                <div class="stat-value" style="color:#16a34a" id="dash-proc-accepted">0</div>
+                                <span style="font-size:1.5rem">✅</span>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-title" style="color:#dc2626">Rejected</div>
+                            <div class="stat-value-row">
+                                <div class="stat-value" style="color:#dc2626" id="dash-proc-rejected">0</div>
+                                <span style="font-size:1.5rem">❌</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="data-section">
+                        <div class="data-section-header">
+                            <div class="data-section-title">Recent Procurement Requests</div>
+                            <button class="btn-secondary" style="padding:0.25rem 0.5rem; font-size:0.75rem" onclick="alert('Viewing all procurements')">View All</button>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Proc ID</th>
+                                        <th>Department Head</th>
+                                        <th>Resource Type</th>
+                                        <th>Qty</th>
+                                        <th>Justification</th>
+                                        <th style="text-align:right">Action</th>
+                                    </tr>
+                                </thead>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2. Global Requests View -->
+                <div id="sys-overview-view" class="view-section">
+                    <h1 class="page-title">Global Requests Filter</h1>
+                    <p class="page-subtitle">Unified view of all departmental requests and current statuses.</p>
+
+                    <div style="background:white; padding:1.5rem; border-radius:12px; box-shadow:var(--shadow-sm); border:1px solid var(--border-color); margin-bottom:2rem; display:flex; gap:1rem">
+                        <select class="form-control" style="width:200px"><option>Filter Status: All</option><option>Pending</option><option>Accepted</option><option>Rejected</option></select>
+                        <select class="form-control" style="width:200px"><option>Filter Dept: All</option><option>IT Services</option><option>HR</option><option>Sciences</option></select>
+                        <button class="btn-secondary">Apply Filters</button>
+                    </div>
+
+                    <div class="data-section">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Req ID</th>
+                                    <th>Dept</th>
+                                    <th>Resource Type</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr><td>REQ-112</td><td>IT Services</td><td>Wireless Mouse</td><td><span class="badge allocated">Approved</span></td></tr>
+                                <tr><td>REQ-113</td><td>Science</td><td>Safety Goggles</td><td><span class="badge pending">Pending</span></td></tr>
+                                <tr><td>REQ-114</td><td>HR Dept</td><td>Office Chair</td><td><span class="badge rejected">Rejected</span></td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- 3. System Analytics View -->
+                <div id="sys-analytics-view" class="view-section">
+                    <h1 class="page-title">Global Platform Analytics</h1>
+                    <p class="page-subtitle">Organizational resource distribution and demand tracking.</p>
+
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-title">Total Active Assets</div>
+                            <div class="stat-value">12,409</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-title">Avg Fulfillment Time</div>
+                            <div class="stat-value" style="color:#16a34a">1.2 Days</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-title">High Demand Dept</div>
+                            <div class="stat-value" style="color:#0369a1; font-size:1.5rem">IT Services</div>
+                        </div>
+                    </div>
+                </div>
+
+            </main>
+        </div>
+    </div>
+
+    <script src="js/store.js"></script>
+    <script src="js/registrar.js"></script>
+</body>
+</html>
