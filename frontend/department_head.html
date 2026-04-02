@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ResourceX - Department Head Dashboard</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        .trend-chart { height: 150px; background: #e0f2fe; border-radius: 8px; margin-top: 1rem; display: flex; align-items: flex-end; padding: 1rem; gap: 0.5rem; }
+        .trend-bar { background: var(--primary-color); width: 100%; border-radius: 4px 4px 0 0; }
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="logo-container">
+                <div class="logo-icon">R</div>
+                <div class="logo-text">ResourceX</div>
+            </div>
+
+            <ul class="nav-menu">
+                <li class="nav-item active" data-target="dashboard-view">
+                    <span class="icon">⊞</span> Dashboard
+                </li>
+                <li class="nav-item" data-target="incoming-requests-view">
+                    <span class="icon">📥</span> Incoming Requests
+                </li>
+                <li class="nav-item" data-target="dept-resources-view">
+                    <span class="icon">🏢</span> Dept Resources
+                </li>
+                <li class="nav-item" data-target="procurement-view">
+                    <span class="icon">🛒</span> Procurement
+                </li>
+            </ul>
+
+            <div class="user-profile-widget">
+                <div class="user-avatar">
+                    <img src="https://i.pravatar.cc/150?img=12" alt="User">
+                </div>
+                <div class="user-info">
+                    <span class="user-name">Sarah Jenkins</span>
+                    <span class="user-role">Head of IT Services</span>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Wrapper -->
+        <div class="main-wrapper">
+            
+            <header class="top-header">
+                <div class="search-bar">
+                    <span style="color:#94a3b8">🔍</span>
+                    <input type="text" placeholder="Search IT Services...">
+                </div>
+                <div class="header-actions">
+                    <button class="btn-danger" style="background:transparent; color:#b91c1c; border:1px solid #b91c1c; padding:0.4rem 0.8rem; font-size:0.75rem" onclick="deptApp.logout()">Logout</button>
+                    <button class="icon-btn">🔔</button>
+                    <button class="icon-btn">⚙️</button>
+                </div>
+            </header>
+
+            <main class="content-area">
+
+                <!-- Dashboard View -->
+                <div id="dashboard-view" class="view-section active">
+                    <h1 class="page-title">Department Dashboard</h1>
+                    <p class="page-subtitle">Overview of <span id="dash-dept-name">your department</span> resources and requests.</p>
+
+                    <!-- Alert Banner -->
+                    <div id="low-stock-alert" style="display:none; background:#fefce8; border:1px solid #fef08a; padding:1rem 1.5rem; border-radius:8px; margin-bottom:1.5rem; display:flex; justify-content:space-between; align-items:center;">
+                        <div>
+                            <span style="color:#a16207; font-size:1.5rem; vertical-align:middle; margin-right:0.5rem">⚠️</span>
+                            <strong style="color:#854d0e">Low Stock Alert:</strong>
+                            <span style="color:#a16207; font-size:0.875rem" id="low-stock-text">Some resource types are below the minimum threshold.</span>
+                        </div>
+                        <button class="btn-secondary" style="background:white; border-color:#fde047; color:#854d0e" onclick="deptApp.switchView('procurement-view')">Create Procurement Request</button>
+                    </div>
+
+                    <!-- Stats Row -->
+                    <div class="stats-grid" style="grid-template-columns: repeat(5, 1fr);">
+                        <div class="stat-card">
+                            <div class="stat-title">Total Resources</div>
+                            <div class="stat-value-row">
+                                <div class="stat-value" id="dash-total-res">0</div>
+                                <span style="font-size:1.5rem">📦</span>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-title" style="color:#16a34a">Available</div>
+                            <div class="stat-value-row">
+                                <div class="stat-value" style="color:#16a34a" id="dash-avail">0</div>
+                                <span style="font-size:1.5rem">📦</span>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-title" style="color:#0284c7">Allocated</div>
+                            <div class="stat-value-row">
+                                <div class="stat-value" style="color:#0284c7" id="dash-alloc">0</div>
+                                <span style="font-size:1.5rem">📦</span>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-title" style="color:#d97706">Maintenance</div>
+                            <div class="stat-value-row">
+                                <div class="stat-value" style="color:#d97706" id="dash-maint">0</div>
+                                <span style="font-size:1.5rem">⚠️</span>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-title" style="color:#dc2626">Scrap</div>
+                            <div class="stat-value-row">
+                                <div class="stat-value" style="color:#dc2626" id="dash-scrap">0</div>
+                                <span style="font-size:1.5rem">⚠️</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Content Grid -->
+                    <div style="display:flex; gap:1.5rem; align-items:flex-start">
+                        <!-- Left Column -->
+                        <div class="data-section" style="flex:1; margin-bottom:0">
+                            <div class="data-section-header">
+                                <div class="data-section-title">Incoming Requests (Pending)</div>
+                                <button class="btn-secondary" style="padding:0.25rem 0.5rem; font-size:0.75rem" onclick="deptApp.switchView('incoming-requests-view')">View All</button>
+                            </div>
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Resource</th>
+                                        <th>By</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="dash-inc-req-tbody">
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <!-- Right Column -->
+                        <div class="data-section" style="flex:1; margin-bottom:0">
+                            <div class="data-section-header">
+                                <div class="data-section-title">Procurements</div>
+                                <button class="btn-secondary" style="padding:0.25rem 0.5rem; font-size:0.75rem" onclick="deptApp.switchView('procurement-view')">View All</button>
+                            </div>
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Resource</th>
+                                        <th>Qty</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="dash-proc-tbody">
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 1. Incoming Requests View -->
+                <div id="incoming-requests-view" class="view-section">
+                    <h1 class="page-title">Incoming Requests</h1>
+                    <p class="page-subtitle">Review pending resource requests from your department staff.</p>
+
+                    <div class="data-section">
+                        <div class="data-section-header">
+                            <div class="data-section-title">Pending Approvals</div>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Req ID</th>
+                                        <th>Requestor</th>
+                                        <th>Resource Type</th>
+                                        <th>Qty</th>
+                                        <th>Reason</th>
+                                        <th style="text-align:right">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="incoming-requests-tbody">
+                                    <!-- Rendered by JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <!-- New Incoming Procurement Requests Block -->
+                    <div class="data-section" style="margin-top:2rem;">
+                        <div class="data-section-header">
+                            <div class="data-section-title">Incoming Procurement Requests</div>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Proc ID</th>
+                                        <th>Requestor</th>
+                                        <th>Resource/Item</th>
+                                        <th>Qty</th>
+                                        <th>Justification</th>
+                                        <th style="text-align:right">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="incoming-procurements-tbody">
+                                    <!-- Rendered by JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2. Dept Resources View -->
+                <div id="dept-resources-view" class="view-section">
+                    <h1 class="page-title">Department Resources</h1>
+                    <p class="page-subtitle">Inventory overview for IT Services.</p>
+
+                    <div class="data-section">
+                        <div class="data-section-header">
+                            <div class="data-section-title">Current Inventory</div>
+                            <div class="search-bar" style="width:250px;">
+                                <span style="color:#94a3b8">🔍</span>
+                                <input type="text" placeholder="Filter resources...">
+                            </div>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Resource Code</th>
+                                        <th>Resource Type</th>
+                                        <th>Assigned To</th>
+                                        <th>Condition</th>
+                                        <th style="text-align:right">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="dept-resources-tbody">
+                                    <!-- Rendered by JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Removed old Analytics view -->
+
+                <!-- 4. Procurement View -->
+                <div id="procurement-view" class="view-section">
+                    <h1 class="page-title">Procurement Requests</h1>
+                    <p class="page-subtitle">Submit and track requests for new resource acquisitions to the Registrar.</p>
+
+                    <div style="display:flex; gap:2rem;">
+                        <div class="form-card" style="flex:1">
+                            <h3 class="data-section-title" style="margin-bottom:1rem">New Procurement</h3>
+                            <form id="procurementForm" onsubmit="deptApp.submitProcurement(event)">
+                                <div class="form-group">
+                                    <label class="form-label">Resource Type / Model</label>
+                                    <input type="text" id="proc-type" class="form-control" required>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Quantity Required</label>
+                                    <input type="number" id="proc-qty" class="form-control" required>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Justification</label>
+                                    <textarea id="proc-reason" class="form-control" rows="3" required></textarea>
+                                </div>
+                                <button type="submit" class="btn-primary">Submit to Registrar</button>
+                            </form>
+                        </div>
+
+                        <div class="data-section" style="flex:1.5">
+                            <div class="data-section-header">
+                                <div class="data-section-title">Recent Procurment Requests</div>
+                            </div>
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Proc ID</th>
+                                        <th>Type</th>
+                                        <th>Qty</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="procurement-tbody">
+                                    <!-- Rendered by JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+            </main>
+        </div>
+    </div>
+
+    <script src="js/store.js"></script>
+    <script src="js/dept_head.js"></script>
+</body>
+</html>

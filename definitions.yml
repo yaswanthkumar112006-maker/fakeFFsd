@@ -1,0 +1,142 @@
+definitions:
+
+  Asset:
+    description: >
+      A physical resource such as computers, equipment, furniture, or rooms
+      that can be tracked, allocated, maintained, and returned in the system.
+
+  Resource:
+    description: >
+      Any item or facility available in the system inventory that can be
+      requested and allocated to users.
+
+  Inventory:
+    description: >
+      A centralized collection of all resources and assets managed by the system,
+      including their status, location, and lifecycle history.
+
+  Request:
+    description: >
+      A formal submission made by a requester to obtain a resource from the system.
+
+  RequestStatus:
+    description: >
+      The current state of a request during the workflow.
+    values:
+      - Pending
+      - Approved
+      - Rejected
+      - Allocated
+      - Completed
+
+  Allocation:
+    description: >
+      The assignment of a specific resource to an approved request
+      along with allocation details and history.
+
+  AllocationStatus:
+    description: >
+      Indicates the current allocation state of a resource.
+    values:
+      - Allocated
+      - Returned
+      - Cancelled
+
+  ProcurementRequest:
+    description: >
+      A request created when required resources are unavailable
+      in inventory and need to be purchased.
+
+  ProcurementStatus:
+    description: >
+      The approval state of a procurement request.
+    values:
+      - Pending
+      - Approved
+      - Rejected
+      - Completed
+
+  MaintenanceRequest:
+    description: >
+      A report submitted for repairing or inspecting a resource
+      that is damaged or malfunctioning.
+
+  MaintenanceStatus:
+    description: >
+      The current state of maintenance activities for a resource.
+    values:
+      - Reported
+      - UnderInspection
+      - Repaired
+      - Scrapped
+
+  ReturnRequest:
+    description: >
+      A request submitted when a user returns an allocated resource
+      back to the inventory.
+
+  ReturnStatus:
+    description: >
+      Indicates the condition or outcome after resource inspection.
+    values:
+      - Returned
+      - Damaged
+      - Scrapped
+
+  User:
+    description: >
+      A person who interacts with the system to perform operations
+      such as requesting resources, approving requests, or managing inventory.
+
+  Role:
+    description: >
+      A classification assigned to users that defines their permissions
+      and system responsibilities.
+
+  Permission:
+    description: >
+      A specific authorization that determines what actions a user
+      can perform in the system.
+
+  Department:
+    description: >
+      An organizational unit that manages resources and users
+      within a specific area of responsibility.
+
+  DepartmentHead:
+    description: >
+      A user assigned to manage and approve requests within a department.
+
+  Staff:
+    description: >
+      Operational personnel responsible for managing resources,
+      inventory updates, allocation, and maintenance.
+
+  Registrar:
+    description: >
+      A senior authority responsible for reviewing and approving
+      procurement requests.
+
+  SystemAdmin:
+    description: >
+      A user responsible for managing users, departments,
+      system configurations, and logs.
+
+  AuditLog:
+    description: >
+      A system record that stores actions performed by users
+      such as requests, approvals, allocations, and updates.
+
+  Notification:
+    description: >
+      A system-generated alert sent to users when important
+      events occur such as request approval or resource allocation.
+
+  ResourceStatus:
+    description: >
+      Indicates the availability and lifecycle stage of a resource.
+    values:
+      - Available
+      - Allocated
+      - Maintenance
+      - Scrap
