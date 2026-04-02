@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ResourceX - Login</title>
+    <link rel="stylesheet" href="../css/main.css">
+    <link rel="stylesheet" href="../css/components/layout.css">
+    <link rel="stylesheet" href="../css/components/button.css">
+    <link rel="stylesheet" href="../css/components/card.css">
+    <link rel="stylesheet" href="../css/components/table.css">
+    <link rel="stylesheet" href="../css/components/form.css">
+    <link rel="stylesheet" href="../css/components/badge.css">
+    <link rel="stylesheet" href="../css/components/toast.css">
+    <style>
+        .login-body {
+            background-color: var(--bg-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            font-family: 'Inter', sans-serif;
+        }
+        .login-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: var(--shadow-lg);
+            border: 1px solid var(--border-color);
+            width: 100%;
+            max-width: 400px;
+            padding: 2.5rem;
+            text-align: center;
+        }
+        .login-logo {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.75rem;
+            margin-bottom: 2rem;
+        }
+        .login-logo .icon {
+            width: 40px;
+            height: 40px;
+            background-color: var(--primary-color);
+            color: white;
+            border-radius: 8px;
+            font-size: 1.25rem;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .login-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            margin-bottom: 0.5rem;
+        }
+        .login-subtitle {
+            color: var(--text-muted);
+            font-size: 0.875rem;
+            margin-bottom: 2rem;
+        }
+        .form-group {
+            text-align: left;
+            margin-bottom: 1.25rem;
+        }
+        .mock-data-panel {
+            margin-top: 2rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid var(--border-color);
+            text-align: left;
+        }
+        .mock-pill {
+            display: inline-block;
+            background: #f1f5f9;
+            color: #64748b;
+            padding: 0.25rem 0.5rem;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            margin: 0.25rem;
+            cursor: pointer;
+            border: 1px solid #e2e8f0;
+            font-weight: 500;
+        }
+        .mock-pill:hover {
+            background: #e2e8f0;
+            color: var(--text-main);
+        }
+    </style>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20,400,0,0">
+</head>
+<body class="login-body">
+
+    <div class="login-card" style="position: relative;">
+        <a href="../index.html" style="position: absolute; top: 1.5rem; left: 1.5rem; color: var(--text-muted); text-decoration: none; display: flex; align-items: center; font-size: 0.875rem; font-weight: 500; transition: color 0.2s;" onmouseover="this.style.color='var(--primary-color)'" onmouseout="this.style.color='var(--text-muted)'">
+            <span class="material-symbols-outlined" style="font-size: 1.25rem; margin-right: 0.25rem;">arrow_back</span> Home
+        </a>
+        
+        <div class="login-logo">
+            <div class="icon">R</div>
+            <div style="font-size:1.5rem; font-weight:700; color:var(--primary-color)">ResourceX</div>
+        </div>
+        
+        <h1 class="login-title">Welcome Back</h1>
+        <p class="login-subtitle">Sign in to your organizational portal</p>
+
+        <form id="loginForm" onsubmit="submitLogin(event)" novalidate>
+            <div class="form-group">
+                <label class="form-label">Email Address</label>
+                <input type="email" id="username" class="form-control" placeholder="Enter email address" required oninput="clearEmailError()">
+                <div id="emailError" style="color: #ef4444; font-size: 0.8rem; font-weight: 500; display: none; margin-top: 0.4rem;">Please enter a valid email address.</div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Password</label>
+                <input type="password" id="password" class="form-control" placeholder="Enter password" required>
+            </div>
+            <button type="submit" class="btn-primary" style="width:100%; padding:0.75rem; font-size:1rem; margin-top:0.5rem">Sign In</button>
+        </form>
+
+        <div class="mock-data-panel">
+            <div style="font-size:0.75rem; color:var(--text-muted); margin-bottom:0.75rem; font-weight:600">QUICK LOGIN (Click to use mock data)</div>
+            <div class="mock-pill" onclick="quickLogin('yaswanth@resourcex.com')">User: Requestor</div>
+            <div class="mock-pill" onclick="quickLogin('sarah@resourcex.com')">User: Dept Head</div>
+            <div class="mock-pill" onclick="quickLogin('mike@resourcex.com')">User: Staff</div>
+            <div class="mock-pill" onclick="quickLogin('eleanor@resourcex.com')">User: Registrar</div>
+            <div class="mock-pill" onclick="quickLogin('admin@resourcex.com')">User: Admin</div>
+        </div>
+        <div style="font-size:0.7rem; color:#94a3b8; margin-top:1rem; text-align:center">
+            Password automatically defaults to: 12345678
+        </div>
+    </div>
+
+    <script src="../js/utils/store.js"></script>
+    <script>
+        function clearEmailError() {
+            const errorDiv = document.getElementById('emailError');
+            if (errorDiv) {
+                errorDiv.style.display = 'none';
+                document.getElementById('username').style.borderColor = 'var(--border-color)';
+            }
+        }
+
+        function submitLogin(e) {
+            e.preventDefault();
+            const emailInput = document.getElementById('username');
+            const email = emailInput.value.toLowerCase().trim();
+            const errorDiv = document.getElementById('emailError');
+            
+            // Validate email format strictly
+            const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+            if (!email) {
+                errorDiv.innerText = 'Email address is required.';
+                errorDiv.style.display = 'block';
+                emailInput.style.borderColor = '#ef4444';
+                emailInput.focus();
+                return;
+            } else if (!emailRegex.test(email)) {
+                errorDiv.innerText = 'Please enter a valid email address (e.g., name@company.com).';
+                errorDiv.style.display = 'block';
+                emailInput.style.borderColor = '#ef4444';
+                emailInput.focus();
+                return;
+            } else {
+                clearEmailError();
+            }
+
+            const passwordInput = document.getElementById('password');
+            if (!passwordInput.value.trim()) {
+                alert('Please enter your password.');
+                passwordInput.focus();
+                return;
+            }
+            const password = passwordInput.value; // mocked, we just check email
+            
+            const user = Store.login(email, password);
+            
+            if (user) {
+                switch(user.role) {
+                    case 'Requestor': window.location.href = 'requestor.html'; break;
+                    case 'Dept Head': window.location.href = 'department_head.html'; break;
+                    case 'Staff': window.location.href = 'staff.html'; break;
+                    case 'Registrar': window.location.href = 'registrar.html'; break;
+                    case 'System Admin': window.location.href = 'admin.html'; break;
+                }
+            } else {
+                alert('User not found. Try one of the quick login options.');
+                document.getElementById('username').focus();
+            }
+        }
+
+        function quickLogin(email) {
+            document.getElementById('username').value = email;
+            document.getElementById('password').value = '12345678';
+        }
+    </script>
+</body>
+</html>
+

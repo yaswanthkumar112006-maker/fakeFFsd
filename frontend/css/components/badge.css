@@ -1,0 +1,20 @@
+/* Badges */
+.badge {
+  padding: 0.25rem 0.6rem;
+  border-radius: 12px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+.badge.allocated, .badge.approved {
+  background-color: var(--status-allocated);
+  color: var(--status-allocated-text);
+}
+.badge.pending, .badge.maintenance {
+  background-color: var(--status-pending);
+  color: var(--status-pending-text);
+}
+.badge.rejected, .badge.scrap {
+  background-color: var(--status-rejected);
+  color: var(--status-rejected-text);
+}
