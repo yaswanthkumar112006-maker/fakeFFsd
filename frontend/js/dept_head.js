@@ -1,5 +1,6 @@
 const deptApp = {
-    init: function() {
+    init: async function() {
+        await Store.sync();
         const user = Store.getCurrentUser();
         if(!user || user.role !== 'Dept Head') {
             window.location.href = 'login.html';

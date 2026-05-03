@@ -1,5 +1,6 @@
 const adminApp = {
-    init: function() {
+    init: async function() {
+        await Store.sync();
         const user = Store.getCurrentUser();
         if(!user || user.role !== 'System Admin') {
             window.location.href = 'login.html';
@@ -248,6 +249,14 @@ const adminApp = {
 
         db.permissionsMatrix = newMatrix;
         Store.saveData(db);
+
+        // API Call
+        fetch('http://localhost:3000/api/permissionsMatrix', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json', 'x-user-role': 'System Admin' },
+            body: JSON.stringify(newMatrix)
+        }).catch(err => console.error(err));
+
         Store.showToast("Permissions updated", "success");
     },
 

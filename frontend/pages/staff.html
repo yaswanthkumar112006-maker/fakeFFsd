@@ -156,10 +156,9 @@
                                 <thead>
                                     <tr>
                                         <th>Req ID</th>
-                                        <th>Department</th>
-                                        <th>Resource Type</th>
+                                        <th>Asset Type</th>
                                         <th>Qty</th>
-                                        <th style="min-width: 200px;">Assign Resources</th>
+                                        <th>Select Resources</th>
                                         <th style="text-align:right">Action</th>
                                     </tr>
                                 </thead>
@@ -183,8 +182,8 @@
 
                 <!-- 3. Manage Resources -->
                 <div id="manage-view" class="view-section">
-                    <h1 class="page-title">Global Inventory</h1>
-                    <p class="page-subtitle">Browse all system resources, modify entries, and audit statuses.</p>
+                    <h1 class="page-title">Department Inventory</h1>
+                    <p class="page-subtitle">Browse department resources, modify entries, and audit statuses.</p>
 
                     <div class="data-section">
                         <div class="data-section-header">
@@ -204,9 +203,14 @@
                             <thead>
                                 <tr>
                                     <th>Code</th>
+                                    <th>Model</th>
                                     <th>Type</th>
-                                    <th>Status</th>
+                                    <th>S/N</th>
                                     <th>Location</th>
+                                    <th>Condition</th>
+                                    <th>Status</th>
+                                    <th>Vendor</th>
+                                    <th>Invoice</th>
                                     <th style="text-align:right">Actions</th>
                                 </tr>
                             </thead>
@@ -355,8 +359,8 @@
 
                 <!-- 6. Stock Monitoring -->
                 <div id="stock-monitoring-view" class="view-section">
-                    <h1 class="page-title">Global Stock Monitoring</h1>
-                    <p class="page-subtitle">Monitor resource stock levels and configure global thresholds.</p>
+                    <h1 class="page-title">Department Stock Monitoring</h1>
+                    <p class="page-subtitle">Monitor department stock levels and configure thresholds.</p>
 
                     <!-- Summary Cards -->
                     <div class="stats-grid" style="grid-template-columns: repeat(3, 1fr); margin-bottom: 2rem;">
@@ -531,7 +535,7 @@
 
     <script src="../js/components/app-header.js"></script>
     <script src="../js/components/app-sidebar.js"></script>
-    <script src="../js/utils/store.js"></script>
+    <script src="../js/store.js"></script>
     <script src="../js/pages/staff.js"></script>
 </body>
 </html>

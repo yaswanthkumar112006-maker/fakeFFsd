@@ -1,5 +1,6 @@
 const regApp = {
-    init: function() {
+    init: async function() {
+        await Store.sync();
         const user = Store.getCurrentUser();
         if(!user || user.role !== 'Registrar') {
             window.location.href = 'login.html';

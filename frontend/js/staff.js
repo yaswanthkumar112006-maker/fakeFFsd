@@ -1,5 +1,6 @@
 const staffApp = {
-    init: function() {
+    init: async function() {
+        await Store.sync();
         const user = Store.getCurrentUser();
         if(!user || user.role !== 'Staff') {
             window.location.href = 'login.html';
@@ -8,7 +9,7 @@ const staffApp = {
         
         // Update UI
         document.querySelector('.user-name').textContent = user.name;
-        document.querySelector('.user-role').textContent = 'Operations Staff';
+        document.querySelector('.user-role').textContent = user.department + ' Staff';
         
         this.bindNav();
         this.renderDashboard();
@@ -17,6 +18,7 @@ const staffApp = {
         this.renderMaintenance();
         this.renderReturns();
         this.renderProcurementTasks();
+        this.renderRegistration();
     },
 
     bindNav: function() {
@@ -43,12 +45,14 @@ const staffApp = {
 
     // 0. Dashboard View
     renderDashboard: function() {
+        const user = Store.getCurrentUser();
+        const userDept = user.department;
         const db = Store.getData();
-        const approvedReqs = db.requests.filter(r => r.status === 'Approved');
-        const resources = db.resources;
+        const approvedReqs = db.requests.filter(r => r.status === 'Approved' && r.department === userDept);
+        const resources = db.resources.filter(r => r.department === userDept);
         const maintenance = resources.filter(r => r.status === 'Maintenance Requested' || r.status === 'Maintenance');
         const returns = resources.filter(r => r.status === 'Returned');
-        const procTasks = db.procurements.filter(p => p.status === 'Approved');
+        const procTasks = db.procurements.filter(p => p.status === 'Approved' && p.department === userDept);
 
         const elAlloc = document.getElementById('dash-staff-alloc');
         const elRes = document.getElementById('dash-staff-res');
@@ -101,14 +105,15 @@ const staffApp = {
         if(!tbody) return;
         tbody.innerHTML = '';
 
+        const user = Store.getCurrentUser();
+        const userDept = user.department;
         const db = Store.getData();
-        const approvedRequests = db.requests.filter(r => r.status === 'Approved');
+        const approvedRequests = db.requests.filter(r => r.status === 'Approved' && r.department === userDept);
 
         approvedRequests.forEach(req => {
             const tr = document.createElement('tr');
             tr.innerHTML = `
                 <td class="td-id">${req.id}</td>
-                <td>${req.department}</td>
                 <td>${req.resourceType}</td>
                 <td>${String(req.quantity).padStart(2, '0')}</td>
                 <td>
@@ -132,38 +137,114 @@ const staffApp = {
     },
 
     // 2. Resource Registration
+    renderRegistration: function() {
+        const tbody = document.getElementById('registration-tbody');
+        if(!tbody) return;
+        tbody.innerHTML = '';
+        
+        const userDept = Store.getCurrentUser().department;
+        const fulfilledProcs = Store.getData().procurements.filter(p => p.status === 'Fulfilled' && p.department === userDept && !p.registered);
+        
+        let hasRows = false;
+        fulfilledProcs.forEach(proc => {
+            const qty = parseInt(proc.quantity) || 1;
+            for(let i=0; i<Math.min(qty, 20); i++) { // Limit to 20 to prevent huge loops
+                hasRows = true;
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td><input type="text" class="form-control" value="RES-Auto" readonly data-proc-id="${proc.id}"></td>
+                    <td><input type="text" class="form-control" value="${proc.resourceType}" readonly></td>
+                    <td><input type="text" class="form-control" placeholder="Model"></td>
+                    <td><input type="text" class="form-control" placeholder="Manufacturer"></td>
+                    <td><input type="text" class="form-control" placeholder="Location"></td>
+                    <td><input type="text" class="form-control" placeholder="S/N"></td>
+                    <td>
+                        <select class="form-control">
+                            <option value="New">New</option>
+                            <option value="Good">Good</option>
+                            <option value="Average">Average</option>
+                        </select>
+                    </td>
+                    <td><input type="text" class="form-control" value="${proc.vendor || ''}" readonly></td>
+                    <td><input type="text" class="form-control" value="${proc.invoice || ''}" readonly></td>
+                `;
+                tbody.appendChild(tr);
+            }
+        });
+        
+        if (!hasRows) {
+            tbody.innerHTML = `<tr><td colspan="9" style="text-align:center; padding:2rem; color:#64748b">No pending procurements to register. Use '+ Add Row' to register manually.</td></tr>`;
+        }
+    },
+
     addRegistrationRow: function() {
         const tbody = document.getElementById('registration-tbody');
+        
+        // Clear empty state message if it exists
+        if(tbody.querySelector('td[colspan]')) {
+            tbody.innerHTML = '';
+        }
         const count = tbody.children.length + 1;
         const newCode = `RES-Auto${count}`;
         
         const tr = document.createElement('tr');
         tr.innerHTML = `
             <td><input type="text" class="form-control" value="${newCode}" readonly></td>
-            <td><input type="text" class="form-control" placeholder="Type/Model"></td>
+            <td><input type="text" class="form-control" placeholder="Type"></td>
+            <td><input type="text" class="form-control" placeholder="Model"></td>
             <td><input type="text" class="form-control" placeholder="Manufacturer"></td>
             <td><input type="text" class="form-control" placeholder="Location"></td>
             <td><input type="text" class="form-control" placeholder="S/N"></td>
+            <td>
+                <select class="form-control">
+                    <option value="New">New</option>
+                    <option value="Good">Good</option>
+                    <option value="Average">Average</option>
+                </select>
+            </td>
+            <td><input type="text" class="form-control" placeholder="Vendor"></td>
+            <td><input type="text" class="form-control" placeholder="Invoice"></td>
         `;
         tbody.appendChild(tr);
     },
 
     submitRegistration: function() {
+        const user = Store.getCurrentUser();
+        const userDept = user.department;
         const tbody = document.getElementById('registration-tbody');
         let count = 0;
+        const processedProcs = new Set();
         Array.from(tbody.children).forEach(tr => {
             const inputs = tr.querySelectorAll('input');
             const type = inputs[1].value;
-            const sn = inputs[4].value;
-            if(type) {
+            const model = inputs[2].value;
+            const mfg = inputs[3].value;
+            const loc = inputs[4].value;
+            const sn = inputs[5].value;
+            const conditionSelect = tr.querySelector('select');
+            const cond = conditionSelect ? conditionSelect.value : "New";
+            const vend = inputs[6] ? inputs[6].value : "";
+            const inv = inputs[7] ? inputs[7].value : "";
+            
+            // Mark procurement as registered if it came from one
+            const procId = inputs[0] ? inputs[0].getAttribute('data-proc-id') : null;
+            if (procId && !processedProcs.has(procId)) {
+                Store.updateItem('procurements', procId, { registered: true });
+                processedProcs.add(procId);
+            }
+
+            if(type && model && sn) { // Require S/N, Type and Model to actually register
                 Store.addItem('resources', {
                     id: `RES-${Math.floor(1000 + Math.random() * 9000)}`,
-                    name: type,
+                    name: mfg ? `${mfg} ${model}` : model,
                     type: type,
-                    department: "Global Ops",
-                    serialNumber: sn || "N/A",
+                    department: userDept,
+                    location: loc,
+                    serialNumber: sn,
                     status: "Available",
-                    condition: "New",
+                    condition: cond,
+                    vendor: vend,
+                    invoice: inv,
                     assignedTo: "None",
                     date: new Date().toLocaleDateString('en-US')
                 });
@@ -172,19 +253,11 @@ const staffApp = {
         });
         
         if (count > 0) {
-            alert(`${count} new assets registered to the Global Pool.`);
-            tbody.innerHTML = `
-                <tr>
-                    <td><input type="text" class="form-control" value="RES-Auto1" readonly></td>
-                    <td><input type="text" class="form-control" placeholder="e.g. MacBook Pro"></td>
-                    <td><input type="text" class="form-control" placeholder="Apple"></td>
-                    <td><input type="text" class="form-control" placeholder="HQ-Floor 2"></td>
-                    <td><input type="text" class="form-control" placeholder="Serial No"></td>
-                </tr>
-            `;
+            alert(`${count} new assets registered to your department pool.`);
+            this.renderRegistration();
             this.renderInventory();
         } else {
-            alert('Please enter at least the Type/Model.');
+            alert('Please fill in Type, Model, and S/N for at least one valid row.');
         }
     },
 
@@ -194,7 +267,9 @@ const staffApp = {
         if(!tbody) return;
         tbody.innerHTML = '';
 
-        const resources = Store.getData().resources;
+        const user = Store.getCurrentUser();
+        const userDept = user.department;
+        const resources = Store.getData().resources.filter(r => r.department === userDept);
 
         resources.forEach(res => {
             const tr = document.createElement('tr');
@@ -204,11 +279,14 @@ const staffApp = {
             
             tr.innerHTML = `
                 <td class="td-id">${res.id}</td>
+                <td style="font-weight: 500">${res.name || res.type}</td>
                 <td>${res.type}</td>
+                <td><span style="font-family: monospace; font-size: 0.8rem; background: #f1f5f9; padding: 2px 4px; border-radius: 4px;">${res.serialNumber || 'N/A'}</span></td>
+                <td>${res.location || res.department || 'N/A'}</td>
+                <td>${res.condition || 'N/A'}</td>
                 <td>${statusBadge}</td>
-                <td>${res.department}</td>
                 <td style="text-align:right">
-                    <button class="btn-secondary" style="font-size:0.75rem">Edit</button>
+                    <button class="btn-secondary" style="font-size:0.75rem" onclick="staffApp.openEditResourceModal('${res.id}')">Edit</button>
                     ${res.status !== 'Scrapped' ? `<button class="btn-danger" style="font-size:0.75rem" onclick="staffApp.scrapResource('${res.id}')">Scrap</button>` : ''}
                 </td>
             `;
@@ -223,14 +301,101 @@ const staffApp = {
         }
     },
 
+    openAddResourceModal: function() {
+        document.getElementById('addResourceForm').reset();
+        document.getElementById('add-resource-modal').style.display = 'flex';
+    },
+
+    closeAddResourceModal: function() {
+        document.getElementById('add-resource-modal').style.display = 'none';
+    },
+
+    submitAddResource: function(e) {
+        e.preventDefault();
+        const type = document.getElementById('ar-type').value;
+        const model = document.getElementById('ar-model').value;
+        const mfg = document.getElementById('ar-mfg').value;
+        const loc = document.getElementById('ar-location').value;
+        const sn = document.getElementById('ar-sn').value;
+        const cond = document.getElementById('ar-condition').value;
+        const vend = document.getElementById('ar-vendor').value;
+        const inv = document.getElementById('ar-invoice').value;
+
+        const currentUser = Store.getCurrentUser();
+        Store.addItem('resources', {
+            id: `RES-${Math.floor(1000 + Math.random() * 9000)}`,
+            name: mfg ? `${mfg} ${model}` : model,
+            type: type,
+            department: currentUser.department,
+            serialNumber: sn,
+            location: loc,
+            condition: cond,
+            vendor: vend,
+            invoice: inv,
+            status: "Available",
+            assignedTo: "None",
+            date: new Date().toLocaleDateString('en-US')
+        });
+
+        this.closeAddResourceModal();
+        this.renderInventory();
+        Store.showToast("Resource added successfully!");
+    },
+
+    openEditResourceModal: function(id) {
+        const res = Store.getData().resources.find(r => r.id === id);
+        if(!res) return;
+        document.getElementById('er-id').value = res.id;
+        document.getElementById('er-name').value = res.name || res.type;
+        document.getElementById('er-location').value = res.location || '';
+        document.getElementById('er-sn').value = res.serialNumber || '';
+        document.getElementById('er-condition').value = res.condition || 'Good';
+        document.getElementById('er-status').value = res.status || 'Available';
+        document.getElementById('er-vendor').value = res.vendor || '';
+        document.getElementById('er-invoice').value = res.invoice || '';
+        document.getElementById('edit-resource-modal').style.display = 'flex';
+    },
+
+    closeEditResourceModal: function() {
+        document.getElementById('edit-resource-modal').style.display = 'none';
+    },
+
+    submitEditResource: function(e) {
+        e.preventDefault();
+        const id = document.getElementById('er-id').value;
+        const name = document.getElementById('er-name').value;
+        const loc = document.getElementById('er-location').value;
+        const sn = document.getElementById('er-sn').value;
+        const cond = document.getElementById('er-condition').value;
+        const status = document.getElementById('er-status').value;
+        const vend = document.getElementById('er-vendor').value;
+        const inv = document.getElementById('er-invoice').value;
+
+        Store.updateItem('resources', id, {
+            name: name,
+            location: loc,
+            serialNumber: sn,
+            condition: cond,
+            status: status,
+            vendor: vend,
+            invoice: inv
+        });
+
+        this.closeEditResourceModal();
+        this.renderInventory();
+        Store.showToast("Resource updated successfully!");
+    },
+
     // 4. Maintenance Management
     renderMaintenance: function() {
         const mtbody = document.getElementById('maint-tbody');
         if(!mtbody) return;
         mtbody.innerHTML = '';
 
+        const user = Store.getCurrentUser();
+        const userDept = user.department;
         const db = Store.getData();
-        const resources = db.resources;
+        const resources = db.resources.filter(r => r.department === userDept);
         
         // Active Queue
         resources.filter(r => r.status === 'Maintenance Requested' || r.status === 'Maintenance').forEach(res => {
@@ -326,8 +491,10 @@ const staffApp = {
         if(!rtbody) return;
         rtbody.innerHTML = '';
 
+        const user = Store.getCurrentUser();
+        const userDept = user.department;
         const db = Store.getData();
-        const resources = db.resources;
+        const resources = db.resources.filter(r => r.department === userDept);
         
         // Return Queue
         resources.filter(r => r.status === 'Returned').forEach(res => {
@@ -430,7 +597,9 @@ const staffApp = {
         if(!tbody) return;
         tbody.innerHTML = '';
 
-        const tasks = Store.getData().procurements.filter(p => p.status === 'Approved');
+        const user = Store.getCurrentUser();
+        const userDept = user.department;
+        const tasks = Store.getData().procurements.filter(p => p.status === 'Approved' && p.department === userDept);
         
         tasks.forEach((p, i) => {
             const tr = document.createElement('tr');
@@ -454,25 +623,19 @@ const staffApp = {
 
     logPurchase: function(id) {
         const proc = Store.getData().procurements.find(p => p.id === id);
-        Store.updateItem('procurements', id, { status: 'Fulfilled' });
+        const vend = document.getElementById(`vend-${id}`).value;
+        const inv = document.getElementById(`inv-${id}`).value;
         
-        // Auto register to global
-        for(let i=0; i<Math.min(proc.quantity, 10); i++) {
-            Store.addItem('resources', {
-                id: `RES-${Math.floor(1000 + Math.random() * 9000)}`,
-                name: proc.resourceType,
-                type: proc.resourceType,
-                department: proc.department,
-                serialNumber: "SN-AUTO",
-                status: "Available",
-                condition: "New",
-                assignedTo: "None",
-                date: new Date().toLocaleDateString('en-US')
-            });
+        if(!vend || !inv) {
+            Store.showToast("Please enter Vendor Name and Invoice Number", "error");
+            return;
         }
-        alert('Procurement logged. Assets added to ' + proc.department);
+
+        Store.updateItem('procurements', id, { status: 'Fulfilled', vendor: vend, invoice: inv, registered: false });
+        
+        Store.showToast(`Procurement logged. Please register the ${proc.quantity} items in Bulk Registration.`);
         this.renderProcurementTasks();
-        this.renderInventory();
+        this.renderRegistration();
     },
 
     logout: function() {

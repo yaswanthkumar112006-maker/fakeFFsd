@@ -1,14 +1,14 @@
 const initialData = {
     users: [
-        { id: "U1", name: "RAVI CHANDRA", email: "ravi@resourcex.com", role: "Requestor", department: "IT Services", status: "Active" },
+        { id: "U1", name: "RAVI CHANDRA", email: "ravi@resourcex.com", role: "Requestor", status: "Active" },
         { id: "U2", name: "pradhyum", email: "pradhyum@resourcex.com", role: "Dept Head", department: "IT Services", status: "Active" },
         { id: "U3", name: "HARSHA TEJ", email: "harsha@resourcex.com", role: "Registrar", department: "Administration", status: "Active" },
-        { id: "U4", name: "prem kumar", email: "prem@resourcex.com", role: "Staff", department: "Operations", status: "Active" },
+        { id: "U4", name: "prem kumar", email: "prem@resourcex.com", role: "Staff", department: "IT Services", status: "Active" },
         { id: "U5", name: "yashwath", email: "yashwath@resourcex.com", role: "System Admin", department: "Administration", status: "Active" },
-        { id: "U6", name: "Alice Worker", email: "alice@resourcex.com", role: "Requestor", department: "HR Dept", status: "Active" },
+        { id: "U6", name: "Alice Worker", email: "alice@resourcex.com", role: "Requestor", status: "Active" },
         { id: "U7", name: "John Doe", email: "john@resourcex.com", role: "Dept Head", department: "HR Dept", status: "Active" },
         { id: "U8", name: "Jane Smith", email: "jane@resourcex.com", role: "Dept Head", department: "Operations", status: "Active" },
-        { id: "U9", name: "Bob Builder", email: "bob@resourcex.com", role: "Requestor", department: "Operations", status: "Active" }
+        { id: "U9", name: "Bob Builder", email: "bob@resourcex.com", role: "Requestor", status: "Active" }
     ],
     departments: [
         { id: "D1", name: "IT Services", head: "pradhyum", memberCount: 15 },
@@ -56,7 +56,7 @@ const initialData = {
         { id: "RES-1122", name: "Tablet Pro", type: "Electronics", department: "Operations", serialNumber: "SN-889900", status: "Allocated", condition: "Fair", assignedTo: "Bob Builder", date: "Oct 01, 2023" },
         
         // Maintenance Queue (Staff)
-        { id: "RES-5011", name: "Server Blade", type: "Hardware", department: "IT Services", serialNumber: "SN-990088", status: "Maintenance Requested", condition: "Damaged", assignedTo: "RAVI CHANDRA", date: "May 20, 2023" },
+        { id: "RES-5011", name: "Server Blade", type: "Hardware", department: "IT Services", serialNumber: "SN-990088", status: "Maintenance Requested", condition: "Damaged", assignedTo: "RAVI CHANDRA", date: "May 20, 2023", vendor: "Cisco Systems", invoice: "INV-8899" },
         { id: "RES-5012", name: "Printer X", type: "Electronics", department: "HR Dept", serialNumber: "SN-880099", status: "Maintenance Requested", condition: "Damaged", assignedTo: "Alice Worker", date: "May 21, 2023" },
         { id: "RES-5013", name: "Coffee Machine", type: "Appliance", department: "Facilities", serialNumber: "SN-770088", status: "Maintenance", condition: "Damaged", assignedTo: "None", date: "May 22, 2023" },
         
@@ -190,9 +190,9 @@ class DataStore {
     }
 
     init() {
-        if (localStorage.getItem('rx_initialized') !== 'v6') {
+        if (localStorage.getItem('rx_initialized') !== 'v9') {
             this.resetToDefaults();
-            localStorage.setItem('rx_initialized', 'v6');
+            localStorage.setItem('rx_initialized', 'v9');
         }
     }
 

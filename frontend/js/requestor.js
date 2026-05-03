@@ -1,5 +1,6 @@
 const app = {
-    init: function() {
+    init: async function() {
+        await Store.sync();
         const user = Store.getCurrentUser();
         if(!user || user.role !== 'Requestor') {
             window.location.href = 'login.html';
@@ -8,7 +9,7 @@ const app = {
         
         // Update UI with user info
         document.querySelector('.user-name').textContent = user.name;
-        document.querySelector('.user-role').textContent = 'Requestor - ' + user.department;
+        document.querySelector('.user-role').textContent = 'Requestor';
         
         this.bindNav();
         this.renderDashboard();

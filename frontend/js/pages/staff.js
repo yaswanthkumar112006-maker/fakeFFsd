@@ -26,7 +26,7 @@ const staffApp = {
         
         // Update UI
         document.querySelector('.user-name').textContent = user.name;
-        document.querySelector('.user-role').textContent = 'Operations Staff';
+        document.querySelector('.user-role').textContent = user.department + ' Staff';
         
         this.bindNav();
         this.renderDashboard();
@@ -61,14 +61,34 @@ const staffApp = {
         }
     },
 
+    getStaffDepartment: function() {
+        const user = Store.getCurrentUser();
+        return user && user.role === 'Staff' ? user.department : null;
+    },
+
+    getDepartmentResource: function(id) {
+        const userDept = this.getStaffDepartment();
+        return Store.getData().resources.find(r => r.id === id && r.department === userDept);
+    },
+
+    getDepartmentProcurement: function(id, status) {
+        const userDept = this.getStaffDepartment();
+        return Store.getData().procurements.find(p => {
+            const statusMatches = status ? p.status === status : true;
+            return p.id === id && p.department === userDept && statusMatches;
+        });
+    },
+
     // 0. Dashboard View
     renderDashboard: function() {
+        const user = Store.getCurrentUser();
+        const userDept = user.department;
         const db = Store.getData();
-        const approvedReqs = db.requests.filter(r => r.status === 'Approved');
-        const resources = db.resources;
+        const approvedReqs = db.requests.filter(r => r.status === 'Approved' && r.department === userDept);
+        const resources = db.resources.filter(r => r.department === userDept);
         const maintenance = resources.filter(r => r.status === 'Maintenance Requested' || r.status === 'Maintenance');
         const returns = resources.filter(r => r.status === 'Returned');
-        const procTasks = db.procurements.filter(p => p.status === 'Approved');
+        const procTasks = db.procurements.filter(p => p.status === 'Approved' && p.department === userDept);
 
         const elAlloc = document.getElementById('dash-staff-alloc');
         const elRes = document.getElementById('dash-staff-res');
@@ -121,9 +141,11 @@ const staffApp = {
         if(!tbody) return;
         tbody.innerHTML = '';
 
+        const user = Store.getCurrentUser();
+        const userDept = user.department;
         const db = Store.getData();
-        const approvedRequests = db.requests.filter(r => r.status === 'Approved');
-        const availableResources = db.resources.filter(res => res.status === 'Available');
+        const approvedRequests = db.requests.filter(r => r.status === 'Approved' && r.department === userDept);
+        const availableResources = db.resources.filter(res => res.status === 'Available' && res.department === userDept);
 
         approvedRequests.forEach(req => {
             let checkboxesHTML = '';
@@ -148,13 +170,12 @@ const staffApp = {
             });
             
             if (matchingResources.length === 0) {
-                checkboxesHTML = `<div style="padding: 0.6rem; text-align: center; color: #94a3b8; font-size: 0.8rem;">No matching resources available in Global Pool</div>`;
+                checkboxesHTML = `<div style="padding: 0.6rem; text-align: center; color: #94a3b8; font-size: 0.8rem;">No matching resources available in your department inventory</div>`;
             }
 
             const tr = document.createElement('tr');
             tr.innerHTML = `
                 <td class="td-id">${req.id}</td>
-                <td>${req.department}</td>
                 <td>${req.resourceType}</td>
                 <td>${String(req.quantity).padStart(2, '0')}</td>
                 <td>
@@ -222,8 +243,14 @@ const staffApp = {
         const checkboxes = document.querySelectorAll(`.alloc-cb-${reqId}:checked`);
         const selectedOptions = Array.from(checkboxes).map(cb => cb.value);
 
+        const userDept = this.getStaffDepartment();
         const db = Store.getData();
-        const req = db.requests.find(r => r.id === reqId);
+        const req = db.requests.find(r => r.id === reqId && r.department === userDept);
+
+        if (!req) {
+            Store.showToast("You can only allocate requests for your department.", "error");
+            return;
+        }
 
         if (selectedOptions.length !== req.quantity) {
             Store.showToast(`Please select exactly ${req.quantity} resource(s) for this request (you selected ${selectedOptions.length}).`, "error");
@@ -232,7 +259,7 @@ const staffApp = {
 
         // Strict Backend Check: Verify that all selected resources properly match the requested type
         const allMatch = selectedOptions.every(id => {
-            const r = db.resources.find(res => res.id === id);
+            const r = db.resources.find(res => res.id === id && res.department === userDept && res.status === 'Available');
             if (!r) return false;
             return (r.type || "").toLowerCase().trim() === (req.resourceType || "").toLowerCase().trim() ||
                    (r.name || "").toLowerCase().trim() === (req.resourceType || "").toLowerCase().trim();
@@ -267,14 +294,15 @@ const staffApp = {
         if (!container) return;
         container.innerHTML = '';
         
-        // Find Fulfilled procurements that need registration
-        const procurements = Store.getData().procurements.filter(p => p.status === 'Fulfilled');
+        const user = Store.getCurrentUser();
+        const userDept = user.department;
+        const procurements = Store.getData().procurements.filter(p => p.status === 'Fulfilled' && p.department === userDept);
         
         if (procurements.length === 0) {
             container.innerHTML = `
                 <div style="text-align:center; padding:3rem; background:#f8fafc; border-radius:8px; border:1px dashed #cbd5e1; color:#64748b;">
                     <span class="material-symbols-outlined" style="font-size:3rem; opacity:0.5; margin-bottom:1rem; display:block;">inventory</span>
-                    <p style="font-size:1.1rem; margin-bottom:0.5rem">No Pendng Registrations</p>
+                    <p style="font-size:1.1rem; margin-bottom:0.5rem">No Pending Registrations</p>
                     <p style="font-size:0.875rem">Purchases logged from Procurement Tasks will appear here for serial registration.</p>
                 </div>
             `;
@@ -286,14 +314,31 @@ const staffApp = {
             let rowsHtml = '';
             
             for (let i = 0; i < qty; i++) {
-                const newCode = `RES-Auto${Math.floor(100 + Math.random()*900)}`;
+                const newCode = `RES-${p.id.replace(/[^a-zA-Z0-9]/g, '')}-${String(i + 1).padStart(2, '0')}`;
                 rowsHtml += `
                     <tr>
                         <td><input type="text" class="form-control" value="${newCode}" readonly></td>
+                        <td><input type="text" class="form-control" placeholder="Model"></td>
                         <td><input type="text" class="form-control" value="${p.resourceType}" readonly></td>
-                        <td><input type="text" class="form-control" placeholder="Manufacturer (e.g. Dell)" value="${p.vendor || ''}"></td>
-                        <td><input type="text" class="form-control" placeholder="Location"></td>
                         <td><input type="text" class="form-control" placeholder="Serial Number"></td>
+                        <td><input type="text" class="form-control" placeholder="Location"></td>
+                        <td>
+                            <select class="form-control">
+                                <option value="New">New</option>
+                                <option value="Good">Good</option>
+                                <option value="Average">Average</option>
+                                <option value="Bad">Bad</option>
+                            </select>
+                        </td>
+                        <td>
+                            <select class="form-control">
+                                <option value="Available">Available</option>
+                                <option value="Maintenance">Maintenance</option>
+                                <option value="Scrapped">Scrapped</option>
+                            </select>
+                        </td>
+                        <td><input type="text" class="form-control" value="${p.vendor || ''}" readonly></td>
+                        <td><input type="text" class="form-control" value="${p.invoice || ''}" readonly></td>
                     </tr>
                 `;
             }
@@ -316,11 +361,15 @@ const staffApp = {
                 <table class="table" style="background:#f8fafc; border-radius:8px; margin-bottom:1.5rem;">
                     <thead>
                         <tr>
-                            <th>Resource Code</th>
-                            <th>Type/Model</th>
-                            <th>Manufacturer</th>
-                            <th>Storage Location</th>
-                            <th>Hardware S/N <span style="color:#ef4444">*</span></th>
+                            <th>Code</th>
+                            <th>Model</th>
+                            <th>Type</th>
+                            <th>S/N <span style="color:#ef4444">*</span></th>
+                            <th>Location</th>
+                            <th>Condition</th>
+                            <th>Status</th>
+                            <th>Vendor</th>
+                            <th>Invoice</th>
                         </tr>
                     </thead>
                     <tbody id="reg-tbody-${p.id}">
@@ -340,45 +389,68 @@ const staffApp = {
         const tbody = document.getElementById(`reg-tbody-${procId}`);
         if (!tbody) return;
 
+        const userDept = this.getStaffDepartment();
+        const procurement = this.getDepartmentProcurement(procId, 'Fulfilled');
+        if (!userDept || !procurement) {
+            Store.showToast("You can only register fulfilled purchases for your department.", "error");
+            return;
+        }
+
         let count = 0;
         let errors = false;
         let formatErrors = false;
         let snErrors = false;
+        let duplicateErrors = false;
         
         const newResources = [];
-        const nameRegex = /^[a-zA-Z0-9\s.-]+$/;
-        const snRegex = /^[0-9]+$/;
+        const modelRegex = /^[a-zA-Z0-9\s.-]+$/;
+        const snRegex = /^[a-zA-Z0-9_.-]+$/;
+        const db = Store.getData();
+        const existingSerials = new Set((db.resources || []).map(r => String(r.serialNumber || '').toLowerCase()));
+        const batchSerials = new Set();
 
         Array.from(tbody.children).forEach(tr => {
             const inputs = tr.querySelectorAll('input');
+            const selects = tr.querySelectorAll('select');
             const code = inputs[0].value.trim();
-            const type = inputs[1].value.trim();
-            const mfg = inputs[2].value.trim();
-            const loc = inputs[3].value.trim();
-            const sn = inputs[4].value.trim();
+            const model = inputs[1].value.trim();
+            const type = inputs[2].value.trim();
+            const sn = inputs[3].value.trim();
+            const loc = inputs[4].value.trim();
+            const cond = selects[0] ? selects[0].value : 'New';
+            const status = selects[1] ? selects[1].value : 'Available';
+            const vendor = inputs[5] ? inputs[5].value.trim() : '';
+            const invoice = inputs[6] ? inputs[6].value.trim() : '';
             
-            if (!mfg || !loc || !sn) {
+            if (!model || !type || !sn || !loc || !cond || !status) {
                 errors = true;
             } else {
-                if (!nameRegex.test(mfg)) {
+                if (!modelRegex.test(model)) {
                     formatErrors = true;
                 }
                 if (!snRegex.test(sn)) {
                     snErrors = true;
                 }
+                const normalizedSn = sn.toLowerCase();
+                if (existingSerials.has(normalizedSn) || batchSerials.has(normalizedSn)) {
+                    duplicateErrors = true;
+                }
+                batchSerials.add(normalizedSn);
                 
-                if (!errors && !formatErrors && !snErrors) {
+                if (!errors && !formatErrors && !snErrors && !duplicateErrors) {
                     newResources.push({
-                        id: `RES-${Math.floor(1000 + Math.random() * 9000)}`,
+                        id: code,
                         code: code,
-                        name: `${mfg} ${type}`,
+                        name: model,
                         type: type,
-                        department: "Global Ops",
+                        department: userDept,
                         serialNumber: sn,
                         location: loc,
-                        status: "Available",
-                        condition: "New",
+                        status: status,
+                        condition: cond,
                         assignedTo: "None",
+                        vendor: vendor,
+                        invoice: invoice,
                         date: new Date().toLocaleDateString('en-US')
                     });
                     count++;
@@ -392,12 +464,17 @@ const staffApp = {
         }
 
         if (formatErrors) {
-            Store.showToast("Manufacturer Name can only contain characters and numbers.", "error");
+            Store.showToast("Model can only contain letters, numbers, spaces, dots, and hyphens.", "error");
             return;
         }
 
         if (snErrors) {
-            Store.showToast("Serial Number must only contain numbers.", "error");
+            Store.showToast("Serial Number can only contain letters, numbers, dots, hyphens, and underscores.", "error");
+            return;
+        }
+
+        if (duplicateErrors) {
+            Store.showToast("Serial numbers must be unique across inventory and this batch.", "error");
             return;
         }
 
@@ -408,7 +485,7 @@ const staffApp = {
             // Mark Procurement as Registered
             Store.updateItem('procurements', procId, { status: "Registered" });
 
-            Store.showToast(`Successfully registered ${count} assets to the Global Pool!`, "success");
+            Store.showToast(`Successfully registered ${count} assets to ${userDept} inventory.`, "success");
             
             this.renderRegistrationCards();
             this.renderInventory();
@@ -422,7 +499,9 @@ const staffApp = {
         if(!tbody) return;
         tbody.innerHTML = '';
 
-        const resources = Store.getData().resources;
+        const user = Store.getCurrentUser();
+        const userDept = user.department;
+        const resources = Store.getData().resources.filter(r => r.department === userDept);
 
         resources.forEach(res => {
             const tr = document.createElement('tr');
@@ -432,9 +511,14 @@ const staffApp = {
             
             tr.innerHTML = `
                 <td class="td-id">${res.id}</td>
+                <td style="font-weight: 500">${res.name || res.type}</td>
                 <td>${res.type}</td>
+                <td><span style="font-family: monospace; font-size: 0.8rem; background: #f1f5f9; padding: 2px 4px; border-radius: 4px;">${res.serialNumber || 'N/A'}</span></td>
+                <td>${res.location || res.department || 'N/A'}</td>
+                <td>${res.condition || 'N/A'}</td>
                 <td>${statusBadge}</td>
-                <td>${res.department}</td>
+                <td>${res.vendor || 'N/A'}</td>
+                <td>${res.invoice || 'N/A'}</td>
                 <td style="text-align:right">
                     <button class="btn-secondary" style="font-size:0.75rem" onclick="staffApp.openEditResourceModal('${res.id}')">Edit</button>
                     ${res.status !== 'Scrapped' ? `<button class="btn-danger" style="font-size:0.75rem" onclick="staffApp.scrapResource('${res.id}')">Scrap</button>` : ''}
@@ -445,6 +529,10 @@ const staffApp = {
     },
 
     scrapResource: function(resId) {
+        if (!this.getDepartmentResource(resId)) {
+            Store.showToast("You can only scrap resources in your department.", "error");
+            return;
+        }
         if(confirm("Permanently mark this resource as scrapped?")) {
             Store.updateItem('resources', resId, { status: "Scrapped" });
             Store.showToast(`Resource ${resId} marked as scrapped!`, "error");
@@ -456,7 +544,7 @@ const staffApp = {
     // 3.1 Edit Resource Dialog
 
     openEditResourceModal: function(id) {
-        const res = Store.getData().resources.find(r => r.id === id);
+        const res = this.getDepartmentResource(id);
         if(!res) return;
         
         document.getElementById('er-id').value = res.id;
@@ -486,6 +574,11 @@ const staffApp = {
         const cond = document.getElementById('er-condition').value;
         const status = document.getElementById('er-status').value;
 
+        if (!this.getDepartmentResource(id)) {
+            Store.showToast("You can only edit resources in your department.", "error");
+            return;
+        }
+
         Store.updateItem('resources', id, {
             location: loc,
             condition: cond,
@@ -504,10 +597,11 @@ const staffApp = {
         const typeSelect = document.getElementById('ar-type');
         typeSelect.innerHTML = '<option value="">Select Resource Type...</option>';
         
-        let allTypes = [];
-        Object.values(this.resourceTypes).forEach(arr => {
-            allTypes = allTypes.concat(arr);
-        });
+        const userDept = this.getStaffDepartment();
+        let allTypes = this.resourceTypes[userDept] || [];
+        Store.getData().resources
+            .filter(r => r.department === userDept && r.type)
+            .forEach(r => allTypes.push(r.type));
         allTypes = [...new Set(allTypes)].sort();
 
         allTypes.forEach(type => {
@@ -540,6 +634,8 @@ const staffApp = {
             return;
         }
 
+        const currentUser = Store.getCurrentUser();
+        const userDept = this.getStaffDepartment();
         const db = Store.getData();
         const resources = db.resources || [];
         
@@ -551,21 +647,21 @@ const staffApp = {
         }
 
         // Generating Code
-        const deptPrefix = "GL"; // Global Pool prefix
+        const deptPrefix = (userDept || 'DEP').replace(/[^a-zA-Z0-9]/g, '').substring(0, 3).toUpperCase();
         const typePrefix = type.substring(0, 3).toUpperCase();
         
-        const sameTypeRes = resources.filter(r => r.type === type);
+        const sameTypeRes = resources.filter(r => r.type === type && r.department === userDept);
         const nextNumber = String(sameTypeRes.length + 1).padStart(3, '0');
         
         const generatedCode = `${deptPrefix}-${typePrefix}-${nextNumber}`;
 
         const newResource = {
-            code: generatedCode,         // specifically requested code format
-            id: generatedCode,           // Using this as ID so it renders perfectly in table
-            internalId: "r" + (resources.length + 1), // fulfilling the "r + length + 1" requirement
+            code: generatedCode,
+            id: generatedCode,
+            internalId: "r" + (resources.length + 1),
             type: type,
             name: `${mfg} ${model}`,
-            department: "Global Ops",
+            department: currentUser.department,
             serialNumber: sn,
             location: loc,
             condition: cond,
@@ -588,8 +684,10 @@ const staffApp = {
         if(!mtbody) return;
         mtbody.innerHTML = '';
 
+        const user = Store.getCurrentUser();
+        const userDept = user.department;
         const db = Store.getData();
-        const resources = db.resources;
+        const resources = db.resources.filter(r => r.department === userDept);
         
         // Active Queue
         resources.filter(r => r.status === 'Maintenance Requested' || r.status === 'Maintenance').forEach(res => {
@@ -625,7 +723,10 @@ const staffApp = {
         const hcount = document.getElementById('maint-history-count');
         if (htbody) {
             htbody.innerHTML = '';
-            const history = db.maintenanceHistory || [];
+            const deptResourceIds = new Set(resources.map(r => r.id));
+            const history = (db.maintenanceHistory || []).filter(log => {
+                return log.department === userDept || (!log.department && deptResourceIds.has(log.code));
+            });
             if (hcount) hcount.textContent = history.length;
             
             history.forEach(log => {
@@ -645,6 +746,10 @@ const staffApp = {
     },
 
     acceptMaintenance: function(id) {
+        if (!this.getDepartmentResource(id)) {
+            Store.showToast("You can only process maintenance for your department.", "error");
+            return;
+        }
         Store.updateItem('resources', id, { status: 'Maintenance' });
         Store.showToast("Maintenance accepted. Resource is now under maintenance.", "success");
         this.renderMaintenance();
@@ -652,12 +757,16 @@ const staffApp = {
     },
 
     markRepaired: function(id) {
-        const res = Store.getData().resources.find(r => r.id === id);
+        const res = this.getDepartmentResource(id);
+        if (!res) {
+            Store.showToast("You can only process maintenance for your department.", "error");
+            return;
+        }
         Store.updateItem('resources', id, { status: 'Available', condition: 'Good' });
         const db = Store.getData();
         if(!db.maintenanceHistory) db.maintenanceHistory = [];
         db.maintenanceHistory.unshift({
-            code: res.id, type: res.type, allocatedTo: res.assignedTo, issue: "Repaired", actionDate: new Date().toLocaleDateString(), status: "Repaired"
+            code: res.id, type: res.type, department: res.department, allocatedTo: res.assignedTo, issue: "Repaired", actionDate: new Date().toLocaleDateString(), status: "Repaired"
         });
         Store.saveData(db);
         Store.showToast("Resource marked as repaired. User notified.", "success");
@@ -666,12 +775,16 @@ const staffApp = {
     },
 
     markScrapMaint: function(id) {
-        const res = Store.getData().resources.find(r => r.id === id);
+        const res = this.getDepartmentResource(id);
+        if (!res) {
+            Store.showToast("You can only process maintenance for your department.", "error");
+            return;
+        }
         Store.updateItem('resources', id, { status: 'Scrapped' });
         const db = Store.getData();
         if(!db.maintenanceHistory) db.maintenanceHistory = [];
         db.maintenanceHistory.unshift({
-            code: res.id, type: res.type, allocatedTo: res.assignedTo, issue: "Unrepairable", actionDate: new Date().toLocaleDateString(), status: "Scrap"
+            code: res.id, type: res.type, department: res.department, allocatedTo: res.assignedTo, issue: "Unrepairable", actionDate: new Date().toLocaleDateString(), status: "Scrap"
         });
         Store.saveData(db);
         Store.showToast("Resource marked as scrap. User notified.", "error");
@@ -685,8 +798,10 @@ const staffApp = {
         if(!rtbody) return;
         rtbody.innerHTML = '';
 
+        const user = Store.getCurrentUser();
+        const userDept = user.department;
         const db = Store.getData();
-        const resources = db.resources;
+        const resources = db.resources.filter(r => r.department === userDept);
         
         // Return Queue
         resources.filter(r => r.status === 'Returned').forEach(res => {
@@ -716,7 +831,10 @@ const staffApp = {
         const hcount = document.getElementById('return-history-count');
         if (htbody) {
             htbody.innerHTML = '';
-            const history = db.returnHistory || [];
+            const deptResourceIds = new Set(resources.map(r => r.id));
+            const history = (db.returnHistory || []).filter(log => {
+                return log.department === userDept || (!log.department && deptResourceIds.has(log.code));
+            });
             if (hcount) hcount.textContent = history.length;
 
             history.forEach(log => {
@@ -746,13 +864,17 @@ const staffApp = {
         const cond = document.getElementById(`return-cond-${id}`).value;
         const newStatus = cond === "Bad" ? "Scrapped" : "Available";
         
-        const res = Store.getData().resources.find(r => r.id === id);
+        const res = this.getDepartmentResource(id);
+        if (!res) {
+            Store.showToast("You can only process returns for your department.", "error");
+            return;
+        }
         Store.updateItem('resources', id, { status: newStatus, condition: cond, assignedTo: "None" });
         
         const db = Store.getData();
         if(!db.returnHistory) db.returnHistory = [];
         db.returnHistory.unshift({
-            code: res.id, type: res.type, returnedBy: res.assignedTo || 'Unknown',
+            code: res.id, type: res.type, department: res.department, returnedBy: res.assignedTo || 'Unknown',
             returnDate: res.date || new Date().toLocaleDateString(),
             processDate: new Date().toLocaleDateString(),
             condition: cond, finalStatus: newStatus
@@ -789,7 +911,9 @@ const staffApp = {
         if(!tbody) return;
         tbody.innerHTML = '';
 
-        const tasks = Store.getData().procurements.filter(p => p.status === 'Approved');
+        const user = Store.getCurrentUser();
+        const userDept = user.department;
+        const tasks = Store.getData().procurements.filter(p => p.status === 'Approved' && p.department === userDept);
         
         tasks.forEach((p, i) => {
             const tr = document.createElement('tr');
@@ -840,8 +964,11 @@ const staffApp = {
             return;
         }
 
-        const proc = Store.getData().procurements.find(p => p.id === id);
-        if (!proc) return;
+        const proc = this.getDepartmentProcurement(id, 'Approved');
+        if (!proc) {
+            Store.showToast("You can only log purchases for your department.", "error");
+            return;
+        }
         
         Store.updateItem('procurements', id, { 
             status: 'Fulfilled',
@@ -860,11 +987,30 @@ const staffApp = {
         if (!tbody) return;
         tbody.innerHTML = '';
 
+        const userDept = this.getStaffDepartment();
+        const deptResources = Store.getData().resources.filter(r => r.department === userDept);
+        const countsByType = {};
+        deptResources.forEach(res => {
+            const type = res.type || res.name || 'Unknown';
+            if (!countsByType[type]) countsByType[type] = 0;
+            if (res.status === 'Available') countsByType[type]++;
+        });
+
+        const stockRows = Object.keys(countsByType).sort().map(type => {
+            const configured = this.stockData.find(item => item.resourceType === type);
+            return {
+                id: configured ? configured.id : type,
+                resourceType: type,
+                currentQuantity: countsByType[type],
+                thresholdLevel: configured ? configured.thresholdLevel : 1
+            };
+        });
+
         let safeCount = 0;
         let nearCount = 0;
         let lowCount = 0;
 
-        this.stockData.forEach(item => {
+        stockRows.forEach(item => {
             let status = '';
             let statusBadge = '';
             let showSendReq = false;
@@ -914,8 +1060,15 @@ const staffApp = {
     },
 
     openStockModal: function(id) {
-        const item = this.stockData.find(i => i.id === id);
-        if(!item) return;
+        let item = this.stockData.find(i => i.id === id);
+        if(!item) {
+            const userDept = this.getStaffDepartment();
+            const currentQuantity = Store.getData().resources.filter(r => {
+                return r.department === userDept && r.status === 'Available' && (r.type === id || r.name === id);
+            }).length;
+            item = { id: id, resourceType: id, currentQuantity: currentQuantity, thresholdLevel: 1 };
+            this.stockData.push(item);
+        }
         this.editStockId = id;
         document.getElementById('stock-modal-resource').textContent = `Resource: ${item.resourceType}`;
         document.getElementById('stock-current-qty').value = item.currentQuantity;

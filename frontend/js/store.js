@@ -1,14 +1,14 @@
 const initialData = {
     users: [
-        { id: "U1", name: "RAVI CHANDRA", email: "ravi@resourcex.com", role: "Requestor", department: "IT Services", status: "Active" },
+        { id: "U1", name: "RAVI CHANDRA", email: "ravi@resourcex.com", role: "Requestor", status: "Active" },
         { id: "U2", name: "pradhyum", email: "pradhyum@resourcex.com", role: "Dept Head", department: "IT Services", status: "Active" },
         { id: "U3", name: "HARSHA TEJ", email: "harsha@resourcex.com", role: "Registrar", department: "Administration", status: "Active" },
-        { id: "U4", name: "prem kumar", email: "prem@resourcex.com", role: "Staff", department: "Operations", status: "Active" },
+        { id: "U4", name: "prem kumar", email: "prem@resourcex.com", role: "Staff", department: "IT Services", status: "Active" },
         { id: "U5", name: "yashwath", email: "yashwath@resourcex.com", role: "System Admin", department: "Administration", status: "Active" },
-        { id: "U6", name: "Alice Worker", email: "alice@resourcex.com", role: "Requestor", department: "HR Dept", status: "Active" },
+        { id: "U6", name: "Alice Worker", email: "alice@resourcex.com", role: "Requestor", status: "Active" },
         { id: "U7", name: "John Doe", email: "john@resourcex.com", role: "Dept Head", department: "HR Dept", status: "Active" },
         { id: "U8", name: "Jane Smith", email: "jane@resourcex.com", role: "Dept Head", department: "Operations", status: "Active" },
-        { id: "U9", name: "Bob Builder", email: "bob@resourcex.com", role: "Requestor", department: "Operations", status: "Active" }
+        { id: "U9", name: "Bob Builder", email: "bob@resourcex.com", role: "Requestor", status: "Active" }
     ],
     departments: [
         { id: "D1", name: "IT Services", head: "pradhyum", memberCount: 15 },
@@ -48,7 +48,7 @@ const initialData = {
         { id: "RES-1122", name: "Tablet Pro", type: "Electronics", department: "Operations", serialNumber: "SN-889900", status: "Allocated", condition: "Fair", assignedTo: "Bob Builder", date: "Oct 01, 2023" },
 
         // Maintenance Queue (Staff)
-        { id: "RES-5011", name: "Server Blade", type: "Hardware", department: "IT Services", serialNumber: "SN-990088", status: "Maintenance Requested", condition: "Damaged", assignedTo: "RAVI CHANDRA", date: "May 20, 2023" },
+        { id: "RES-5011", name: "Server Blade", type: "Hardware", department: "IT Services", serialNumber: "SN-990088", status: "Maintenance Requested", condition: "Damaged", assignedTo: "RAVI CHANDRA", date: "May 20, 2023", vendor: "Cisco Systems", invoice: "INV-8899" },
         { id: "RES-5012", name: "Printer X", type: "Electronics", department: "HR Dept", serialNumber: "SN-880099", status: "Maintenance Requested", condition: "Damaged", assignedTo: "Alice Worker", date: "May 21, 2023" },
         { id: "RES-5013", name: "Coffee Machine", type: "Appliance", department: "Facilities", serialNumber: "SN-770088", status: "Maintenance", condition: "Damaged", assignedTo: "None", date: "May 22, 2023" },
 
@@ -124,9 +124,9 @@ class DataStore {
     }
 
     init() {
-        if (localStorage.getItem('rx_initialized') !== 'v6') {
+        if (localStorage.getItem('rx_initialized') !== 'v9') {
             this.resetToDefaults();
-            localStorage.setItem('rx_initialized', 'v6');
+            localStorage.setItem('rx_initialized', 'v9');
         }
     }
 
@@ -140,6 +140,27 @@ class DataStore {
 
     saveData(data) {
         localStorage.setItem('rx_data', JSON.stringify(data));
+    }
+
+    async sync() {
+        try {
+            const collections = ['users', 'departments', 'requests', 'resources', 'procurements', 'notifications', 'maintenanceHistory', 'returnHistory', 'permissionsMatrix'];
+            const user = this.getCurrentUser();
+            const role = user ? user.role : 'System Admin';
+
+            const data = this.getData();
+            for (const col of collections) {
+                const res = await fetch(`http://localhost:3000/api/${col}`, {
+                    headers: { 'x-user-role': role }
+                });
+                if (res.ok) {
+                    data[col] = await res.json();
+                }
+            }
+            this.saveData(data);
+        } catch (error) {
+            console.error('Failed to sync with API:', error);
+        }
     }
 
     // Auth
@@ -169,15 +190,39 @@ class DataStore {
         const data = this.getData();
         data[collection].unshift(item); // Add to beginning
         this.saveData(data);
+
+        // Backend API Call
+        const user = this.getCurrentUser();
+        fetch(`http://localhost:3000/api/${collection}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'x-user-role': user ? user.role : 'System Admin'
+            },
+            body: JSON.stringify(item)
+        }).catch(err => console.error('API Error:', err));
+
         return item;
     }
 
     updateItem(collection, id, updates) {
         const data = this.getData();
-        const index = data[collection].findIndex(i => i.id === id);
+        const index = data[collection].findIndex(i => (i.id || i.code) === id);
         if (index > -1) {
             data[collection][index] = { ...data[collection][index], ...updates };
             this.saveData(data);
+
+            // Backend API Call
+            const user = this.getCurrentUser();
+            fetch(`http://localhost:3000/api/${collection}/${id}`, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'x-user-role': user ? user.role : 'System Admin'
+                },
+                body: JSON.stringify(updates)
+            }).catch(err => console.error('API Error:', err));
+
             return data[collection][index];
         }
         return null;
@@ -185,8 +230,17 @@ class DataStore {
 
     deleteItem(collection, id) {
         const data = this.getData();
-        data[collection] = data[collection].filter(i => i.id !== id);
+        data[collection] = data[collection].filter(i => (i.id || i.code) !== id);
         this.saveData(data);
+
+        // Backend API Call
+        const user = this.getCurrentUser();
+        fetch(`http://localhost:3000/api/${collection}/${id}`, {
+            method: 'DELETE',
+            headers: {
+                'x-user-role': user ? user.role : 'System Admin'
+            }
+        }).catch(err => console.error('API Error:', err));
     }
 
     // Global Toast Notification
@@ -212,6 +266,24 @@ class DataStore {
                 container.removeChild(toast);
             }
         }, 3000);
+    }
+
+    filterTable(inputEl, tbodyId) {
+        const term = inputEl.value.toLowerCase();
+        const tbody = document.getElementById(tbodyId);
+        if (!tbody) return;
+        tbody.querySelectorAll('tr').forEach(row => {
+            row.style.display = row.innerText.toLowerCase().includes(term) ? '' : 'none';
+        });
+    }
+
+    globalSearch(term) {
+        const activeView = document.querySelector('.view-section.active');
+        if (!activeView) return;
+        const normalizedTerm = term.toLowerCase();
+        activeView.querySelectorAll('tbody tr').forEach(row => {
+            row.style.display = row.innerText.toLowerCase().includes(normalizedTerm) ? '' : 'none';
+        });
     }
 }
 
