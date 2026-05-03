@@ -164,9 +164,10 @@
                             </div>
                             <div class="form-group">
                                 <label class="form-label">Resource Type</label>
-                                <select class="form-control" id="req-type" required>
+                                <select class="form-control" id="req-type" required onchange="app.updateResourceCount()">
                                     <option value="" disabled selected>Select Resource Type</option>
                                 </select>
+                                <small id="resource-count-display" style="display:none; color: #64748b; margin-top: 0.5rem; font-weight: 500;"></small>
                             </div>
 
                             <div class="form-group">

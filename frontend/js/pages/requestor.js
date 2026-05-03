@@ -63,6 +63,35 @@ const app = {
             opt.textContent = res;
             typeSelect.appendChild(opt);
         });
+        
+        this.updateResourceCount();
+    },
+
+    updateResourceCount: function() {
+        const dept = document.getElementById('req-dept').value;
+        const type = document.getElementById('req-type').value;
+        const countDisplay = document.getElementById('resource-count-display');
+        
+        if (!countDisplay) return;
+
+        if (!dept || !type) {
+            countDisplay.style.display = 'none';
+            return;
+        }
+
+        const resources = Store.getData().resources;
+        // Count resources that match department, type, and are "Available"
+        const availableCount = resources.filter(r => r.department === dept && r.type === type && r.status === 'Available').length;
+        
+        countDisplay.textContent = `Available in Inventory: ${availableCount}`;
+        countDisplay.style.display = 'block';
+        
+        // Change color based on availability
+        if (availableCount > 0) {
+            countDisplay.style.color = '#16a34a'; // Green
+        } else {
+            countDisplay.style.color = '#dc2626'; // Red
+        }
     },
 
     submitRequest: function(e) {

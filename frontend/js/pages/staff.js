@@ -319,7 +319,7 @@ const staffApp = {
                     <tr>
                         <td><input type="text" class="form-control" value="${newCode}" readonly></td>
                         <td><input type="text" class="form-control" placeholder="Model"></td>
-                        <td><input type="text" class="form-control" value="${p.resourceType}" readonly></td>
+                        <td style="display:none"><input type="hidden" value="${p.resourceType}"></td>
                         <td><input type="text" class="form-control" placeholder="Serial Number"></td>
                         <td><input type="text" class="form-control" placeholder="Location"></td>
                         <td>
@@ -337,8 +337,8 @@ const staffApp = {
                                 <option value="Scrapped">Scrapped</option>
                             </select>
                         </td>
-                        <td><input type="text" class="form-control" value="${p.vendor || ''}" readonly></td>
-                        <td><input type="text" class="form-control" value="${p.invoice || ''}" readonly></td>
+                        <td style="display:none"><input type="hidden" value="${p.vendor || ''}"></td>
+                        <td style="display:none"><input type="hidden" value="${p.invoice || ''}"></td>
                     </tr>
                 `;
             }
@@ -363,13 +363,10 @@ const staffApp = {
                         <tr>
                             <th>Code</th>
                             <th>Model</th>
-                            <th>Type</th>
                             <th>S/N <span style="color:#ef4444">*</span></th>
                             <th>Location</th>
                             <th>Condition</th>
                             <th>Status</th>
-                            <th>Vendor</th>
-                            <th>Invoice</th>
                         </tr>
                     </thead>
                     <tbody id="reg-tbody-${p.id}">
@@ -549,6 +546,9 @@ const staffApp = {
         
         document.getElementById('er-id').value = res.id;
         document.getElementById('er-code').value = res.code || res.id;
+        document.getElementById('er-sn').value = res.serialNumber || '';
+        document.getElementById('er-vendor').value = res.vendor || '';
+        document.getElementById('er-invoice').value = res.invoice || '';
         document.getElementById('er-location').value = res.location || '';
         
         // Sometimes mock data condition is "Fair" instead of "Average"
@@ -570,6 +570,9 @@ const staffApp = {
     submitEditResource: function(e) {
         e.preventDefault();
         const id = document.getElementById('er-id').value;
+        const sn = document.getElementById('er-sn').value.trim();
+        const vendor = document.getElementById('er-vendor').value.trim();
+        const invoice = document.getElementById('er-invoice').value.trim();
         const loc = document.getElementById('er-location').value;
         const cond = document.getElementById('er-condition').value;
         const status = document.getElementById('er-status').value;
@@ -579,7 +582,24 @@ const staffApp = {
             return;
         }
 
+        const snRegex = /^[a-zA-Z0-9_.-]+$/;
+        if (!sn || !snRegex.test(sn)) {
+            Store.showToast("Serial Number can only contain letters, numbers, dots, hyphens, and underscores.", "error");
+            return;
+        }
+
+        const duplicateSerial = Store.getData().resources.some(r => {
+            return r.id !== id && String(r.serialNumber || '').toLowerCase() === sn.toLowerCase();
+        });
+        if (duplicateSerial) {
+            Store.showToast("Serial number already exists", "error");
+            return;
+        }
+
         Store.updateItem('resources', id, {
+            serialNumber: sn,
+            vendor: vendor,
+            invoice: invoice,
             location: loc,
             condition: cond,
             status: status
@@ -626,6 +646,8 @@ const staffApp = {
         const mfg = document.getElementById('ar-mfg').value;
         const model = document.getElementById('ar-model').value;
         const sn = document.getElementById('ar-sn').value;
+        const vendor = document.getElementById('ar-vendor').value.trim();
+        const invoice = document.getElementById('ar-invoice').value.trim();
         const loc = document.getElementById('ar-location').value;
         const cond = document.getElementById('ar-condition').value;
 
@@ -638,9 +660,15 @@ const staffApp = {
         const userDept = this.getStaffDepartment();
         const db = Store.getData();
         const resources = db.resources || [];
+
+        const snRegex = /^[a-zA-Z0-9_.-]+$/;
+        if (!snRegex.test(sn)) {
+            Store.showToast("Serial Number can only contain letters, numbers, dots, hyphens, and underscores.", "error");
+            return;
+        }
         
         // Validation: Unique Serial Number
-        const isDuplicate = resources.some(r => r.serialNumber === sn);
+        const isDuplicate = resources.some(r => String(r.serialNumber || '').toLowerCase() === sn.toLowerCase());
         if (isDuplicate) {
             Store.showToast("Serial number already exists", "error");
             return;
@@ -666,6 +694,8 @@ const staffApp = {
             location: loc,
             condition: cond,
             status: "Available",
+            vendor: vendor,
+            invoice: invoice,
             assignedTo: "None",
             date: new Date().toLocaleDateString('en-US')
         };
