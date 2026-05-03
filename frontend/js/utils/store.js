@@ -190,9 +190,9 @@ class DataStore {
     }
 
     init() {
-        if (localStorage.getItem('rx_initialized') !== 'v5') {
+        if (localStorage.getItem('rx_initialized') !== 'v6') {
             this.resetToDefaults();
-            localStorage.setItem('rx_initialized', 'v5');
+            localStorage.setItem('rx_initialized', 'v6');
         }
     }
 
