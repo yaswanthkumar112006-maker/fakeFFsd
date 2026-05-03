@@ -349,7 +349,7 @@ const adminApp = {
             </div>
             <div>
                 <label style="display:block; margin-bottom:0.5rem; font-weight:500">Head Name</label>
-                <input type="text" id="modal-dept-head" class="form-control" style="width:100%; padding:0.5rem; border:1px solid #ccc; border-radius:4px" placeholder="e.g. Sarah Jenkins">
+                <input type="text" id="modal-dept-head" class="form-control" style="width:100%; padding:0.5rem; border:1px solid #ccc; border-radius:4px" placeholder="e.g. pradhyum">
                 <div style="font-size:0.75rem; color:#94a3b8; margin-top:0.25rem;">Alphabets and spaces only.</div>
             </div>
         `;

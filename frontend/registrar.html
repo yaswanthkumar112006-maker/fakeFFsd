@@ -1,15 +1,17 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ResourceX - Registrar Dashboard</title>
     <link rel="stylesheet" href="css/style.css">
 </head>
+
 <body>
 
     <div class="app-container">
-        
+
         <!-- Sidebar -->
         <aside class="sidebar">
             <div class="logo-container">
@@ -34,7 +36,7 @@
                     <img src="https://i.pravatar.cc/150?img=9" alt="User">
                 </div>
                 <div class="user-info">
-                    <span class="user-name">Dr. Eleanor Vance</span>
+                    <span class="user-name">HARSHA TEJ </span>
                     <span class="user-role">University Registrar</span>
                 </div>
             </div>
@@ -48,7 +50,9 @@
                     <input type="text" placeholder="Search system...">
                 </div>
                 <div class="header-actions">
-                    <button class="btn-danger" style="background:transparent; color:#b91c1c; border:1px solid #b91c1c; padding:0.4rem 0.8rem; font-size:0.75rem" onclick="regApp.logout()">Logout</button>
+                    <button class="btn-danger"
+                        style="background:transparent; color:#b91c1c; border:1px solid #b91c1c; padding:0.4rem 0.8rem; font-size:0.75rem"
+                        onclick="regApp.logout()">Logout</button>
                     <button class="icon-btn">🔔</button>
                     <button class="icon-btn">⚙️</button>
                 </div>
@@ -96,7 +100,8 @@
                     <div class="data-section">
                         <div class="data-section-header">
                             <div class="data-section-title">Recent Procurement Requests</div>
-                            <button class="btn-secondary" style="padding:0.25rem 0.5rem; font-size:0.75rem" onclick="alert('Viewing all procurements')">View All</button>
+                            <button class="btn-secondary" style="padding:0.25rem 0.5rem; font-size:0.75rem"
+                                onclick="alert('Viewing all procurements')">View All</button>
                         </div>
                         <div class="table-responsive">
                             <table class="table">
@@ -121,9 +126,20 @@
                     <h1 class="page-title">Global Requests Filter</h1>
                     <p class="page-subtitle">Unified view of all departmental requests and current statuses.</p>
 
-                    <div style="background:white; padding:1.5rem; border-radius:12px; box-shadow:var(--shadow-sm); border:1px solid var(--border-color); margin-bottom:2rem; display:flex; gap:1rem">
-                        <select class="form-control" style="width:200px"><option>Filter Status: All</option><option>Pending</option><option>Accepted</option><option>Rejected</option></select>
-                        <select class="form-control" style="width:200px"><option>Filter Dept: All</option><option>IT Services</option><option>HR</option><option>Sciences</option></select>
+                    <div
+                        style="background:white; padding:1.5rem; border-radius:12px; box-shadow:var(--shadow-sm); border:1px solid var(--border-color); margin-bottom:2rem; display:flex; gap:1rem">
+                        <select class="form-control" style="width:200px">
+                            <option>Filter Status: All</option>
+                            <option>Pending</option>
+                            <option>Accepted</option>
+                            <option>Rejected</option>
+                        </select>
+                        <select class="form-control" style="width:200px">
+                            <option>Filter Dept: All</option>
+                            <option>IT Services</option>
+                            <option>HR</option>
+                            <option>Sciences</option>
+                        </select>
                         <button class="btn-secondary">Apply Filters</button>
                     </div>
 
@@ -138,9 +154,24 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr><td>REQ-112</td><td>IT Services</td><td>Wireless Mouse</td><td><span class="badge allocated">Approved</span></td></tr>
-                                <tr><td>REQ-113</td><td>Science</td><td>Safety Goggles</td><td><span class="badge pending">Pending</span></td></tr>
-                                <tr><td>REQ-114</td><td>HR Dept</td><td>Office Chair</td><td><span class="badge rejected">Rejected</span></td></tr>
+                                <tr>
+                                    <td>REQ-112</td>
+                                    <td>IT Services</td>
+                                    <td>Wireless Mouse</td>
+                                    <td><span class="badge allocated">Approved</span></td>
+                                </tr>
+                                <tr>
+                                    <td>REQ-113</td>
+                                    <td>Science</td>
+                                    <td>Safety Goggles</td>
+                                    <td><span class="badge pending">Pending</span></td>
+                                </tr>
+                                <tr>
+                                    <td>REQ-114</td>
+                                    <td>HR Dept</td>
+                                    <td>Office Chair</td>
+                                    <td><span class="badge rejected">Rejected</span></td>
+                                </tr>
                             </tbody>
                         </table>
                     </div>
@@ -174,4 +205,5 @@
     <script src="js/store.js"></script>
     <script src="js/registrar.js"></script>
 </body>
+
 </html>
