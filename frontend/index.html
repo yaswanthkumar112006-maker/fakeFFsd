@@ -67,6 +67,39 @@
             max-width: 600px;
             margin: 0 auto;
         }
+        .custom-signin-btn {
+            padding: 0.5rem 1.25rem;
+            border-radius: 20px;
+            background: linear-gradient(135deg, #e0e7ff, #c7d2fe);
+            color: #1e40af;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        .custom-signin-btn:hover {
+            background: linear-gradient(135deg, #c7d2fe, #a5b4fc);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px -2px rgba(0, 0, 0, 0.15);
+        }
+        
+        .custom-explore-btn {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+            padding: 0.75rem 2rem;
+            border-radius: 30px;
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 10px 15px -3px rgba(16, 185, 129, 0.4);
+            font-size: 1.1rem;
+        }
+        .custom-explore-btn:hover {
+            background: linear-gradient(135deg, #059669, #047857);
+            transform: translateY(-3px) scale(1.02);
+            box-shadow: 0 15px 20px -5px rgba(16, 185, 129, 0.5);
+        }
     </style>
 </head>
 <body class="landing-body">
@@ -85,7 +118,7 @@
         </ul>
 
         <div class="landing-actions">
-            <a href="pages/login.html" style="color:var(--text-main); font-weight:500; font-size:0.875rem; text-decoration:none;">Sign In</a>
+            <a href="pages/login.html" class="custom-signin-btn">Sign In</a>
         </div>
     </nav>
 
@@ -97,7 +130,7 @@
                 <h1 class="hero-title">Empower Your <span>Enterprise</span> with ResourceX</h1>
                 <p class="hero-subtitle">A unified platform to orchestrate your global workforce. Manage departments, users, and organizational resources with unprecedented precision and real-time clarity.</p>
                 <div class="hero-actions">
-                    <button class="btn-secondary" onclick="document.getElementById('departments').scrollIntoView()">Explore Features</button>
+                    <button class="custom-explore-btn" onclick="document.getElementById('departments').scrollIntoView()">Explore Features</button>
                 </div>
             </div>
             <div class="hero-visual">
