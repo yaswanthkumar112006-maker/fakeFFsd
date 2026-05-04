@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -13,40 +14,47 @@
     <link rel="stylesheet" href="../css/components/badge.css">
     <link rel="stylesheet" href="../css/components/toast.css">
     <link rel="stylesheet" href="../css/components/stock-monitoring.css">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20,400,0,0">
-<style>
-    .resource-modal-content {
-        max-width: 760px;
-        width: min(760px, calc(100vw - 2rem));
-        max-height: calc(100vh - 2rem);
-        overflow-y: auto;
-    }
-    .resource-form-grid {
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 0.9rem 1rem;
-    }
-    .resource-form-grid .form-group {
-        margin-bottom: 0 !important;
-        min-width: 0;
-    }
-    .resource-form-grid .span-2 {
-        grid-column: 1 / -1;
-    }
-    @media (max-width: 720px) {
+    <link rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20,400,0,0">
+    <style>
+        .resource-modal-content {
+            max-width: 760px;
+            width: min(760px, calc(100vw - 2rem));
+            max-height: calc(100vh - 2rem);
+            overflow-y: auto;
+        }
+
         .resource-form-grid {
-            grid-template-columns: 1fr;
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 0.9rem 1rem;
         }
+
+        .resource-form-grid .form-group {
+            margin-bottom: 0 !important;
+            min-width: 0;
+        }
+
         .resource-form-grid .span-2 {
-            grid-column: auto;
+            grid-column: 1 / -1;
         }
-    }
-</style>
+
+        @media (max-width: 720px) {
+            .resource-form-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .resource-form-grid .span-2 {
+                grid-column: auto;
+            }
+        }
+    </style>
 </head>
+
 <body>
 
     <div class="app-container">
-        
+
         <!-- Sidebar -->
         <app-sidebar user-name="prem kumar" user-role="Operations Staff">
             <ul class="nav-menu">
@@ -94,7 +102,8 @@
                             <div class="stat-title">Pending Allocations</div>
                             <div class="stat-value-row">
                                 <div class="stat-value" id="dash-staff-alloc">0</div>
-                                <span class="material-symbols-outlined" style="font-size:1.5rem; color:#0f38ae">assignment</span>
+                                <span class="material-symbols-outlined"
+                                    style="font-size:1.5rem; color:#0f38ae">assignment</span>
                             </div>
                         </div>
                         <div class="stat-card">
@@ -108,21 +117,24 @@
                             <div class="stat-title" style="color:#d97706">Maintenance</div>
                             <div class="stat-value-row">
                                 <div class="stat-value" style="color:#d97706" id="dash-staff-maint">0</div>
-                                <span class="material-symbols-outlined" style="font-size:1.5rem; color:#d97706">build</span>
+                                <span class="material-symbols-outlined"
+                                    style="font-size:1.5rem; color:#d97706">build</span>
                             </div>
                         </div>
                         <div class="stat-card">
                             <div class="stat-title" style="color:#0284c7">Procurement Tasks</div>
                             <div class="stat-value-row">
                                 <div class="stat-value" style="color:#0284c7" id="dash-staff-proc">0</div>
-                                <span class="material-symbols-outlined" style="font-size:1.5rem; color:#0284c7">shopping_cart</span>
+                                <span class="material-symbols-outlined"
+                                    style="font-size:1.5rem; color:#0284c7">shopping_cart</span>
                             </div>
                         </div>
                         <div class="stat-card">
                             <div class="stat-title" style="color:#8b5cf6">Returns Pending</div>
                             <div class="stat-value-row">
                                 <div class="stat-value" style="color:#8b5cf6" id="dash-staff-returns">0</div>
-                                <span class="material-symbols-outlined" style="font-size:1.5rem; color:#8b5cf6">assignment_return</span>
+                                <span class="material-symbols-outlined"
+                                    style="font-size:1.5rem; color:#8b5cf6">assignment_return</span>
                             </div>
                         </div>
                     </div>
@@ -133,7 +145,8 @@
                         <div class="data-section" style="flex:1; margin-bottom:0">
                             <div class="data-section-header">
                                 <div class="data-section-title">Allocation Requests</div>
-                                <button class="btn-secondary" style="padding:0.25rem 0.5rem; font-size:0.75rem" onclick="staffApp.switchView('allocations-view')">View All</button>
+                                <button class="btn-secondary" style="padding:0.25rem 0.5rem; font-size:0.75rem"
+                                    onclick="staffApp.switchView('allocations-view')">View All</button>
                             </div>
                             <table class="table">
                                 <thead>
@@ -148,12 +161,13 @@
                                 </tbody>
                             </table>
                         </div>
-                        
+
                         <!-- Right Column -->
                         <div class="data-section" style="flex:1; margin-bottom:0">
                             <div class="data-section-header">
                                 <div class="data-section-title">Maintenance Queue</div>
-                                <button class="btn-secondary" style="padding:0.25rem 0.5rem; font-size:0.75rem" onclick="staffApp.switchView('maintenance-view')">View All</button>
+                                <button class="btn-secondary" style="padding:0.25rem 0.5rem; font-size:0.75rem"
+                                    onclick="staffApp.switchView('maintenance-view')">View All</button>
                             </div>
                             <table class="table">
                                 <thead>
@@ -217,13 +231,17 @@
                         <div class="data-section-header">
                             <div class="data-section-title">Asset List</div>
                             <div style="display:flex; gap:1rem; align-items:center;">
-                                <button class="btn-primary" style="padding: 0.5rem 1.25rem; font-size: 0.875rem; display: flex; align-items: center; border-radius: 8px;" onclick="staffApp.openAddResourceModal()">
-                                    <span class="material-symbols-outlined" style="font-size: 1.25rem; margin-right: 0.5rem">add</span>
+                                <button class="btn-primary"
+                                    style="padding: 0.5rem 1.25rem; font-size: 0.875rem; display: flex; align-items: center; border-radius: 8px;"
+                                    onclick="staffApp.openAddResourceModal()">
+                                    <span class="material-symbols-outlined"
+                                        style="font-size: 1.25rem; margin-right: 0.5rem">add</span>
                                     Add Resource
                                 </button>
                                 <div class="search-bar" style="width:250px;">
                                     <span class="material-symbols-outlined" style="color:#94a3b8">search</span>
-                                    <input type="text" placeholder="Search by Code or Type..." onkeyup="Store.filterTable(this, 'inventory-tbody')">
+                                    <input type="text" placeholder="Search by Code or Type..."
+                                        onkeyup="Store.filterTable(this, 'inventory-tbody')">
                                 </div>
                             </div>
                         </div>
@@ -275,8 +293,12 @@
                     </div>
 
                     <div class="collapsible-header" onclick="staffApp.toggleHistory('maint-history')">
-                        <div><span class="material-symbols-outlined" style="margin-right:8px; vertical-align:middle; font-size:18px">history</span> Maintenance History <span class="badge pending" id="maint-history-count" style="margin-left:8px">0</span></div>
-                        <span id="maint-history-icon" class="material-symbols-outlined" style="font-size:18px">expand_more</span>
+                        <div><span class="material-symbols-outlined"
+                                style="margin-right:8px; vertical-align:middle; font-size:18px">history</span>
+                            Maintenance History <span class="badge pending" id="maint-history-count"
+                                style="margin-left:8px">0</span></div>
+                        <span id="maint-history-icon" class="material-symbols-outlined"
+                            style="font-size:18px">expand_more</span>
                     </div>
                     <div class="collapsible-content" id="maint-history">
                         <div class="data-section">
@@ -325,8 +347,12 @@
                     </div>
 
                     <div class="collapsible-header" onclick="staffApp.toggleHistory('return-history')">
-                        <div><span class="material-symbols-outlined" style="margin-right:8px; vertical-align:middle; font-size:18px">history</span> Return History <span class="badge pending" id="return-history-count" style="margin-left:8px">0</span></div>
-                        <span id="return-history-icon" class="material-symbols-outlined" style="font-size:18px">expand_more</span>
+                        <div><span class="material-symbols-outlined"
+                                style="margin-right:8px; vertical-align:middle; font-size:18px">history</span> Return
+                            History <span class="badge pending" id="return-history-count"
+                                style="margin-left:8px">0</span></div>
+                        <span id="return-history-icon" class="material-symbols-outlined"
+                            style="font-size:18px">expand_more</span>
                     </div>
                     <div class="collapsible-content" id="return-history">
                         <div class="data-section">
@@ -352,7 +378,8 @@
                 <!-- 5. Procurement Tasks -->
                 <div id="proc-tasks-view" class="view-section">
                     <h1 class="page-title">Procurement Fulfillment</h1>
-                    <p class="page-subtitle">Process Registrar-approved purchases by logging vendor and invoice data.</p>
+                    <p class="page-subtitle">Process Registrar-approved purchases by logging vendor and invoice data.
+                    </p>
 
                     <div class="data-section">
                         <table class="table" id="proctask-tbody">
@@ -373,11 +400,14 @@
                                     </td>
                                     <td>20</td>
                                     <td>
-                                        <input type="text" class="form-control" style="margin-bottom:0.25rem; font-size:0.75rem" placeholder="Vendor Name">
-                                        <input type="text" class="form-control" style="font-size:0.75rem" placeholder="Invoice Number">
+                                        <input type="text" class="form-control"
+                                            style="margin-bottom:0.25rem; font-size:0.75rem" placeholder="Vendor Name">
+                                        <input type="text" class="form-control" style="font-size:0.75rem"
+                                            placeholder="Invoice Number">
                                     </td>
                                     <td style="text-align:right; vertical-align:middle">
-                                        <button class="btn-primary" onclick="staffApp.logPurchase()">Log Purchase</button>
+                                        <button class="btn-primary" onclick="staffApp.logPurchase()">Log
+                                            Purchase</button>
                                     </td>
                                 </tr>
                             </tbody>
@@ -473,7 +503,7 @@
                 <h3 class="stock-modal-title">Add New Resource</h3>
                 <button onclick="staffApp.closeAddResourceModal()" class="stock-modal-close">&#x2715;</button>
             </div>
-            
+
             <form id="addResourceForm" onsubmit="staffApp.submitAddResource(event)" novalidate>
                 <div class="resource-form-grid">
                     <div class="form-group">
@@ -492,7 +522,8 @@
                     </div>
                     <div class="form-group">
                         <label class="form-label" style="text-align:left; display:block">Model</label>
-                        <input type="text" id="ar-model" class="form-control" placeholder="e.g., Latitude 5540" required>
+                        <input type="text" id="ar-model" class="form-control" placeholder="e.g., Latitude 5540"
+                            required>
                     </div>
                     <div class="form-group">
                         <label class="form-label" style="text-align:left; display:block">Vendor</label>
@@ -504,7 +535,8 @@
                     </div>
                     <div class="form-group">
                         <label class="form-label" style="text-align:left; display:block">Location</label>
-                        <input type="text" id="ar-location" class="form-control" placeholder="e.g., Building A, Room 101" required>
+                        <input type="text" id="ar-location" class="form-control"
+                            placeholder="e.g., Building A, Room 101" required>
                     </div>
                     <div class="form-group">
                         <label class="form-label" style="text-align:left; display:block">Condition</label>
@@ -516,9 +548,10 @@
                         </select>
                     </div>
                 </div>
-                
+
                 <div class="stock-modal-actions" style="margin-top:1.25rem">
-                    <button type="button" onclick="staffApp.closeAddResourceModal()" class="btn-secondary">Cancel</button>
+                    <button type="button" onclick="staffApp.closeAddResourceModal()"
+                        class="btn-secondary">Cancel</button>
                     <button type="submit" class="btn-primary">Add Resource</button>
                 </div>
             </form>
@@ -532,7 +565,7 @@
                 <h3 class="stock-modal-title">Edit Resource</h3>
                 <button onclick="staffApp.closeEditResourceModal()" class="stock-modal-close">&#x2715;</button>
             </div>
-            
+
             <form id="editResourceForm" onsubmit="staffApp.submitEditResource(event)" novalidate>
                 <input type="hidden" id="er-id">
                 <div class="resource-form-grid">
@@ -576,9 +609,10 @@
                         </select>
                     </div>
                 </div>
-                
+
                 <div class="stock-modal-actions" style="margin-top:1.25rem">
-                    <button type="button" onclick="staffApp.closeEditResourceModal()" class="btn-secondary">Cancel</button>
+                    <button type="button" onclick="staffApp.closeEditResourceModal()"
+                        class="btn-secondary">Cancel</button>
                     <button type="submit" class="btn-primary">Save Changes</button>
                 </div>
             </form>
@@ -590,4 +624,5 @@
     <script src="../js/store.js"></script>
     <script src="../js/pages/staff.js"></script>
 </body>
+
 </html>

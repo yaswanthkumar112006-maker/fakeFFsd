@@ -17,17 +17,17 @@ const staffApp = {
     },
     editStockId: null,
 
-    init: function() {
+    init: function () {
         const user = Store.getCurrentUser();
-        if(!user || user.role !== 'Staff') {
+        if (!user || user.role !== 'Staff') {
             window.location.href = 'login.html';
             return;
         }
-        
+
         // Update UI
         document.querySelector('.user-name').textContent = user.name;
         document.querySelector('.user-role').textContent = user.department + ' Staff';
-        
+
         this.bindNav();
         this.renderDashboard();
         this.renderAllocations();
@@ -39,7 +39,7 @@ const staffApp = {
         this.renderRegistrationCards();
     },
 
-    bindNav: function() {
+    bindNav: function () {
         const items = document.querySelectorAll('.nav-item');
         items.forEach(item => {
             item.addEventListener('click', (e) => {
@@ -53,25 +53,25 @@ const staffApp = {
         });
     },
 
-    switchView: function(viewId) {
+    switchView: function (viewId) {
         document.querySelectorAll('.view-section').forEach(sec => sec.classList.remove('active'));
         const targetSection = document.getElementById(viewId);
-        if(targetSection) {
+        if (targetSection) {
             targetSection.classList.add('active');
         }
     },
 
-    getStaffDepartment: function() {
+    getStaffDepartment: function () {
         const user = Store.getCurrentUser();
         return user && user.role === 'Staff' ? user.department : null;
     },
 
-    getDepartmentResource: function(id) {
+    getDepartmentResource: function (id) {
         const userDept = this.getStaffDepartment();
         return Store.getData().resources.find(r => r.id === id && r.department === userDept);
     },
 
-    getDepartmentProcurement: function(id, status) {
+    getDepartmentProcurement: function (id, status) {
         const userDept = this.getStaffDepartment();
         return Store.getData().procurements.find(p => {
             const statusMatches = status ? p.status === status : true;
@@ -80,7 +80,7 @@ const staffApp = {
     },
 
     // 0. Dashboard View
-    renderDashboard: function() {
+    renderDashboard: function () {
         const user = Store.getCurrentUser();
         const userDept = user.department;
         const db = Store.getData();
@@ -96,15 +96,15 @@ const staffApp = {
         const elProc = document.getElementById('dash-staff-proc');
         const elReturns = document.getElementById('dash-staff-returns');
 
-        if(elAlloc) elAlloc.textContent = approvedReqs.length;
-        if(elRes) elRes.textContent = resources.length;
-        if(elMaint) elMaint.textContent = maintenance.length;
-        if(elProc) elProc.textContent = procTasks.length;
-        if(elReturns) elReturns.textContent = returns.length;
+        if (elAlloc) elAlloc.textContent = approvedReqs.length;
+        if (elRes) elRes.textContent = resources.length;
+        if (elMaint) elMaint.textContent = maintenance.length;
+        if (elProc) elProc.textContent = procTasks.length;
+        if (elReturns) elReturns.textContent = returns.length;
 
         // Allocation Table
         const allocTbody = document.getElementById('dash-alloc-tbody');
-        if(allocTbody) {
+        if (allocTbody) {
             allocTbody.innerHTML = '';
             approvedReqs.slice(0, 5).forEach(req => {
                 const tr = document.createElement('tr');
@@ -120,7 +120,7 @@ const staffApp = {
 
         // Maintenance Table
         const maintTbody = document.getElementById('dash-maint-tbody');
-        if(maintTbody) {
+        if (maintTbody) {
             maintTbody.innerHTML = '';
             maintenance.slice(0, 5).forEach(res => {
                 let statusBadge = `<span class="badge pending">${res.status}</span>`;
@@ -136,9 +136,9 @@ const staffApp = {
     },
 
     // 1. Allocation Requests
-    renderAllocations: function() {
+    renderAllocations: function () {
         const tbody = document.getElementById('allocation-tbody');
-        if(!tbody) return;
+        if (!tbody) return;
         tbody.innerHTML = '';
 
         const user = Store.getCurrentUser();
@@ -149,14 +149,14 @@ const staffApp = {
 
         approvedRequests.forEach(req => {
             let checkboxesHTML = '';
-            
+
             let matchingResources = availableResources.filter(res => {
-                 let t1 = (res.type || "").toLowerCase().trim();
-                 let t2 = (req.resourceType || "").toLowerCase().trim();
-                 let n1 = (res.name || "").toLowerCase().trim();
-                 
-                 // Strict matching to ensure absolute proper allocation.
-                 return t1 === t2 || n1 === t2;
+                let t1 = (res.type || "").toLowerCase().trim();
+                let t2 = (req.resourceType || "").toLowerCase().trim();
+                let n1 = (res.name || "").toLowerCase().trim();
+
+                // Strict matching to ensure absolute proper allocation.
+                return t1 === t2 || n1 === t2;
             });
 
             matchingResources.forEach(res => {
@@ -168,7 +168,7 @@ const staffApp = {
                     </label>
                 `;
             });
-            
+
             if (matchingResources.length === 0) {
                 checkboxesHTML = `<div style="padding: 0.6rem; text-align: center; color: #94a3b8; font-size: 0.8rem;">No matching resources available in your department inventory</div>`;
             }
@@ -197,21 +197,21 @@ const staffApp = {
         });
     },
 
-    toggleMultiDropdown: function(reqId) {
+    toggleMultiDropdown: function (reqId) {
         const dropdown = document.getElementById(`multi-drop-${reqId}`);
         const header = document.getElementById(`multi-header-${reqId}`);
-        
-        if(dropdown.style.display === 'none') {
+
+        if (dropdown.style.display === 'none') {
             // Close any open dropdowns
             document.querySelectorAll('.multi-select-dropdown').forEach(d => d.style.display = 'none');
             document.querySelectorAll('.multi-select-header').forEach(h => h.classList.remove('active'));
-            
+
             dropdown.style.display = 'flex';
             header.classList.add('active');
-            
+
             // Close when clicking outside
             document.addEventListener('click', function closeMenu(e) {
-                if(!e.target.closest(`.multi-select-container`)) {
+                if (!e.target.closest(`.multi-select-container`)) {
                     dropdown.style.display = 'none';
                     header.classList.remove('active');
                     document.removeEventListener('click', closeMenu);
@@ -223,11 +223,11 @@ const staffApp = {
         }
     },
 
-    updateMultiSelect: function(reqId, targetQty) {
+    updateMultiSelect: function (reqId, targetQty) {
         const checkboxes = document.querySelectorAll(`.alloc-cb-${reqId}:checked`);
         const title = document.getElementById(`multi-title-${reqId}`);
         const count = checkboxes.length;
-        
+
         if (count === targetQty) {
             title.textContent = `${count}/${targetQty} Selected ✅`;
             title.style.color = '#16a34a';
@@ -239,7 +239,7 @@ const staffApp = {
         }
     },
 
-    allocateResource: function(reqId) {
+    allocateResource: function (reqId) {
         const checkboxes = document.querySelectorAll(`.alloc-cb-${reqId}:checked`);
         const selectedOptions = Array.from(checkboxes).map(cb => cb.value);
 
@@ -262,7 +262,7 @@ const staffApp = {
             const r = db.resources.find(res => res.id === id && res.department === userDept && res.status === 'Available');
             if (!r) return false;
             return (r.type || "").toLowerCase().trim() === (req.resourceType || "").toLowerCase().trim() ||
-                   (r.name || "").toLowerCase().trim() === (req.resourceType || "").toLowerCase().trim();
+                (r.name || "").toLowerCase().trim() === (req.resourceType || "").toLowerCase().trim();
         });
 
         if (!allMatch) {
@@ -272,10 +272,10 @@ const staffApp = {
 
         // Update Request
         Store.updateItem('requests', reqId, { status: "Allocated", assignedResources: selectedOptions.join(', ') });
-        
+
         // Update all Selected Resources
         selectedOptions.forEach(resourceId => {
-            Store.updateItem('resources', resourceId, { 
+            Store.updateItem('resources', resourceId, {
                 status: "Allocated",
                 assignedTo: req ? req.requestor : "Unknown Requestor",
                 department: req ? req.department : "Unknown Department",
@@ -289,15 +289,15 @@ const staffApp = {
     },
 
     // 2. Modular Resource Registration
-    renderRegistrationCards: function() {
+    renderRegistrationCards: function () {
         const container = document.getElementById('procurement-registration-container');
         if (!container) return;
         container.innerHTML = '';
-        
+
         const user = Store.getCurrentUser();
         const userDept = user.department;
         const procurements = Store.getData().procurements.filter(p => p.status === 'Fulfilled' && p.department === userDept);
-        
+
         if (procurements.length === 0) {
             container.innerHTML = `
                 <div style="text-align:center; padding:3rem; background:#f8fafc; border-radius:8px; border:1px dashed #cbd5e1; color:#64748b;">
@@ -312,7 +312,7 @@ const staffApp = {
         procurements.forEach(p => {
             const qty = parseInt(p.quantity) || 1;
             let rowsHtml = '';
-            
+
             for (let i = 0; i < qty; i++) {
                 const newCode = `RES-${p.id.replace(/[^a-zA-Z0-9]/g, '')}-${String(i + 1).padStart(2, '0')}`;
                 rowsHtml += `
@@ -382,7 +382,7 @@ const staffApp = {
         });
     },
 
-    submitRegistrationCard: function(procId) {
+    submitRegistrationCard: function (procId) {
         const tbody = document.getElementById(`reg-tbody-${procId}`);
         if (!tbody) return;
 
@@ -398,7 +398,7 @@ const staffApp = {
         let formatErrors = false;
         let snErrors = false;
         let duplicateErrors = false;
-        
+
         const newResources = [];
         const modelRegex = /^[a-zA-Z0-9\s.-]+$/;
         const snRegex = /^[a-zA-Z0-9_.-]+$/;
@@ -418,7 +418,7 @@ const staffApp = {
             const status = selects[1] ? selects[1].value : 'Available';
             const vendor = inputs[5] ? inputs[5].value.trim() : '';
             const invoice = inputs[6] ? inputs[6].value.trim() : '';
-            
+
             if (!model || !type || !sn || !loc || !cond || !status) {
                 errors = true;
             } else {
@@ -433,7 +433,7 @@ const staffApp = {
                     duplicateErrors = true;
                 }
                 batchSerials.add(normalizedSn);
-                
+
                 if (!errors && !formatErrors && !snErrors && !duplicateErrors) {
                     newResources.push({
                         id: code,
@@ -454,7 +454,7 @@ const staffApp = {
                 }
             }
         });
-        
+
         if (errors) {
             Store.showToast("Please fully complete all fields for every row in this batch.", "error");
             return;
@@ -478,12 +478,12 @@ const staffApp = {
         if (count > 0) {
             // Push all to resources
             newResources.forEach(res => Store.addItem('resources', res));
-            
+
             // Mark Procurement as Registered
             Store.updateItem('procurements', procId, { status: "Registered" });
 
             Store.showToast(`Successfully registered ${count} assets to ${userDept} inventory.`, "success");
-            
+
             this.renderRegistrationCards();
             this.renderInventory();
             this.renderDashboard();
@@ -491,9 +491,9 @@ const staffApp = {
     },
 
     // 3. Manage Inventory
-    renderInventory: function() {
+    renderInventory: function () {
         const tbody = document.getElementById('inventory-tbody');
-        if(!tbody) return;
+        if (!tbody) return;
         tbody.innerHTML = '';
 
         const user = Store.getCurrentUser();
@@ -502,10 +502,10 @@ const staffApp = {
 
         resources.forEach(res => {
             const tr = document.createElement('tr');
-            
+
             let statusBadge = `<span class="badge ${res.status.toLowerCase()}">${res.status}</span>`;
-            if(res.status === 'Available') statusBadge = `<span class="badge allocated">${res.status}</span>`;
-            
+            if (res.status === 'Available') statusBadge = `<span class="badge allocated">${res.status}</span>`;
+
             tr.innerHTML = `
                 <td class="td-id">${res.id}</td>
                 <td style="font-weight: 500">${res.name || res.type}</td>
@@ -525,12 +525,12 @@ const staffApp = {
         });
     },
 
-    scrapResource: function(resId) {
+    scrapResource: function (resId) {
         if (!this.getDepartmentResource(resId)) {
             Store.showToast("You can only scrap resources in your department.", "error");
             return;
         }
-        if(confirm("Permanently mark this resource as scrapped?")) {
+        if (confirm("Permanently mark this resource as scrapped?")) {
             Store.updateItem('resources', resId, { status: "Scrapped" });
             Store.showToast(`Resource ${resId} marked as scrapped!`, "error");
             this.renderInventory();
@@ -540,34 +540,34 @@ const staffApp = {
 
     // 3.1 Edit Resource Dialog
 
-    openEditResourceModal: function(id) {
+    openEditResourceModal: function (id) {
         const res = this.getDepartmentResource(id);
-        if(!res) return;
-        
+        if (!res) return;
+
         document.getElementById('er-id').value = res.id;
         document.getElementById('er-code').value = res.code || res.id;
         document.getElementById('er-sn').value = res.serialNumber || '';
         document.getElementById('er-vendor').value = res.vendor || '';
         document.getElementById('er-invoice').value = res.invoice || '';
         document.getElementById('er-location').value = res.location || '';
-        
+
         // Sometimes mock data condition is "Fair" instead of "Average"
         let cond = res.condition || 'Average';
-        if(cond === 'Fair') cond = 'Average';
-        if(cond === 'New') cond = 'Good';
+        if (cond === 'Fair') cond = 'Average';
+        if (cond === 'New') cond = 'Good';
         document.getElementById('er-condition').value = cond;
-        
+
         document.getElementById('er-status').value = res.status || 'Available';
-        
+
         document.getElementById('edit-resource-modal').classList.add('active');
     },
 
-    closeEditResourceModal: function() {
+    closeEditResourceModal: function () {
         document.getElementById('edit-resource-modal').classList.remove('active');
         document.getElementById('editResourceForm').reset();
     },
 
-    submitEditResource: function(e) {
+    submitEditResource: function (e) {
         e.preventDefault();
         const id = document.getElementById('er-id').value;
         const sn = document.getElementById('er-sn').value.trim();
@@ -613,10 +613,10 @@ const staffApp = {
 
     // 3.2 Add Resource Dialog
 
-    openAddResourceModal: function() {
+    openAddResourceModal: function () {
         const typeSelect = document.getElementById('ar-type');
         typeSelect.innerHTML = '<option value="">Select Resource Type...</option>';
-        
+
         const userDept = this.getStaffDepartment();
         let allTypes = this.resourceTypes[userDept] || [];
         Store.getData().resources
@@ -630,18 +630,18 @@ const staffApp = {
             opt.textContent = type;
             typeSelect.appendChild(opt);
         });
-        
+
         document.getElementById('add-resource-modal').classList.add('active');
     },
 
-    closeAddResourceModal: function() {
+    closeAddResourceModal: function () {
         document.getElementById('add-resource-modal').classList.remove('active');
         document.getElementById('addResourceForm').reset();
     },
 
-    submitAddResource: function(e) {
+    submitAddResource: function (e) {
         e.preventDefault();
-        
+
         const type = document.getElementById('ar-type').value;
         const mfg = document.getElementById('ar-mfg').value;
         const model = document.getElementById('ar-model').value;
@@ -666,7 +666,7 @@ const staffApp = {
             Store.showToast("Serial Number can only contain letters, numbers, dots, hyphens, and underscores.", "error");
             return;
         }
-        
+
         // Validation: Unique Serial Number
         const isDuplicate = resources.some(r => String(r.serialNumber || '').toLowerCase() === sn.toLowerCase());
         if (isDuplicate) {
@@ -677,10 +677,10 @@ const staffApp = {
         // Generating Code
         const deptPrefix = (userDept || 'DEP').replace(/[^a-zA-Z0-9]/g, '').substring(0, 3).toUpperCase();
         const typePrefix = type.substring(0, 3).toUpperCase();
-        
+
         const sameTypeRes = resources.filter(r => r.type === type && r.department === userDept);
         const nextNumber = String(sameTypeRes.length + 1).padStart(3, '0');
-        
+
         const generatedCode = `${deptPrefix}-${typePrefix}-${nextNumber}`;
 
         const newResource = {
@@ -702,23 +702,23 @@ const staffApp = {
 
         Store.addItem('resources', newResource);
         Store.showToast(`Resource ${generatedCode} added successfully!`, "success");
-        
+
         this.renderInventory();
         this.renderDashboard();
         this.closeAddResourceModal();
     },
 
     // 4. Maintenance Management
-    renderMaintenance: function() {
+    renderMaintenance: function () {
         const mtbody = document.getElementById('maint-tbody');
-        if(!mtbody) return;
+        if (!mtbody) return;
         mtbody.innerHTML = '';
 
         const user = Store.getCurrentUser();
         const userDept = user.department;
         const db = Store.getData();
         const resources = db.resources.filter(r => r.department === userDept);
-        
+
         // Active Queue
         resources.filter(r => r.status === 'Maintenance Requested' || r.status === 'Maintenance').forEach(res => {
             const tr = document.createElement('tr');
@@ -758,7 +758,7 @@ const staffApp = {
                 return log.department === userDept || (!log.department && deptResourceIds.has(log.code));
             });
             if (hcount) hcount.textContent = history.length;
-            
+
             history.forEach(log => {
                 const sbadge = log.status === 'Repaired' ? `<span class="badge allocated">${log.status}</span>` : `<span class="badge rejected">${log.status}</span>`;
                 const tr = document.createElement('tr');
@@ -775,7 +775,7 @@ const staffApp = {
         }
     },
 
-    acceptMaintenance: function(id) {
+    acceptMaintenance: function (id) {
         if (!this.getDepartmentResource(id)) {
             Store.showToast("You can only process maintenance for your department.", "error");
             return;
@@ -786,7 +786,7 @@ const staffApp = {
         this.renderDashboard();
     },
 
-    markRepaired: function(id) {
+    markRepaired: function (id) {
         const res = this.getDepartmentResource(id);
         if (!res) {
             Store.showToast("You can only process maintenance for your department.", "error");
@@ -794,7 +794,7 @@ const staffApp = {
         }
         Store.updateItem('resources', id, { status: 'Available', condition: 'Good' });
         const db = Store.getData();
-        if(!db.maintenanceHistory) db.maintenanceHistory = [];
+        if (!db.maintenanceHistory) db.maintenanceHistory = [];
         db.maintenanceHistory.unshift({
             code: res.id, type: res.type, department: res.department, allocatedTo: res.assignedTo, issue: "Repaired", actionDate: new Date().toLocaleDateString(), status: "Repaired"
         });
@@ -804,7 +804,7 @@ const staffApp = {
         this.renderDashboard();
     },
 
-    markScrapMaint: function(id) {
+    markScrapMaint: function (id) {
         const res = this.getDepartmentResource(id);
         if (!res) {
             Store.showToast("You can only process maintenance for your department.", "error");
@@ -812,7 +812,7 @@ const staffApp = {
         }
         Store.updateItem('resources', id, { status: 'Scrapped' });
         const db = Store.getData();
-        if(!db.maintenanceHistory) db.maintenanceHistory = [];
+        if (!db.maintenanceHistory) db.maintenanceHistory = [];
         db.maintenanceHistory.unshift({
             code: res.id, type: res.type, department: res.department, allocatedTo: res.assignedTo, issue: "Unrepairable", actionDate: new Date().toLocaleDateString(), status: "Scrap"
         });
@@ -823,16 +823,16 @@ const staffApp = {
     },
 
     // 5. Return Management
-    renderReturns: function() {
+    renderReturns: function () {
         const rtbody = document.getElementById('return-tbody');
-        if(!rtbody) return;
+        if (!rtbody) return;
         rtbody.innerHTML = '';
 
         const user = Store.getCurrentUser();
         const userDept = user.department;
         const db = Store.getData();
         const resources = db.resources.filter(r => r.department === userDept);
-        
+
         // Return Queue
         resources.filter(r => r.status === 'Returned').forEach(res => {
             const tr = document.createElement('tr');
@@ -884,25 +884,25 @@ const staffApp = {
         }
     },
 
-    validateReturnCond: function(id) {
+    validateReturnCond: function (id) {
         const val = document.getElementById(`return-cond-${id}`).value;
         const btn = document.getElementById(`process-ret-${id}`);
-        if(btn) btn.disabled = val === "";
+        if (btn) btn.disabled = val === "";
     },
 
-    processReturn: function(id) {
+    processReturn: function (id) {
         const cond = document.getElementById(`return-cond-${id}`).value;
         const newStatus = cond === "Bad" ? "Scrapped" : "Available";
-        
+
         const res = this.getDepartmentResource(id);
         if (!res) {
             Store.showToast("You can only process returns for your department.", "error");
             return;
         }
         Store.updateItem('resources', id, { status: newStatus, condition: cond, assignedTo: "None" });
-        
+
         const db = Store.getData();
-        if(!db.returnHistory) db.returnHistory = [];
+        if (!db.returnHistory) db.returnHistory = [];
         db.returnHistory.unshift({
             code: res.id, type: res.type, department: res.department, returnedBy: res.assignedTo || 'Unknown',
             returnDate: res.date || new Date().toLocaleDateString(),
@@ -911,40 +911,40 @@ const staffApp = {
         });
         Store.saveData(db);
 
-        if(newStatus === 'Available') {
+        if (newStatus === 'Available') {
             Store.showToast("Return processed. Resource marked as Available.", "success");
         } else {
             Store.showToast("Return processed. Resource marked as Scrap.", "error");
         }
-        
+
         this.renderReturns();
         this.renderDashboard();
     },
 
-    toggleHistory: function(contentId) {
+    toggleHistory: function (contentId) {
         const content = document.getElementById(contentId);
         const icon = document.getElementById(contentId + '-icon');
-        if(content) {
-            if(content.classList.contains('expanded')) {
+        if (content) {
+            if (content.classList.contains('expanded')) {
                 content.classList.remove('expanded');
-                if(icon) icon.textContent = '▼';
+                if (icon) icon.textContent = '▼';
             } else {
                 content.classList.add('expanded');
-                if(icon) icon.textContent = '▲';
+                if (icon) icon.textContent = '▲';
             }
         }
     },
 
     // 5. Procurement Tasks
-    renderProcurementTasks: function() {
+    renderProcurementTasks: function () {
         const tbody = document.querySelector('#proctask-tbody tbody');
-        if(!tbody) return;
+        if (!tbody) return;
         tbody.innerHTML = '';
 
         const user = Store.getCurrentUser();
         const userDept = user.department;
         const tasks = Store.getData().procurements.filter(p => p.status === 'Approved' && p.department === userDept);
-        
+
         tasks.forEach((p, i) => {
             const tr = document.createElement('tr');
             tr.innerHTML = `
@@ -965,13 +965,13 @@ const staffApp = {
         });
     },
 
-    logPurchase: function(id) {
+    logPurchase: function (id) {
         const vendorInput = document.getElementById('vend-' + id);
         const invoiceInput = document.getElementById('inv-' + id);
-        
+
         const vendor = vendorInput ? vendorInput.value.trim() : '';
         const invoice = invoiceInput ? invoiceInput.value.trim() : '';
-        
+
         if (!vendor || !invoice) {
             Store.showToast("Please provide both Vendor Name and Invoice Number before logging purchase.", "error");
             if (!vendor && vendorInput) vendorInput.focus();
@@ -981,13 +981,13 @@ const staffApp = {
 
         const vendorRegex = /^[a-zA-Z0-9\s.-]+$/;
         const invoiceRegex = /^[0-9]+$/;
-        
+
         if (!vendorRegex.test(vendor)) {
             Store.showToast("Vendor Name can only contain characters and numbers.", "error");
             if (vendorInput) vendorInput.focus();
             return;
         }
-        
+
         if (!invoiceRegex.test(invoice)) {
             Store.showToast("Invoice Number can only contain numbers.", "error");
             if (invoiceInput) invoiceInput.focus();
@@ -999,20 +999,20 @@ const staffApp = {
             Store.showToast("You can only log purchases for your department.", "error");
             return;
         }
-        
-        Store.updateItem('procurements', id, { 
+
+        Store.updateItem('procurements', id, {
             status: 'Fulfilled',
             vendor: vendor,
             invoice: invoice
         });
-        
+
         Store.showToast(`Purchase logged for Invoice ${invoice}. Assets are now pending Serial Registration.`, "success");
         this.renderProcurementTasks();
         this.renderRegistrationCards();
     },
 
     // Stock Monitoring
-    renderStockMonitoring: function() {
+    renderStockMonitoring: function () {
         const tbody = document.getElementById('stock-monitoring-tbody');
         if (!tbody) return;
         tbody.innerHTML = '';
@@ -1084,14 +1084,14 @@ const staffApp = {
         const nearEl = document.getElementById('stock-near-count');
         const lowEl = document.getElementById('stock-low-count');
 
-        if(safeEl) safeEl.textContent = safeCount;
-        if(nearEl) nearEl.textContent = nearCount;
-        if(lowEl) lowEl.textContent = lowCount;
+        if (safeEl) safeEl.textContent = safeCount;
+        if (nearEl) nearEl.textContent = nearCount;
+        if (lowEl) lowEl.textContent = lowCount;
     },
 
-    openStockModal: function(id) {
+    openStockModal: function (id) {
         let item = this.stockData.find(i => i.id === id);
-        if(!item) {
+        if (!item) {
             const userDept = this.getStaffDepartment();
             const currentQuantity = Store.getData().resources.filter(r => {
                 return r.department === userDept && r.status === 'Available' && (r.type === id || r.name === id);
@@ -1106,13 +1106,13 @@ const staffApp = {
         document.getElementById('stock-edit-modal').classList.add('active');
     },
 
-    closeStockModal: function() {
+    closeStockModal: function () {
         this.editStockId = null;
         document.getElementById('stock-edit-modal').classList.remove('active');
         document.getElementById('stock-threshold-input').value = '';
     },
 
-    saveStockThreshold: function() {
+    saveStockThreshold: function () {
         if (!this.editStockId) return;
         const val = parseInt(document.getElementById('stock-threshold-input').value);
         if (isNaN(val) || val < 0) {
@@ -1121,7 +1121,7 @@ const staffApp = {
         }
 
         const itemIndex = this.stockData.findIndex(i => i.id === this.editStockId);
-        if(itemIndex > -1) {
+        if (itemIndex > -1) {
             this.stockData[itemIndex].thresholdLevel = val;
             Store.showToast("Threshold updated successfully.", "success");
             this.renderStockMonitoring();
@@ -1129,19 +1129,19 @@ const staffApp = {
         }
     },
 
-    sendStockRequest: function(resourceType) {
+    sendStockRequest: function (resourceType) {
         this.switchView('proc-tasks-view');
-        
+
         // Update nav active state
         document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
         const navItem = document.querySelector('.nav-item[data-target="proc-tasks-view"]');
-        if(navItem) navItem.classList.add('active');
-        
+        if (navItem) navItem.classList.add('active');
+
         // Give context to the user
         Store.showToast(`Navigated to Procurement Tasks for ${resourceType}.`, "warning");
     },
 
-    logout: function() {
+    logout: function () {
         Store.logout();
         window.location.href = 'login.html';
     }
