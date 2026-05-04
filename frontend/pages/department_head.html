@@ -314,7 +314,9 @@
                             <form id="procurementForm" onsubmit="deptApp.submitProcurement(event)" novalidate>
                                 <div class="form-group">
                                     <label class="form-label">Resource Type / Model</label>
-                                    <input type="text" id="proc-type" class="form-control" required>
+                                    <select id="proc-type" class="form-control" required>
+                                        <option value="" disabled selected>Select Resource Type</option>
+                                    </select>
                                 </div>
                                 <div class="form-group">
                                     <label class="form-label">Quantity Required</label>

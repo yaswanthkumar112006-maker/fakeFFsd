@@ -1,0 +1,48 @@
+import { Controller, Get, Param, Post, Req } from '@nestjs/common';
+import { ApiOkResponse, ApiOperation, ApiParam, ApiTags } from '@nestjs/swagger';
+import { Roles } from '../common/roles.decorator';
+import { MaintenanceHistoryResponseDto, ResourceResponseDto } from '../common/swagger-models';
+import { ApiRoleHeaders, ApiStandardErrorResponses } from '../common/swagger';
+import { MaintenanceService } from './maintenance.service';
+
+@ApiTags('maintenance')
+@ApiRoleHeaders()
+@ApiStandardErrorResponses()
+@Controller('maintenance')
+export class MaintenanceController {
+  constructor(private readonly maintenanceService: MaintenanceService) {}
+
+  @Get('history')
+  @ApiOperation({ summary: 'Get maintenance history visible to the acting role' })
+  @ApiOkResponse({ description: 'Maintenance history returned successfully.', type: MaintenanceHistoryResponseDto, isArray: true })
+  getHistory(@Req() req: any) {
+    return this.maintenanceService.getHistory(req.context);
+  }
+
+  @Post(':resourceId/accept')
+  @Roles('Staff', 'System Admin')
+  @ApiOperation({ summary: 'Accept a maintenance request' })
+  @ApiParam({ name: 'resourceId', example: 'RES-ITL-001' })
+  @ApiOkResponse({ description: 'Maintenance request accepted successfully.', type: ResourceResponseDto })
+  accept(@Param('resourceId') resourceId: string, @Req() req: any) {
+    return this.maintenanceService.accept(resourceId, req.context);
+  }
+
+  @Post(':resourceId/repair')
+  @Roles('Staff', 'System Admin')
+  @ApiOperation({ summary: 'Mark a resource as repaired' })
+  @ApiParam({ name: 'resourceId', example: 'RES-ITL-001' })
+  @ApiOkResponse({ description: 'Resource marked as repaired successfully.', type: ResourceResponseDto })
+  repair(@Param('resourceId') resourceId: string, @Req() req: any) {
+    return this.maintenanceService.repair(resourceId, req.context);
+  }
+
+  @Post(':resourceId/scrap')
+  @Roles('Staff', 'System Admin')
+  @ApiOperation({ summary: 'Scrap a resource from the maintenance flow' })
+  @ApiParam({ name: 'resourceId', example: 'RES-ITL-001' })
+  @ApiOkResponse({ description: 'Resource scrapped successfully.', type: ResourceResponseDto })
+  scrap(@Param('resourceId') resourceId: string, @Req() req: any) {
+    return this.maintenanceService.scrap(resourceId, req.context);
+  }
+}

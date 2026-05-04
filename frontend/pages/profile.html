@@ -261,15 +261,17 @@
         }
         customElements.define('app-sidebar', DummySidebar);
 
-        function loadProfileData() {
-            const user = Store.getCurrentUser();
-            if(!user) {
-                // Not strictly enforcing redirect so it works if opened locally without state setup for testing
-                // window.location.href = 'login.html';
-                // return;
+        async function loadProfileData() {
+            let activeUser = Store.getCurrentUser();
+            if (activeUser) {
+                try {
+                    activeUser = await Store.getProfile();
+                    Store.setCurrentUser(activeUser);
+                } catch (e) {}
             }
-
-            const activeUser = user || { id: 'U-999', name: 'Demo User', role: 'Staff', department: 'Demo Dept', email: 'demo@resourcex.com' };
+            if(!activeUser) {
+                activeUser = { id: 'U-999', name: 'Demo User', role: 'Staff', department: 'Demo Dept', email: 'demo@resourcex.com', preferences: { notifications: true } };
+            }
 
             document.getElementById('pageProfileName').innerText = activeUser.name;
             document.getElementById('pageProfileRole').innerText = activeUser.role;
@@ -281,8 +283,7 @@
             document.getElementById('inputUserEmail').value = activeUser.email;
             
             // Load local prefs
-            const prefs = JSON.parse(localStorage.getItem('rx_prefs') || '{"notifications": true}');
-            document.getElementById('toggleNotifications').checked = prefs.notifications;
+            document.getElementById('toggleNotifications').checked = activeUser.preferences ? activeUser.preferences.notifications !== false : true;
         }
 
         function clearNameError() {
@@ -293,7 +294,7 @@
             }
         }
 
-        function saveProfileChanges() {
+        async function saveProfileChanges() {
             const user = Store.getCurrentUser();
             if(!user) return;
 
@@ -319,22 +320,10 @@
                 clearNameError();
             }
 
-            // Update user in data array and currentUser
-            const data = Store.getData();
-            
-            const userIndex = data.users.findIndex(u => u.id === user.id);
-            if(userIndex > -1) {
-                data.users[userIndex].name = newName;
-            }
-            data.currentUser.name = newName;
-            
-            Store.saveData(data);
-
-            // Save Prefs
-            const prefs = {
+            await Store.updateProfile({
+                name: newName,
                 notifications: document.getElementById('toggleNotifications').checked
-            };
-            localStorage.setItem('rx_prefs', JSON.stringify(prefs));
+            });
 
             // Show Toast
             Store.showToast("Profile Settings Saved Successfully");
@@ -398,7 +387,7 @@
             label.style.color = fill;
         }
 
-        function updatePassword() {
+        async function updatePassword() {
             const currentPass = document.getElementById('inputCurrentPassword').value;
             const newPass = document.getElementById('inputNewPassword').value;
             const confirmPass = document.getElementById('inputConfirmPassword').value;
@@ -436,7 +425,11 @@
                 return;
             }
 
-            // Clear fields & show success
+            await Store.updatePassword({
+                currentPassword: currentPass,
+                newPassword: newPass
+            });
+
             document.getElementById('inputCurrentPassword').value = '';
             document.getElementById('inputNewPassword').value = '';
             document.getElementById('inputConfirmPassword').value = '';

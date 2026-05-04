@@ -142,7 +142,7 @@
             }
         }
 
-        function submitLogin(e) {
+        async function submitLogin(e) {
             e.preventDefault();
             const emailInput = document.getElementById('username');
             const email = emailInput.value.toLowerCase().trim();
@@ -174,7 +174,7 @@
             }
             const password = passwordInput.value; // mocked, we just check email
             
-            const user = Store.login(email, password);
+            const user = await Store.login(email, password);
             
             if (user) {
                 switch(user.role) {
@@ -197,4 +197,3 @@
     </script>
 </body>
 </html>
-

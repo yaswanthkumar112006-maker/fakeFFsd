@@ -1,20 +1,53 @@
 const app = {
-    init: function() {
+    state: {
+        departments: [],
+        resourceCatalog: [],
+        stock: [],
+        requests: [],
+        resources: [],
+        procurements: [],
+        summary: null
+    },
+    init: async function() {
         const user = Store.getCurrentUser();
         if(!user || user.role !== 'Requestor') {
             window.location.href = 'login.html';
             return;
         }
+        await this.refreshData();
         
         // Update UI with user info
         document.querySelector('.user-name').textContent = user.name;
         document.querySelector('.user-role').textContent = 'Requestor - ' + user.department;
-        
+
+        this.populateDepartmentDropdowns();
         this.bindNav();
         this.renderDashboard();
         this.renderRequests();
         this.renderResources();
         this.renderProcurements();
+    },
+
+    refreshData: async function() {
+        const [departments, resourceCatalog, stock, requests, resources, procurements, summary] = await Promise.all([
+            Store.fetchDepartments(),
+            Store.fetchResourceCatalog(),
+            Store.fetchStock(),
+            Store.fetchRequests(),
+            Store.fetchResources(),
+            Store.fetchProcurements(),
+            Store.fetchRequestorSummary()
+        ]);
+
+        this.state = {
+            departments: departments || [],
+            resourceCatalog: resourceCatalog || [],
+            stock: stock || [],
+            requests: requests || [],
+            resources: resources || [],
+            procurements: procurements || [],
+            summary: summary || null
+        };
     },
 
     bindNav: function() {
@@ -40,16 +73,40 @@ const app = {
     },
 
     getDepartments: function() {
-        return ['IT Services', 'Logistics Ops', 'HR Dept'];
+        return this.state.departments.map(dept => dept.name);
+    },
+
+    populateDepartmentDropdowns: function() {
+        const departments = this.getDepartments();
+        ['req-dept', 'proc-dept'].forEach((id) => {
+            const select = document.getElementById(id);
+            if (!select) return;
+
+            select.innerHTML = '<option value="" disabled selected>Select Department</option>';
+            departments.forEach(dept => {
+                const option = document.createElement('option');
+                option.value = dept;
+                option.textContent = dept;
+                select.appendChild(option);
+            });
+        });
     },
     
     getDeptResources: function(dept) {
-        const map = {
-            "IT Services": ["High-Cap Battery", "Server Blades v2", "Laptop Bundles", "Wireless Mouse"],
-            "Logistics Ops": ["Field Tablets", "Safety Gear Kit"],
-            "HR Dept": ["Projector", "Printer"]
-        };
-        return map[dept] || [];
+        const entry = (this.state.resourceCatalog || []).find(item => item.department === dept);
+        if (entry && Array.isArray(entry.resourceTypes) && entry.resourceTypes.length) {
+            return [...entry.resourceTypes];
+        }
+
+        const stockRows = this.state.stock.filter(item => item.department === dept);
+        if (stockRows.length) {
+            return [...new Set(stockRows.map(item => item.resourceType))];
+        }
+
+        const resourceTypes = this.state.resources
+            .filter(resource => resource.department === dept)
+            .map(resource => resource.type);
+        return [...new Set(resourceTypes)];
     },
 
     updateResourceDropdown: function() {
@@ -67,7 +124,21 @@ const app = {
         this.updateResourceCount();
     },
 
-    updateResourceCount: function() {
+    updateProcurementTypeDropdown: function() {
+        const dept = document.getElementById('proc-dept').value;
+        const typeSelect = document.getElementById('proc-type');
+        if (!typeSelect) return;
+
+        typeSelect.innerHTML = '<option value="" disabled selected>Select Resource Type</option>';
+        this.getDeptResources(dept).forEach(type => {
+            const option = document.createElement('option');
+            option.value = type;
+            option.textContent = type;
+            typeSelect.appendChild(option);
+        });
+    },
+
+    updateResourceCount: async function() {
         const dept = document.getElementById('req-dept').value;
         const type = document.getElementById('req-type').value;
         const countDisplay = document.getElementById('resource-count-display');
@@ -79,9 +150,8 @@ const app = {
             return;
         }
 
-        const resources = Store.getData().resources;
-        // Count resources that match department, type, and are "Available"
-        const availableCount = resources.filter(r => r.department === dept && r.type === type && r.status === 'Available').length;
+        const availability = await Store.fetchResourceAvailability(dept, type);
+        const availableCount = Number(availability?.availableCount || 0);
         
         countDisplay.textContent = `Available in Inventory: ${availableCount}`;
         countDisplay.style.display = 'block';
@@ -94,7 +164,7 @@ const app = {
         }
     },
 
-    submitRequest: function(e) {
+    submitRequest: async function(e) {
         e.preventDefault();
         const dept = document.getElementById('req-dept').value;
         const type = document.getElementById('req-type').value;
@@ -111,17 +181,19 @@ const app = {
         const newId = `REQ-${Math.floor(1000 + Math.random() * 9000)}`;
         const dateStr = new Date().toLocaleDateString('en-US', {month: 'short', day: 'numeric', year:'numeric'});
 
-        Store.addItem('requests', {
+        await Store.createRequest({
             id: newId,
             department: dept,
             resourceType: type,
             quantity: qty,
             requestor: user.name,
+            requestorId: user.id,
             status: "Pending",
             priority: "Normal",
             date: dateStr,
             justification: reason
         });
+        await this.refreshData();
 
         Store.showToast("Request Submitted Successfully! ID: " + newId, "success");
         document.getElementById('requestForm').reset();
@@ -134,7 +206,7 @@ const app = {
         document.querySelector('.nav-item[data-target="my-requests-view"]').classList.add('active');
     },
 
-    submitProcurement: function(e) {
+    submitProcurement: async function(e) {
         e.preventDefault();
         const dept = document.getElementById('proc-dept').value;
         const type = document.getElementById('proc-type').value;
@@ -150,17 +222,20 @@ const app = {
         const newId = `PRC-${Math.floor(1000 + Math.random() * 9000)}`;
         const dateStr = new Date().toLocaleDateString('en-US', {month: 'short', day: 'numeric', year:'numeric'});
 
-        Store.addItem('procurements', {
+        await Store.createProcurement({
             id: newId,
             item: type,
+            resourceType: type,
             department: dept,
             requester: user.name,
+            requestedById: user.id,
             quantity: qty,
             status: "Pending Approval",
             priority: "Normal",
             date: dateStr,
             justification: reason
         });
+        await this.refreshData();
 
         Store.showToast("Procurement Request Submitted Successfully! ID: " + newId, "success");
         document.getElementById('procurementForm').reset();
@@ -170,28 +245,23 @@ const app = {
 
     renderDashboard: function() {
         const user = Store.getCurrentUser();
-        const data = Store.getData();
-        const myRequests = data.requests.filter(r => r.requestor === user.name);
-        const myResources = data.resources.filter(r => r.assignedTo === user.name);
+        const myRequests = this.state.requests;
+        const myResources = this.state.resources;
+        const summary = this.state.summary || {};
 
         const nameSpan = document.getElementById('dash-user-name');
         if(nameSpan) nameSpan.textContent = user.name.split(' ')[0];
         
         // 1. Stats
-        let pending = 0;
-        myRequests.forEach(r => { if(r.status === 'Pending') pending++; });
-        let maint = 0;
-        myResources.forEach(r => { if(r.status === 'Maintenance Requested' || r.status === 'Maintenance') maint++; });
-
         const elTotalReq = document.getElementById('dash-total-req');
         const elPendingReq = document.getElementById('dash-pending-req');
         const elMyRes = document.getElementById('dash-my-res');
         const elMaint = document.getElementById('dash-maint');
 
-        if(elTotalReq) elTotalReq.textContent = myRequests.length;
-        if(elPendingReq) elPendingReq.textContent = pending;
-        if(elMyRes) elMyRes.textContent = myResources.length;
-        if(elMaint) elMaint.textContent = maint;
+        if(elTotalReq) elTotalReq.textContent = summary.totalRequests ?? myRequests.length;
+        if(elPendingReq) elPendingReq.textContent = summary.pendingRequests ?? myRequests.filter(r => r.status === 'Pending').length;
+        if(elMyRes) elMyRes.textContent = summary.allocatedResources ?? myResources.length;
+        if(elMaint) elMaint.textContent = summary.maintenanceItems ?? myResources.filter(r => r.status === 'Maintenance Requested' || r.status === 'Maintenance').length;
 
         // 2. Recent Requests Table
         const reqTbody = document.getElementById('dash-requests-tbody');
@@ -234,11 +304,9 @@ const app = {
         const statApproved = document.getElementById('stat-approved');
         const statAllocated = document.getElementById('stat-allocated');
         
-        let approved = 0, allocated = 0;
-        myRequests.forEach(r => {
-            if(r.status === 'Approved') approved++;
-            if(r.status === 'Allocated') allocated++;
-        });
+        const pending = summary.pendingRequests ?? myRequests.filter(r => r.status === 'Pending').length;
+        const approved = summary.approvedRequests ?? myRequests.filter(r => r.status === 'Approved').length;
+        const allocated = summary.allocatedRequests ?? myRequests.filter(r => r.status === 'Allocated').length;
 
         if(statPending) statPending.textContent = pending.toString().padStart(2, '0');
         if(statApproved) statApproved.textContent = approved.toString().padStart(2, '0');
@@ -251,7 +319,7 @@ const app = {
         tbody.innerHTML = '';
 
         const user = Store.getCurrentUser();
-        let myRequests = Store.getData().requests.filter(r => r.requestor === user.name);
+        let myRequests = [...this.state.requests];
 
         // Apply status filter
         const filterEl = document.getElementById('req-status-filter');
@@ -290,7 +358,7 @@ const app = {
         tbody.innerHTML = '';
 
         const user = Store.getCurrentUser();
-        const myProcs = Store.getData().procurements.filter(p => p.requester === user.name);
+        const myProcs = this.state.procurements.filter(p => p.requester === user.name || p.requestedById === user.id);
 
         myProcs.forEach(proc => {
             let statusBadge = `<span class="badge" style="background:#cbd5e1; color:#0f172a">${proc.status}</span>`;
@@ -310,36 +378,16 @@ const app = {
         });
     },
 
-    confirmReceipt: function(reqId) {
-        const user = Store.getCurrentUser();
-        const req = Store.getData().requests.find(r => r.id === reqId);
-        
-        if(req) {
-            // Add resource to inventory and assign to user
-            Store.addItem('resources', {
-                id: `RES-${Math.floor(1000 + Math.random() * 9000)}`,
-                name: req.resourceType,
-                type: req.resourceType, // simplification
-                department: req.department,
-                serialNumber: 'SN-TBD',
-                status: "Allocated",
-                condition: "New",
-                assignedTo: user.name,
-                date: new Date().toLocaleDateString('en-US', {month: 'short', day: 'numeric', year:'numeric'})
-            });
-            
-            Store.deleteItem('requests', reqId); // remove or keep as fulfilled
-            
-            alert('Item successfully received and added to your resources.');
-            
-            this.renderDashboard();
-            this.renderRequests();
-            this.renderResources();
-            
-            this.switchView('my-resources-view');
-            document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
-            document.querySelector('.nav-item[data-target="my-resources-view"]').classList.add('active');
-        }
+    confirmReceipt: async function(reqId) {
+        await Store.confirmReceipt(reqId);
+        await this.refreshData();
+        alert('Item successfully received and confirmed.');
+        this.renderDashboard();
+        this.renderRequests();
+        this.renderResources();
+        this.switchView('my-resources-view');
+        document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+        document.querySelector('.nav-item[data-target="my-resources-view"]').classList.add('active');
     },
 
     renderResources: function() {
@@ -347,8 +395,7 @@ const app = {
         if(!tbody) return;
         tbody.innerHTML = '';
 
-        const user = Store.getCurrentUser();
-        const myResources = Store.getData().resources.filter(r => r.assignedTo === user.name);
+        const myResources = this.state.resources;
 
         myResources.forEach((res) => {
             let statusBadge = "";
@@ -383,23 +430,26 @@ const app = {
         });
     },
 
-    requestMaintenance: function(resId) {
+    requestMaintenance: async function(resId) {
         if(confirm("Submit maintenance request for this resource?")) {
-            Store.updateItem('resources', resId, { status: "Maintenance Requested" });
+            await Store.requestMaintenance(resId);
+            await this.refreshData();
             this.renderResources();
         }
     },
 
-    returnResource: function(resId) {
+    returnResource: async function(resId) {
         if(confirm("Are you sure you want to return this resource? It will be sent to Staff for Verification.")) {
-            Store.updateItem('resources', resId, { status: "Returned", assignedTo: "None" });
+            await Store.initiateReturn(resId);
+            await this.refreshData();
             alert("Resource returned successfully. Status moved to Returned.");
             this.renderResources();
         }
     },
     
-    confirmRepairedAllocation: function(resId) {
-        Store.updateItem('resources', resId, { status: "Allocated" });
+    confirmRepairedAllocation: async function(resId) {
+        await Store.confirmRepairedAllocation(resId);
+        await this.refreshData();
         this.renderResources();
     },
     
@@ -409,6 +459,6 @@ const app = {
     }
 };
 
-document.addEventListener('DOMContentLoaded', () => {
-    app.init();
+document.addEventListener('DOMContentLoaded', async () => {
+    await app.init();
 });

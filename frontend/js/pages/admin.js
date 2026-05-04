@@ -1,11 +1,12 @@
 const adminApp = {
     viewAllUsers: false,
-    init: function() {
+    init: async function() {
         const user = Store.getCurrentUser();
         if(!user || user.role !== 'System Admin') {
             window.location.href = 'login.html';
             return;
         }
+        await Store.sync();
         
         // Update UI
         document.querySelector('.user-name').textContent = user.name;
@@ -161,7 +162,7 @@ const adminApp = {
                 <input type="password" id="modal-user-password" class="form-control" style="width:100%; padding:0.5rem; border:1px solid #ccc; border-radius:4px" placeholder="Enter temporary password">
             </div>
         `;
-        this.openModal("Add New User", html, () => {
+        this.openModal("Add New User", html, async () => {
             const name = document.getElementById('modal-user-name').value.trim();
             const email = document.getElementById('modal-user-email').value.trim();
             const role = document.getElementById('modal-user-role').value;
@@ -192,7 +193,7 @@ const adminApp = {
                 return;
             }
 
-            Store.addItem('users', {
+            await Store.createUser({
                 id: `U-9${Math.floor(100 + Math.random() * 900)}`,
                 name: name,
                 email: email,
@@ -247,7 +248,7 @@ const adminApp = {
                 <input type="password" id="modal-edit-password" placeholder="Enter new password" class="form-control" style="width:100%; padding:0.5rem; border:1px solid #ccc; border-radius:4px">
             </div>
         `;
-        this.openModal("Edit User", html, () => {
+        this.openModal("Edit User", html, async () => {
             const newName = document.getElementById('modal-edit-name').value.trim();
             const newRole = document.getElementById('modal-role-select').value;
             const newDept = document.getElementById('modal-dept-select').value;
@@ -282,14 +283,14 @@ const adminApp = {
                 updates.password = newPassword;
             }
 
-            Store.updateItem('users', id, updates);
+            await Store.updateUser(id, updates);
             
             const currentUser = Store.getCurrentUser();
             if (currentUser && currentUser.id === id) {
-                const db = Store.getData();
-                db.currentUser.name = newName;
-                db.currentUser.role = newRole;
-                Store.saveData(db);
+                Store.setCurrentUser({
+                    ...currentUser,
+                    ...updates
+                });
                 // Update nav/header directly if on page
                 const uiName = document.querySelector('.user-name');
                 if (uiName) uiName.textContent = newName;
@@ -303,8 +304,8 @@ const adminApp = {
 
     deleteUser: function(id) {
         const html = `<p style="color:#64748b; margin:0">Are you absolutely sure you want to deactivate this user? They will lose access immediately.</p>`;
-        this.openModal("Deactivate User", html, () => {
-            Store.updateItem('users', id, { status: "Inactive" });
+        this.openModal("Deactivate User", html, async () => {
+            await Store.updateUser(id, { status: "Inactive" });
             this.renderUsers();
             Store.showToast("User deactivated.", "success");
             this.closeModal();
@@ -356,7 +357,7 @@ const adminApp = {
         const nameRegex = /^[a-zA-Z\s\-\.]+$/;
         const headRegex = /^[a-zA-Z\s\.]+$/;
 
-        this.openModal("Add New Department", html, () => {
+        this.openModal("Add New Department", html, async () => {
             const name = document.getElementById('modal-dept-name').value.trim();
             const head = document.getElementById('modal-dept-head').value.trim();
 
@@ -380,7 +381,7 @@ const adminApp = {
                 return;
             }
 
-            Store.addItem('departments', {
+            await Store.createDepartment({
                 id: `D${Math.floor(100 + Math.random() * 900)}`,
                 name: name,
                 head: head,
@@ -416,7 +417,7 @@ const adminApp = {
         const nameRegex = /^[a-zA-Z\s\-\.]+$/;
         const headRegex = /^[a-zA-Z\s\.]+$/;
 
-        this.openModal("Edit Department", html, () => {
+        this.openModal("Edit Department", html, async () => {
             const newName    = document.getElementById('modal-edit-dept-name').value.trim();
             const newHead    = document.getElementById('modal-edit-dept-head').value.trim();
             const newMembers = parseInt(document.getElementById('modal-edit-dept-members').value);
@@ -446,7 +447,7 @@ const adminApp = {
                 return;
             }
 
-            Store.updateItem('departments', id, { name: newName, head: newHead, memberCount: newMembers });
+            await Store.updateDepartment(id, { name: newName, head: newHead, memberCount: newMembers });
             this.renderDepartments();
             Store.showToast("Department updated successfully.", "success");
             this.closeModal();
@@ -455,8 +456,8 @@ const adminApp = {
 
     deleteDept: function(id) {
         const html = `<p style="color:#b91c1c; margin:0">Warning: Deleting this department affects all linked associated users and active resources. Proceed at your own risk.</p>`;
-        this.openModal("Delete Department", html, () => {
-            Store.deleteItem('departments', id);
+        this.openModal("Delete Department", html, async () => {
+            await Store.deleteDepartment(id);
             this.renderDepartments();
             Store.showToast("Department securely removed.", "warning");
             this.closeModal();
@@ -513,19 +514,19 @@ const adminApp = {
             }
         });
 
-        db.permissionsMatrix = newMatrix;
-        Store.saveData(db);
-        Store.showToast("Permissions updated", "success");
+        Store.updatePermissionsMatrix(newMatrix)
+            .then(() => {
+                this.renderRolesMatrix();
+                Store.showToast("Permissions updated", "success");
+            });
     },
 
     resetPermissions: function() {
-        const db = Store.getData();
-        if (typeof initialData !== 'undefined') {
-            db.permissionsMatrix = JSON.parse(JSON.stringify(initialData.permissionsMatrix));
-            Store.saveData(db);
-            this.renderRolesMatrix();
-            Store.showToast("Matrix reset to defaults", "warning");
-        }
+        Store.resetPermissionsMatrix()
+            .then(() => {
+                this.renderRolesMatrix();
+                Store.showToast("Matrix reset to defaults", "warning");
+            });
     },
 
     logout: function() {
@@ -534,6 +535,6 @@ const adminApp = {
     }
 };
 
-document.addEventListener('DOMContentLoaded', () => {
-    adminApp.init();
+document.addEventListener('DOMContentLoaded', async () => {
+    await adminApp.init();
 });

@@ -1,0 +1,6240 @@
+{
+  "openapi": "3.0.0",
+  "paths": {
+    "/api/users": {
+      "get": {
+        "operationId": "UsersController_getAll",
+        "parameters": [
+          {
+            "name": "x-user-role",
+            "in": "header",
+            "description": "Acting role for RBAC. Allowed values: Requestor, Dept Head, Registrar, Staff, System Admin.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "Staff"
+            }
+          },
+          {
+            "name": "x-user-id",
+            "in": "header",
+            "description": "Acting user id used for department scoping and own-record views. Example: U100.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "example": "U100"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Users returned for the current actor scope.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/UserResponseDto"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error or invalid workflow transition.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Role or department scope does not allow this action.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Requested entity was not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "role-header": []
+          },
+          {
+            "user-id-header": []
+          }
+        ],
+        "summary": "List users visible to the acting role",
+        "tags": [
+          "users"
+        ]
+      },
+      "post": {
+        "operationId": "UsersController_create",
+        "parameters": [
+          {
+            "name": "x-user-role",
+            "in": "header",
+            "description": "Acting role for RBAC. Allowed values: Requestor, Dept Head, Registrar, Staff, System Admin.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "Staff"
+            }
+          },
+          {
+            "name": "x-user-id",
+            "in": "header",
+            "description": "Acting user id used for department scoping and own-record views. Example: U100.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "example": "U100"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateUserDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "User created successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error or invalid workflow transition.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Only System Admin can create users."
+          },
+          "404": {
+            "description": "Requested entity was not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "role-header": []
+          },
+          {
+            "user-id-header": []
+          }
+        ],
+        "summary": "Create a new user",
+        "tags": [
+          "users"
+        ]
+      }
+    },
+    "/api/users/{id}": {
+      "patch": {
+        "operationId": "UsersController_update",
+        "parameters": [
+          {
+            "name": "x-user-role",
+            "in": "header",
+            "description": "Acting role for RBAC. Allowed values: Requestor, Dept Head, Registrar, Staff, System Admin.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "Staff"
+            }
+          },
+          {
+            "name": "x-user-id",
+            "in": "header",
+            "description": "Acting user id used for department scoping and own-record views. Example: U100.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "example": "U100"
+            }
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "example": "U201",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateUserDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "User updated successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error or invalid workflow transition.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Role or department scope does not allow this action.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Requested entity was not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "role-header": []
+          },
+          {
+            "user-id-header": []
+          }
+        ],
+        "summary": "Update a user",
+        "tags": [
+          "users"
+        ]
+      },
+      "delete": {
+        "operationId": "UsersController_remove",
+        "parameters": [
+          {
+            "name": "x-user-role",
+            "in": "header",
+            "description": "Acting role for RBAC. Allowed values: Requestor, Dept Head, Registrar, Staff, System Admin.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "Staff"
+            }
+          },
+          {
+            "name": "x-user-id",
+            "in": "header",
+            "description": "Acting user id used for department scoping and own-record views. Example: U100.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "example": "U100"
+            }
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "example": "U201",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "User deactivated successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error or invalid workflow transition.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Role or department scope does not allow this action.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Requested entity was not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "role-header": []
+          },
+          {
+            "user-id-header": []
+          }
+        ],
+        "summary": "Deactivate a user",
+        "tags": [
+          "users"
+        ]
+      }
+    },
+    "/api/departments": {
+      "get": {
+        "operationId": "DepartmentsController_getAll",
+        "parameters": [
+          {
+            "name": "x-user-role",
+            "in": "header",
+            "description": "Acting role for RBAC. Allowed values: Requestor, Dept Head, Registrar, Staff, System Admin.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "Staff"
+            }
+          },
+          {
+            "name": "x-user-id",
+            "in": "header",
+            "description": "Acting user id used for department scoping and own-record views. Example: U100.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "example": "U100"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Department list returned successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/DepartmentResponseDto"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error or invalid workflow transition.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Role or department scope does not allow this action.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Requested entity was not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "role-header": []
+          },
+          {
+            "user-id-header": []
+          }
+        ],
+        "summary": "List departments",
+        "tags": [
+          "departments"
+        ]
+      },
+      "post": {
+        "operationId": "DepartmentsController_create",
+        "parameters": [
+          {
+            "name": "x-user-role",
+            "in": "header",
+            "description": "Acting role for RBAC. Allowed values: Requestor, Dept Head, Registrar, Staff, System Admin.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "Staff"
+            }
+          },
+          {
+            "name": "x-user-id",
+            "in": "header",
+            "description": "Acting user id used for department scoping and own-record views. Example: U100.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "example": "U100"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateDepartmentDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Department created successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DepartmentResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error or invalid workflow transition.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Role or department scope does not allow this action.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Requested entity was not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "role-header": []
+          },
+          {
+            "user-id-header": []
+          }
+        ],
+        "summary": "Create a department",
+        "tags": [
+          "departments"
+        ]
+      }
+    },
+    "/api/departments/{id}": {
+      "patch": {
+        "operationId": "DepartmentsController_update",
+        "parameters": [
+          {
+            "name": "x-user-role",
+            "in": "header",
+            "description": "Acting role for RBAC. Allowed values: Requestor, Dept Head, Registrar, Staff, System Admin.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "Staff"
+            }
+          },
+          {
+            "name": "x-user-id",
+            "in": "header",
+            "description": "Acting user id used for department scoping and own-record views. Example: U100.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "example": "U100"
+            }
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "example": "D101",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateDepartmentDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Department updated successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DepartmentResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error or invalid workflow transition.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Role or department scope does not allow this action.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Requested entity was not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "role-header": []
+          },
+          {
+            "user-id-header": []
+          }
+        ],
+        "summary": "Update a department",
+        "tags": [
+          "departments"
+        ]
+      },
+      "delete": {
+        "operationId": "DepartmentsController_remove",
+        "parameters": [
+          {
+            "name": "x-user-role",
+            "in": "header",
+            "description": "Acting role for RBAC. Allowed values: Requestor, Dept Head, Registrar, Staff, System Admin.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "Staff"
+            }
+          },
+          {
+            "name": "x-user-id",
+            "in": "header",
+            "description": "Acting user id used for department scoping and own-record views. Example: U100.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "example": "U100"
+            }
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "example": "D101",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Department deleted successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error or invalid workflow transition.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Role or department scope does not allow this action.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Requested entity was not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "role-header": []
+          },
+          {
+            "user-id-header": []
+          }
+        ],
+        "summary": "Delete a department",
+        "tags": [
+          "departments"
+        ]
+      }
+    },
+    "/api/permissionsMatrix": {
+      "get": {
+        "operationId": "PermissionsController_get",
+        "parameters": [
+          {
+            "name": "x-user-role",
+            "in": "header",
+            "description": "Acting role for RBAC. Allowed values: Requestor, Dept Head, Registrar, Staff, System Admin.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "Staff"
+            }
+          },
+          {
+            "name": "x-user-id",
+            "in": "header",
+            "description": "Acting user id used for department scoping and own-record views. Example: U100.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "example": "U100"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Current permissions matrix returned successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "example": {
+                    "Request Resources": [
+                      "Requestor",
+                      "System Admin"
+                    ],
+                    "Allocate Resources": [
+                      "Staff",
+                      "System Admin"
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error or invalid workflow transition.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Role or department scope does not allow this action.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Requested entity was not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "role-header": []
+          },
+          {
+            "user-id-header": []
+          }
+        ],
+        "summary": "Get the permissions matrix",
+        "tags": [
+          "permissionsMatrix"
+        ]
+      },
+      "post": {
+        "operationId": "PermissionsController_update",
+        "parameters": [
+          {
+            "name": "x-user-role",
+            "in": "header",
+            "description": "Acting role for RBAC. Allowed values: Requestor, Dept Head, Registrar, Staff, System Admin.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "Staff"
+            }
+          },
+          {
+            "name": "x-user-id",
+            "in": "header",
+            "description": "Acting user id used for department scoping and own-record views. Example: U100.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "example": "U100"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdatePermissionsMatrixDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Permissions matrix updated successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error or invalid workflow transition.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Role or department scope does not allow this action.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Requested entity was not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "role-header": []
+          },
+          {
+            "user-id-header": []
+          }
+        ],
+        "summary": "Replace the permissions matrix",
+        "tags": [
+          "permissionsMatrix"
+        ]
+      }
+    },
+    "/api/permissionsMatrix/reset": {
+      "post": {
+        "operationId": "PermissionsController_reset",
+        "parameters": [
+          {
+            "name": "x-user-role",
+            "in": "header",
+            "description": "Acting role for RBAC. Allowed values: Requestor, Dept Head, Registrar, Staff, System Admin.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "Staff"
+            }
+          },
+          {
+            "name": "x-user-id",
+            "in": "header",
+            "description": "Acting user id used for department scoping and own-record views. Example: U100.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "example": "U100"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Permissions matrix reset successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error or invalid workflow transition.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Role or department scope does not allow this action.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Requested entity was not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "role-header": []
+          },
+          {
+            "user-id-header": []
+          }
+        ],
+        "summary": "Reset permissions matrix to defaults",
+        "tags": [
+          "permissionsMatrix"
+        ]
+      }
+    },
+    "/api/requests": {
+      "get": {
+        "operationId": "RequestsController_getAll",
+        "parameters": [
+          {
+            "name": "x-user-role",
+            "in": "header",
+            "description": "Acting role for RBAC. Allowed values: Requestor, Dept Head, Registrar, Staff, System Admin.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "Staff"
+            }
+          },
+          {
+            "name": "x-user-id",
+            "in": "header",
+            "description": "Acting user id used for department scoping and own-record views. Example: U100.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "example": "U100"
+            }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": "Pending",
+              "type": "string"
+            }
+          },
+          {
+            "name": "department",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": "IT Services",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Requests returned successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/RequestResponseDto"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error or invalid workflow transition.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Role or department scope does not allow this action.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Requested entity was not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "role-header": []
+          },
+          {
+            "user-id-header": []
+          }
+        ],
+        "summary": "List requests visible to the acting role",
+        "tags": [
+          "requests"
+        ]
+      },
+      "post": {
+        "operationId": "RequestsController_create",
+        "parameters": [
+          {
+            "name": "x-user-role",
+            "in": "header",
+            "description": "Acting role for RBAC. Allowed values: Requestor, Dept Head, Registrar, Staff, System Admin.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "Staff"
+            }
+          },
+          {
+            "name": "x-user-id",
+            "in": "header",
+            "description": "Acting user id used for department scoping and own-record views. Example: U100.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "example": "U100"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Request created successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RequestResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error or invalid workflow transition.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Role or department scope does not allow this action.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Requested entity was not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "role-header": []
+          },
+          {
+            "user-id-header": []
+          }
+        ],
+        "summary": "Create a resource request",
+        "tags": [
+          "requests"
+        ]
+      }
+    },
+    "/api/requests/{id}": {
+      "patch": {
+        "operationId": "RequestsController_update",
+        "parameters": [
+          {
+            "name": "x-user-role",
+            "in": "header",
+            "description": "Acting role for RBAC. Allowed values: Requestor, Dept Head, Registrar, Staff, System Admin.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "Staff"
+            }
+          },
+          {
+            "name": "x-user-id",
+            "in": "header",
+            "description": "Acting user id used for department scoping and own-record views. Example: U100.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "example": "U100"
+            }
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "example": "REQ-1001",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Request updated successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RequestResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error or invalid workflow transition.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Role or department scope does not allow this action.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Requested entity was not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "role-header": []
+          },
+          {
+            "user-id-header": []
+          }
+        ],
+        "summary": "Update a request",
+        "tags": [
+          "requests"
+        ]
+      }
+    },
+    "/api/requests/{id}/approve": {
+      "post": {
+        "operationId": "RequestsController_approve",
+        "parameters": [
+          {
+            "name": "x-user-role",
+            "in": "header",
+            "description": "Acting role for RBAC. Allowed values: Requestor, Dept Head, Registrar, Staff, System Admin.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "Staff"
+            }
+          },
+          {
+            "name": "x-user-id",
+            "in": "header",
+            "description": "Acting user id used for department scoping and own-record views. Example: U100.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "example": "U100"
+            }
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "example": "REQ-1001",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Request approved successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RequestResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error or invalid workflow transition.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Role or department scope does not allow this action.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Requested entity was not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "role-header": []
+          },
+          {
+            "user-id-header": []
+          }
+        ],
+        "summary": "Approve a request",
+        "tags": [
+          "requests"
+        ]
+      }
+    },
+    "/api/requests/{id}/reject": {
+      "post": {
+        "operationId": "RequestsController_reject",
+        "parameters": [
+          {
+            "name": "x-user-role",
+            "in": "header",
+            "description": "Acting role for RBAC. Allowed values: Requestor, Dept Head, Registrar, Staff, System Admin.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "Staff"
+            }
+          },
+          {
+            "name": "x-user-id",
+            "in": "header",
+            "description": "Acting user id used for department scoping and own-record views. Example: U100.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "example": "U100"
+            }
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "example": "REQ-1001",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Request rejected successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RequestResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error or invalid workflow transition.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Role or department scope does not allow this action.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Requested entity was not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "role-header": []
+          },
+          {
+            "user-id-header": []
+          }
+        ],
+        "summary": "Reject a request",
+        "tags": [
+          "requests"
+        ]
+      }
+    },
+    "/api/requests/{id}/allocate": {
+      "post": {
+        "operationId": "RequestsController_allocate",
+        "parameters": [
+          {
+            "name": "x-user-role",
+            "in": "header",
+            "description": "Acting role for RBAC. Allowed values: Requestor, Dept Head, Registrar, Staff, System Admin.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "Staff"
+            }
+          },
+          {
+            "name": "x-user-id",
+            "in": "header",
+            "description": "Acting user id used for department scoping and own-record views. Example: U100.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "example": "U100"
+            }
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "example": "REQ-1001",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AllocateRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Request allocated successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RequestResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error or invalid workflow transition.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Role or department scope does not allow this action.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Requested entity was not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "role-header": []
+          },
+          {
+            "user-id-header": []
+          }
+        ],
+        "summary": "Allocate inventory resources to an approved request",
+        "tags": [
+          "requests"
+        ]
+      }
+    },
+    "/api/requests/{id}/receipt": {
+      "post": {
+        "operationId": "RequestsController_confirmReceipt",
+        "parameters": [
+          {
+            "name": "x-user-role",
+            "in": "header",
+            "description": "Acting role for RBAC. Allowed values: Requestor, Dept Head, Registrar, Staff, System Admin.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "Staff"
+            }
+          },
+          {
+            "name": "x-user-id",
+            "in": "header",
+            "description": "Acting user id used for department scoping and own-record views. Example: U100.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "example": "U100"
+            }
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "example": "REQ-1001",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Receipt confirmed successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RequestResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error or invalid workflow transition.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Role or department scope does not allow this action.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Requested entity was not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "role-header": []
+          },
+          {
+            "user-id-header": []
+          }
+        ],
+        "summary": "Confirm request receipt from the requestor side",
+        "tags": [
+          "requests"
+        ]
+      }
+    },
+    "/api/resources/catalog": {
+      "get": {
+        "operationId": "ResourcesController_getCatalog",
+        "parameters": [
+          {
+            "name": "x-user-role",
+            "in": "header",
+            "description": "Acting role for RBAC. Allowed values: Requestor, Dept Head, Registrar, Staff, System Admin.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "Staff"
+            }
+          },
+          {
+            "name": "x-user-id",
+            "in": "header",
+            "description": "Acting user id used for department scoping and own-record views. Example: U100.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "example": "U100"
+            }
+          },
+          {
+            "name": "department",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": "IT Services",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Department resource-type catalog returned successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/DepartmentResourceCatalogResponseDto"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error or invalid workflow transition.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Role or department scope does not allow this action.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Requested entity was not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "role-header": []
+          },
+          {
+            "user-id-header": []
+          }
+        ],
+        "summary": "List static resource types configured per department",
+        "tags": [
+          "resources"
+        ]
+      }
+    },
+    "/api/resources/availability": {
+      "get": {
+        "operationId": "ResourcesController_getAvailability",
+        "parameters": [
+          {
+            "name": "x-user-role",
+            "in": "header",
+            "description": "Acting role for RBAC. Allowed values: Requestor, Dept Head, Registrar, Staff, System Admin.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "Staff"
+            }
+          },
+          {
+            "name": "x-user-id",
+            "in": "header",
+            "description": "Acting user id used for department scoping and own-record views. Example: U100.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "example": "U100"
+            }
+          },
+          {
+            "name": "department",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "example": "IT Services",
+              "type": "string"
+            }
+          },
+          {
+            "name": "type",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "example": "Laptop",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Department inventory availability returned successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResourceAvailabilityResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error or invalid workflow transition.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Role or department scope does not allow this action.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Requested entity was not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "role-header": []
+          },
+          {
+            "user-id-header": []
+          }
+        ],
+        "summary": "Get available inventory count for a department resource type",
+        "tags": [
+          "resources"
+        ]
+      }
+    },
+    "/api/resources": {
+      "get": {
+        "operationId": "ResourcesController_getAll",
+        "parameters": [
+          {
+            "name": "x-user-role",
+            "in": "header",
+            "description": "Acting role for RBAC. Allowed values: Requestor, Dept Head, Registrar, Staff, System Admin.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "Staff"
+            }
+          },
+          {
+            "name": "x-user-id",
+            "in": "header",
+            "description": "Acting user id used for department scoping and own-record views. Example: U100.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "example": "U100"
+            }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": "Available",
+              "type": "string"
+            }
+          },
+          {
+            "name": "department",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": "IT Services",
+              "type": "string"
+            }
+          },
+          {
+            "name": "type",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": "Laptop",
+              "type": "string"
+            }
+          },
+          {
+            "name": "assignedToId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": "U101",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Resources returned successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ResourceResponseDto"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error or invalid workflow transition.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Role or department scope does not allow this action.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Requested entity was not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "role-header": []
+          },
+          {
+            "user-id-header": []
+          }
+        ],
+        "summary": "List resources visible to the acting role",
+        "tags": [
+          "resources"
+        ]
+      },
+      "post": {
+        "operationId": "ResourcesController_create",
+        "parameters": [
+          {
+            "name": "x-user-role",
+            "in": "header",
+            "description": "Acting role for RBAC. Allowed values: Requestor, Dept Head, Registrar, Staff, System Admin.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "Staff"
+            }
+          },
+          {
+            "name": "x-user-id",
+            "in": "header",
+            "description": "Acting user id used for department scoping and own-record views. Example: U100.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "example": "U100"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateResourceDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Resource created successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResourceResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error or invalid workflow transition.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Role or department scope does not allow this action.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Requested entity was not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "role-header": []
+          },
+          {
+            "user-id-header": []
+          }
+        ],
+        "summary": "Create an inventory resource",
+        "tags": [
+          "resources"
+        ]
+      }
+    },
+    "/api/resources/{id}": {
+      "patch": {
+        "operationId": "ResourcesController_update",
+        "parameters": [
+          {
+            "name": "x-user-role",
+            "in": "header",
+            "description": "Acting role for RBAC. Allowed values: Requestor, Dept Head, Registrar, Staff, System Admin.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "Staff"
+            }
+          },
+          {
+            "name": "x-user-id",
+            "in": "header",
+            "description": "Acting user id used for department scoping and own-record views. Example: U100.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "example": "U100"
+            }
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "example": "RES-ITL-001",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateResourceDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Resource updated successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResourceResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error or invalid workflow transition.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Role or department scope does not allow this action.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Requested entity was not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "role-header": []
+          },
+          {
+            "user-id-header": []
+          }
+        ],
+        "summary": "Update a resource",
+        "tags": [
+          "resources"
+        ]
+      }
+    },
+    "/api/resources/{id}/maintenance-request": {
+      "post": {
+        "operationId": "ResourcesController_requestMaintenance",
+        "parameters": [
+          {
+            "name": "x-user-role",
+            "in": "header",
+            "description": "Acting role for RBAC. Allowed values: Requestor, Dept Head, Registrar, Staff, System Admin.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "Staff"
+            }
+          },
+          {
+            "name": "x-user-id",
+            "in": "header",
+            "description": "Acting user id used for department scoping and own-record views. Example: U100.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "example": "U100"
+            }
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "example": "RES-ITL-001",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Maintenance requested successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResourceResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error or invalid workflow transition.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Role or department scope does not allow this action.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Requested entity was not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "role-header": []
+          },
+          {
+            "user-id-header": []
+          }
+        ],
+        "summary": "Request maintenance for an allocated resource",
+        "tags": [
+          "resources"
+        ]
+      }
+    },
+    "/api/resources/{id}/initiate-return": {
+      "post": {
+        "operationId": "ResourcesController_initiateReturn",
+        "parameters": [
+          {
+            "name": "x-user-role",
+            "in": "header",
+            "description": "Acting role for RBAC. Allowed values: Requestor, Dept Head, Registrar, Staff, System Admin.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "Staff"
+            }
+          },
+          {
+            "name": "x-user-id",
+            "in": "header",
+            "description": "Acting user id used for department scoping and own-record views. Example: U100.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "example": "U100"
+            }
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "example": "RES-ITL-001",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Return initiated successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResourceResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error or invalid workflow transition.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Role or department scope does not allow this action.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Requested entity was not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "role-header": []
+          },
+          {
+            "user-id-header": []
+          }
+        ],
+        "summary": "Initiate a return request for an allocated resource",
+        "tags": [
+          "resources"
+        ]
+      }
+    },
+    "/api/resources/{id}/confirm-repaired": {
+      "post": {
+        "operationId": "ResourcesController_confirmRepaired",
+        "parameters": [
+          {
+            "name": "x-user-role",
+            "in": "header",
+            "description": "Acting role for RBAC. Allowed values: Requestor, Dept Head, Registrar, Staff, System Admin.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "Staff"
+            }
+          },
+          {
+            "name": "x-user-id",
+            "in": "header",
+            "description": "Acting user id used for department scoping and own-record views. Example: U100.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "example": "U100"
+            }
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "example": "RES-ITL-001",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Repaired allocation confirmed successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResourceResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error or invalid workflow transition.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Role or department scope does not allow this action.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Requested entity was not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "role-header": []
+          },
+          {
+            "user-id-header": []
+          }
+        ],
+        "summary": "Confirm repaired resource allocation",
+        "tags": [
+          "resources"
+        ]
+      }
+    },
+    "/api/resources/{id}/scrap": {
+      "post": {
+        "operationId": "ResourcesController_scrap",
+        "parameters": [
+          {
+            "name": "x-user-role",
+            "in": "header",
+            "description": "Acting role for RBAC. Allowed values: Requestor, Dept Head, Registrar, Staff, System Admin.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "Staff"
+            }
+          },
+          {
+            "name": "x-user-id",
+            "in": "header",
+            "description": "Acting user id used for department scoping and own-record views. Example: U100.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "example": "U100"
+            }
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "example": "RES-ITL-001",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Resource marked as scrapped successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResourceResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error or invalid workflow transition.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Role or department scope does not allow this action.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Requested entity was not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "role-header": []
+          },
+          {
+            "user-id-header": []
+          }
+        ],
+        "summary": "Scrap a resource",
+        "tags": [
+          "resources"
+        ]
+      }
+    },
+    "/api/procurements": {
+      "get": {
+        "operationId": "ProcurementsController_getAll",
+        "parameters": [
+          {
+            "name": "x-user-role",
+            "in": "header",
+            "description": "Acting role for RBAC. Allowed values: Requestor, Dept Head, Registrar, Staff, System Admin.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "Staff"
+            }
+          },
+          {
+            "name": "x-user-id",
+            "in": "header",
+            "description": "Acting user id used for department scoping and own-record views. Example: U100.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "example": "U100"
+            }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": "Pending",
+              "type": "string"
+            }
+          },
+          {
+            "name": "department",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": "IT Services",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Procurements returned successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ProcurementResponseDto"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error or invalid workflow transition.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Role or department scope does not allow this action.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Requested entity was not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "role-header": []
+          },
+          {
+            "user-id-header": []
+          }
+        ],
+        "summary": "List procurements visible to the acting role",
+        "tags": [
+          "procurements"
+        ]
+      },
+      "post": {
+        "operationId": "ProcurementsController_create",
+        "parameters": [
+          {
+            "name": "x-user-role",
+            "in": "header",
+            "description": "Acting role for RBAC. Allowed values: Requestor, Dept Head, Registrar, Staff, System Admin.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "Staff"
+            }
+          },
+          {
+            "name": "x-user-id",
+            "in": "header",
+            "description": "Acting user id used for department scoping and own-record views. Example: U100.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "example": "U100"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateProcurementDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Procurement created successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProcurementResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error or invalid workflow transition.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Role or department scope does not allow this action.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Requested entity was not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "role-header": []
+          },
+          {
+            "user-id-header": []
+          }
+        ],
+        "summary": "Create a procurement request",
+        "tags": [
+          "procurements"
+        ]
+      }
+    },
+    "/api/procurements/{id}": {
+      "patch": {
+        "operationId": "ProcurementsController_update",
+        "parameters": [
+          {
+            "name": "x-user-role",
+            "in": "header",
+            "description": "Acting role for RBAC. Allowed values: Requestor, Dept Head, Registrar, Staff, System Admin.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "Staff"
+            }
+          },
+          {
+            "name": "x-user-id",
+            "in": "header",
+            "description": "Acting user id used for department scoping and own-record views. Example: U100.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "example": "U100"
+            }
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "example": "PROC-1001",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateProcurementDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Procurement updated successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProcurementResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error or invalid workflow transition.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Role or department scope does not allow this action.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Requested entity was not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "role-header": []
+          },
+          {
+            "user-id-header": []
+          }
+        ],
+        "summary": "Update a procurement",
+        "tags": [
+          "procurements"
+        ]
+      }
+    },
+    "/api/procurements/{id}/department-approve": {
+      "post": {
+        "operationId": "ProcurementsController_departmentApprove",
+        "parameters": [
+          {
+            "name": "x-user-role",
+            "in": "header",
+            "description": "Acting role for RBAC. Allowed values: Requestor, Dept Head, Registrar, Staff, System Admin.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "Staff"
+            }
+          },
+          {
+            "name": "x-user-id",
+            "in": "header",
+            "description": "Acting user id used for department scoping and own-record views. Example: U100.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "example": "U100"
+            }
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "example": "PROC-1001",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Procurement moved to registrar review.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProcurementResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error or invalid workflow transition.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Role or department scope does not allow this action.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Requested entity was not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "role-header": []
+          },
+          {
+            "user-id-header": []
+          }
+        ],
+        "summary": "Approve a procurement as department head",
+        "tags": [
+          "procurements"
+        ]
+      }
+    },
+    "/api/procurements/{id}/department-reject": {
+      "post": {
+        "operationId": "ProcurementsController_departmentReject",
+        "parameters": [
+          {
+            "name": "x-user-role",
+            "in": "header",
+            "description": "Acting role for RBAC. Allowed values: Requestor, Dept Head, Registrar, Staff, System Admin.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "Staff"
+            }
+          },
+          {
+            "name": "x-user-id",
+            "in": "header",
+            "description": "Acting user id used for department scoping and own-record views. Example: U100.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "example": "U100"
+            }
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "example": "PROC-1001",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Procurement rejected successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProcurementResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error or invalid workflow transition.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Role or department scope does not allow this action.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Requested entity was not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "role-header": []
+          },
+          {
+            "user-id-header": []
+          }
+        ],
+        "summary": "Reject a procurement as department head",
+        "tags": [
+          "procurements"
+        ]
+      }
+    },
+    "/api/procurements/{id}/registrar-approve": {
+      "post": {
+        "operationId": "ProcurementsController_registrarApprove",
+        "parameters": [
+          {
+            "name": "x-user-role",
+            "in": "header",
+            "description": "Acting role for RBAC. Allowed values: Requestor, Dept Head, Registrar, Staff, System Admin.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "Staff"
+            }
+          },
+          {
+            "name": "x-user-id",
+            "in": "header",
+            "description": "Acting user id used for department scoping and own-record views. Example: U100.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "example": "U100"
+            }
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "example": "PROC-1001",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Procurement approved successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProcurementResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error or invalid workflow transition.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Role or department scope does not allow this action.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Requested entity was not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "role-header": []
+          },
+          {
+            "user-id-header": []
+          }
+        ],
+        "summary": "Approve a procurement as registrar",
+        "tags": [
+          "procurements"
+        ]
+      }
+    },
+    "/api/procurements/{id}/registrar-reject": {
+      "post": {
+        "operationId": "ProcurementsController_registrarReject",
+        "parameters": [
+          {
+            "name": "x-user-role",
+            "in": "header",
+            "description": "Acting role for RBAC. Allowed values: Requestor, Dept Head, Registrar, Staff, System Admin.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "Staff"
+            }
+          },
+          {
+            "name": "x-user-id",
+            "in": "header",
+            "description": "Acting user id used for department scoping and own-record views. Example: U100.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "example": "U100"
+            }
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "example": "PROC-1001",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Procurement rejected successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProcurementResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error or invalid workflow transition.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Role or department scope does not allow this action.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Requested entity was not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "role-header": []
+          },
+          {
+            "user-id-header": []
+          }
+        ],
+        "summary": "Reject a procurement as registrar",
+        "tags": [
+          "procurements"
+        ]
+      }
+    },
+    "/api/procurements/{id}/log-purchase": {
+      "post": {
+        "operationId": "ProcurementsController_logPurchase",
+        "parameters": [
+          {
+            "name": "x-user-role",
+            "in": "header",
+            "description": "Acting role for RBAC. Allowed values: Requestor, Dept Head, Registrar, Staff, System Admin.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "Staff"
+            }
+          },
+          {
+            "name": "x-user-id",
+            "in": "header",
+            "description": "Acting user id used for department scoping and own-record views. Example: U100.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "example": "U100"
+            }
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "example": "PROC-1001",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LogPurchaseDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Purchase log saved successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProcurementResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error or invalid workflow transition.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Role or department scope does not allow this action.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Requested entity was not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "role-header": []
+          },
+          {
+            "user-id-header": []
+          }
+        ],
+        "summary": "Log vendor and invoice details for an approved procurement",
+        "tags": [
+          "procurements"
+        ]
+      }
+    },
+    "/api/procurements/{id}/register": {
+      "post": {
+        "operationId": "ProcurementsController_register",
+        "parameters": [
+          {
+            "name": "x-user-role",
+            "in": "header",
+            "description": "Acting role for RBAC. Allowed values: Requestor, Dept Head, Registrar, Staff, System Admin.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "Staff"
+            }
+          },
+          {
+            "name": "x-user-id",
+            "in": "header",
+            "description": "Acting user id used for department scoping and own-record views. Example: U100.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "example": "U100"
+            }
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "example": "PROC-1001",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterProcurementDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Procurement assets registered successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProcurementResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error or invalid workflow transition.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Role or department scope does not allow this action.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Requested entity was not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "role-header": []
+          },
+          {
+            "user-id-header": []
+          }
+        ],
+        "summary": "Register delivered assets for a fulfilled procurement",
+        "tags": [
+          "procurements"
+        ]
+      }
+    },
+    "/api/maintenance/history": {
+      "get": {
+        "operationId": "MaintenanceController_getHistory",
+        "parameters": [
+          {
+            "name": "x-user-role",
+            "in": "header",
+            "description": "Acting role for RBAC. Allowed values: Requestor, Dept Head, Registrar, Staff, System Admin.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "Staff"
+            }
+          },
+          {
+            "name": "x-user-id",
+            "in": "header",
+            "description": "Acting user id used for department scoping and own-record views. Example: U100.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "example": "U100"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Maintenance history returned successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MaintenanceHistoryResponseDto"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error or invalid workflow transition.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Role or department scope does not allow this action.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Requested entity was not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "role-header": []
+          },
+          {
+            "user-id-header": []
+          }
+        ],
+        "summary": "Get maintenance history visible to the acting role",
+        "tags": [
+          "maintenance"
+        ]
+      }
+    },
+    "/api/maintenance/{resourceId}/accept": {
+      "post": {
+        "operationId": "MaintenanceController_accept",
+        "parameters": [
+          {
+            "name": "x-user-role",
+            "in": "header",
+            "description": "Acting role for RBAC. Allowed values: Requestor, Dept Head, Registrar, Staff, System Admin.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "Staff"
+            }
+          },
+          {
+            "name": "x-user-id",
+            "in": "header",
+            "description": "Acting user id used for department scoping and own-record views. Example: U100.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "example": "U100"
+            }
+          },
+          {
+            "name": "resourceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "example": "RES-ITL-001",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Maintenance request accepted successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResourceResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error or invalid workflow transition.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Role or department scope does not allow this action.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Requested entity was not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "role-header": []
+          },
+          {
+            "user-id-header": []
+          }
+        ],
+        "summary": "Accept a maintenance request",
+        "tags": [
+          "maintenance"
+        ]
+      }
+    },
+    "/api/maintenance/{resourceId}/repair": {
+      "post": {
+        "operationId": "MaintenanceController_repair",
+        "parameters": [
+          {
+            "name": "x-user-role",
+            "in": "header",
+            "description": "Acting role for RBAC. Allowed values: Requestor, Dept Head, Registrar, Staff, System Admin.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "Staff"
+            }
+          },
+          {
+            "name": "x-user-id",
+            "in": "header",
+            "description": "Acting user id used for department scoping and own-record views. Example: U100.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "example": "U100"
+            }
+          },
+          {
+            "name": "resourceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "example": "RES-ITL-001",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Resource marked as repaired successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResourceResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error or invalid workflow transition.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Role or department scope does not allow this action.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Requested entity was not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "role-header": []
+          },
+          {
+            "user-id-header": []
+          }
+        ],
+        "summary": "Mark a resource as repaired",
+        "tags": [
+          "maintenance"
+        ]
+      }
+    },
+    "/api/maintenance/{resourceId}/scrap": {
+      "post": {
+        "operationId": "MaintenanceController_scrap",
+        "parameters": [
+          {
+            "name": "x-user-role",
+            "in": "header",
+            "description": "Acting role for RBAC. Allowed values: Requestor, Dept Head, Registrar, Staff, System Admin.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "Staff"
+            }
+          },
+          {
+            "name": "x-user-id",
+            "in": "header",
+            "description": "Acting user id used for department scoping and own-record views. Example: U100.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "example": "U100"
+            }
+          },
+          {
+            "name": "resourceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "example": "RES-ITL-001",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Resource scrapped successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResourceResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error or invalid workflow transition.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Role or department scope does not allow this action.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Requested entity was not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "role-header": []
+          },
+          {
+            "user-id-header": []
+          }
+        ],
+        "summary": "Scrap a resource from the maintenance flow",
+        "tags": [
+          "maintenance"
+        ]
+      }
+    },
+    "/api/returns/history": {
+      "get": {
+        "operationId": "ReturnsController_getHistory",
+        "parameters": [
+          {
+            "name": "x-user-role",
+            "in": "header",
+            "description": "Acting role for RBAC. Allowed values: Requestor, Dept Head, Registrar, Staff, System Admin.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "Staff"
+            }
+          },
+          {
+            "name": "x-user-id",
+            "in": "header",
+            "description": "Acting user id used for department scoping and own-record views. Example: U100.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "example": "U100"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Return history returned successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ReturnHistoryResponseDto"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error or invalid workflow transition.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Role or department scope does not allow this action.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Requested entity was not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "role-header": []
+          },
+          {
+            "user-id-header": []
+          }
+        ],
+        "summary": "Get return history visible to the acting role",
+        "tags": [
+          "returns"
+        ]
+      }
+    },
+    "/api/returns/{resourceId}/process": {
+      "post": {
+        "operationId": "ReturnsController_process",
+        "parameters": [
+          {
+            "name": "x-user-role",
+            "in": "header",
+            "description": "Acting role for RBAC. Allowed values: Requestor, Dept Head, Registrar, Staff, System Admin.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "Staff"
+            }
+          },
+          {
+            "name": "x-user-id",
+            "in": "header",
+            "description": "Acting user id used for department scoping and own-record views. Example: U100.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "example": "U100"
+            }
+          },
+          {
+            "name": "resourceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "example": "RES-ITL-001",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReturnProcessDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Return processed successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResourceResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error or invalid workflow transition.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Role or department scope does not allow this action.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Requested entity was not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "role-header": []
+          },
+          {
+            "user-id-header": []
+          }
+        ],
+        "summary": "Process a returned resource",
+        "tags": [
+          "returns"
+        ]
+      }
+    },
+    "/api/notifications": {
+      "get": {
+        "operationId": "NotificationsController_getAll",
+        "parameters": [
+          {
+            "name": "x-user-role",
+            "in": "header",
+            "description": "Acting role for RBAC. Allowed values: Requestor, Dept Head, Registrar, Staff, System Admin.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "Staff"
+            }
+          },
+          {
+            "name": "x-user-id",
+            "in": "header",
+            "description": "Acting user id used for department scoping and own-record views. Example: U100.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "example": "U100"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Notifications returned successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/NotificationResponseDto"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error or invalid workflow transition.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Role or department scope does not allow this action.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Requested entity was not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "role-header": []
+          },
+          {
+            "user-id-header": []
+          }
+        ],
+        "summary": "List notifications visible to the acting role",
+        "tags": [
+          "notifications"
+        ]
+      }
+    },
+    "/api/notifications/{id}": {
+      "patch": {
+        "operationId": "NotificationsController_update",
+        "parameters": [
+          {
+            "name": "x-user-role",
+            "in": "header",
+            "description": "Acting role for RBAC. Allowed values: Requestor, Dept Head, Registrar, Staff, System Admin.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "Staff"
+            }
+          },
+          {
+            "name": "x-user-id",
+            "in": "header",
+            "description": "Acting user id used for department scoping and own-record views. Example: U100.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "example": "U100"
+            }
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "example": "N1",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateNotificationDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Notification updated successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotificationResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error or invalid workflow transition.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Role or department scope does not allow this action.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Requested entity was not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "role-header": []
+          },
+          {
+            "user-id-header": []
+          }
+        ],
+        "summary": "Update a notification state",
+        "tags": [
+          "notifications"
+        ]
+      }
+    },
+    "/api/analytics/requestor-summary": {
+      "get": {
+        "operationId": "AnalyticsController_requestorSummary",
+        "parameters": [
+          {
+            "name": "x-user-role",
+            "in": "header",
+            "description": "Acting role for RBAC. Allowed values: Requestor, Dept Head, Registrar, Staff, System Admin.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "Staff"
+            }
+          },
+          {
+            "name": "x-user-id",
+            "in": "header",
+            "description": "Acting user id used for department scoping and own-record views. Example: U100.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "example": "U100"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Requestor summary returned successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RequestorSummaryResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error or invalid workflow transition.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Role or department scope does not allow this action.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Requested entity was not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "role-header": []
+          },
+          {
+            "user-id-header": []
+          }
+        ],
+        "summary": "Get requestor dashboard summary",
+        "tags": [
+          "analytics"
+        ]
+      }
+    },
+    "/api/analytics/department-summary": {
+      "get": {
+        "operationId": "AnalyticsController_departmentSummary",
+        "parameters": [
+          {
+            "name": "x-user-role",
+            "in": "header",
+            "description": "Acting role for RBAC. Allowed values: Requestor, Dept Head, Registrar, Staff, System Admin.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "Staff"
+            }
+          },
+          {
+            "name": "x-user-id",
+            "in": "header",
+            "description": "Acting user id used for department scoping and own-record views. Example: U100.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "example": "U100"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Department summary returned successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DepartmentSummaryResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error or invalid workflow transition.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Role or department scope does not allow this action.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Requested entity was not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "role-header": []
+          },
+          {
+            "user-id-header": []
+          }
+        ],
+        "summary": "Get department-head dashboard summary",
+        "tags": [
+          "analytics"
+        ]
+      }
+    },
+    "/api/analytics/registrar-summary": {
+      "get": {
+        "operationId": "AnalyticsController_registrarSummary",
+        "parameters": [
+          {
+            "name": "x-user-role",
+            "in": "header",
+            "description": "Acting role for RBAC. Allowed values: Requestor, Dept Head, Registrar, Staff, System Admin.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "Staff"
+            }
+          },
+          {
+            "name": "x-user-id",
+            "in": "header",
+            "description": "Acting user id used for department scoping and own-record views. Example: U100.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "example": "U100"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Registrar summary returned successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RegistrarSummaryResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error or invalid workflow transition.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Role or department scope does not allow this action.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Requested entity was not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "role-header": []
+          },
+          {
+            "user-id-header": []
+          }
+        ],
+        "summary": "Get registrar dashboard summary",
+        "tags": [
+          "analytics"
+        ]
+      }
+    },
+    "/api/analytics/stock": {
+      "get": {
+        "operationId": "AnalyticsController_stock",
+        "parameters": [
+          {
+            "name": "x-user-role",
+            "in": "header",
+            "description": "Acting role for RBAC. Allowed values: Requestor, Dept Head, Registrar, Staff, System Admin.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "Staff"
+            }
+          },
+          {
+            "name": "x-user-id",
+            "in": "header",
+            "description": "Acting user id used for department scoping and own-record views. Example: U100.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "example": "U100"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Stock monitoring rows returned successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/StockRowResponseDto"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error or invalid workflow transition.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Role or department scope does not allow this action.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Requested entity was not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "role-header": []
+          },
+          {
+            "user-id-header": []
+          }
+        ],
+        "summary": "Get stock threshold rows visible to the acting role",
+        "tags": [
+          "analytics"
+        ]
+      }
+    },
+    "/api/analytics/stock-thresholds/{id}/{level}": {
+      "patch": {
+        "operationId": "AnalyticsController_updateStockThreshold",
+        "parameters": [
+          {
+            "name": "x-user-role",
+            "in": "header",
+            "description": "Acting role for RBAC. Allowed values: Requestor, Dept Head, Registrar, Staff, System Admin.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "Staff"
+            }
+          },
+          {
+            "name": "x-user-id",
+            "in": "header",
+            "description": "Acting user id used for department scoping and own-record views. Example: U100.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "example": "U100"
+            }
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "example": "STK-1001",
+              "type": "string"
+            }
+          },
+          {
+            "name": "level",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "example": 10,
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Stock threshold updated successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StockRowResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error or invalid workflow transition.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Role or department scope does not allow this action.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Requested entity was not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "role-header": []
+          },
+          {
+            "user-id-header": []
+          }
+        ],
+        "summary": "Update a stock threshold level",
+        "tags": [
+          "analytics"
+        ]
+      }
+    },
+    "/api/profile/me": {
+      "get": {
+        "operationId": "ProfileController_getMe",
+        "parameters": [
+          {
+            "name": "x-user-role",
+            "in": "header",
+            "description": "Acting role for RBAC. Allowed values: Requestor, Dept Head, Registrar, Staff, System Admin.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "Staff"
+            }
+          },
+          {
+            "name": "x-user-id",
+            "in": "header",
+            "description": "Acting user id used for department scoping and own-record views. Example: U100.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "example": "U100"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Profile returned successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error or invalid workflow transition.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Role or department scope does not allow this action.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Requested entity was not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "role-header": []
+          },
+          {
+            "user-id-header": []
+          }
+        ],
+        "summary": "Get current actor profile",
+        "tags": [
+          "profile"
+        ]
+      },
+      "patch": {
+        "operationId": "ProfileController_update",
+        "parameters": [
+          {
+            "name": "x-user-role",
+            "in": "header",
+            "description": "Acting role for RBAC. Allowed values: Requestor, Dept Head, Registrar, Staff, System Admin.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "Staff"
+            }
+          },
+          {
+            "name": "x-user-id",
+            "in": "header",
+            "description": "Acting user id used for department scoping and own-record views. Example: U100.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "example": "U100"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateProfileDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Profile updated successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error or invalid workflow transition.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Role or department scope does not allow this action.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Requested entity was not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "role-header": []
+          },
+          {
+            "user-id-header": []
+          }
+        ],
+        "summary": "Update current actor profile",
+        "tags": [
+          "profile"
+        ]
+      }
+    },
+    "/api/profile/me/password": {
+      "post": {
+        "operationId": "ProfileController_updatePassword",
+        "parameters": [
+          {
+            "name": "x-user-role",
+            "in": "header",
+            "description": "Acting role for RBAC. Allowed values: Requestor, Dept Head, Registrar, Staff, System Admin.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "Staff"
+            }
+          },
+          {
+            "name": "x-user-id",
+            "in": "header",
+            "description": "Acting user id used for department scoping and own-record views. Example: U100.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "example": "U100"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdatePasswordDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Password updated successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error or invalid workflow transition.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Role or department scope does not allow this action.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Requested entity was not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "role-header": []
+          },
+          {
+            "user-id-header": []
+          }
+        ],
+        "summary": "Update current actor password",
+        "tags": [
+          "profile"
+        ]
+      }
+    }
+  },
+  "info": {
+    "title": "ResourceX Demo Backend",
+    "description": "Demo-exact NestJS backend for the ResourceX frontend. All authorization is role-based through request headers. Use x-user-role on every protected route and x-user-id when actor-specific scoping is required.",
+    "version": "1.0.0",
+    "contact": {}
+  },
+  "tags": [],
+  "servers": [
+    {
+      "url": "/api",
+      "description": "API base path"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "role-header": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "x-user-role",
+        "description": "Required RBAC header. Example values: Requestor, Dept Head, Registrar, Staff, System Admin."
+      },
+      "user-id-header": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "x-user-id",
+        "description": "Optional acting user id header for own-profile and department-scoped behavior. Example: U100."
+      }
+    },
+    "schemas": {
+      "ErrorResponseDto": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "number",
+            "example": 400
+          },
+          "message": {
+            "type": "object",
+            "example": "Selected resources must match request quantity."
+          },
+          "error": {
+            "type": "string",
+            "example": "Bad Request"
+          }
+        },
+        "required": [
+          "statusCode",
+          "message",
+          "error"
+        ]
+      },
+      "UserPreferencesDto": {
+        "type": "object",
+        "properties": {
+          "notifications": {
+            "type": "boolean",
+            "example": true
+          }
+        },
+        "required": [
+          "notifications"
+        ]
+      },
+      "UserResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "U1"
+          },
+          "name": {
+            "type": "string",
+            "example": "RAVI CHANDRA"
+          },
+          "email": {
+            "type": "string",
+            "example": "ravi@resourcex.com"
+          },
+          "password": {
+            "type": "string",
+            "example": "12345678"
+          },
+          "role": {
+            "type": "string",
+            "example": "Requestor"
+          },
+          "department": {
+            "type": "string",
+            "example": "IT Services"
+          },
+          "status": {
+            "type": "string",
+            "example": "Active"
+          },
+          "preferences": {
+            "$ref": "#/components/schemas/UserPreferencesDto"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "email",
+          "role",
+          "status"
+        ]
+      },
+      "CreateUserDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "U201"
+          },
+          "name": {
+            "type": "string",
+            "example": "Asha Nair"
+          },
+          "email": {
+            "type": "string",
+            "example": "asha@resourcex.com"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "Requestor",
+              "Dept Head",
+              "Registrar",
+              "Staff",
+              "System Admin"
+            ],
+            "example": "Staff"
+          },
+          "department": {
+            "type": "string",
+            "example": "IT Services"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "Active",
+              "Inactive",
+              "Suspended"
+            ],
+            "example": "Active"
+          },
+          "password": {
+            "type": "string",
+            "example": "temporary123"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "email",
+          "role",
+          "status",
+          "password"
+        ]
+      },
+      "UpdateUserDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "U201"
+          },
+          "name": {
+            "type": "string",
+            "example": "Asha Nair"
+          },
+          "email": {
+            "type": "string",
+            "example": "asha@resourcex.com"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "Requestor",
+              "Dept Head",
+              "Registrar",
+              "Staff",
+              "System Admin"
+            ],
+            "example": "Staff"
+          },
+          "department": {
+            "type": "string",
+            "example": "IT Services"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "Active",
+              "Inactive",
+              "Suspended"
+            ],
+            "example": "Active"
+          },
+          "password": {
+            "type": "string",
+            "example": "newsecret123"
+          }
+        }
+      },
+      "DepartmentResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "D1"
+          },
+          "name": {
+            "type": "string",
+            "example": "IT Services"
+          },
+          "head": {
+            "type": "string",
+            "example": "pradhyum"
+          },
+          "memberCount": {
+            "type": "number",
+            "example": 15
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "head",
+          "memberCount"
+        ]
+      },
+      "CreateDepartmentDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "D101"
+          },
+          "name": {
+            "type": "string",
+            "example": "IT Services"
+          },
+          "head": {
+            "type": "string",
+            "example": "Pradhyum"
+          },
+          "memberCount": {
+            "type": "number",
+            "example": 12
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "head",
+          "memberCount"
+        ]
+      },
+      "UpdateDepartmentDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "D101"
+          },
+          "name": {
+            "type": "string",
+            "example": "IT Services"
+          },
+          "head": {
+            "type": "string",
+            "example": "Pradhyum"
+          },
+          "memberCount": {
+            "type": "number",
+            "example": 12
+          }
+        }
+      },
+      "SuccessResponseDto": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          }
+        },
+        "required": [
+          "success"
+        ]
+      },
+      "UpdatePermissionsMatrixDto": {
+        "type": "object",
+        "properties": {
+          "matrix": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "Requestor",
+                  "Dept Head",
+                  "Registrar",
+                  "Staff",
+                  "System Admin"
+                ]
+              }
+            },
+            "example": {
+              "Request Resources": [
+                "Requestor",
+                "System Admin"
+              ],
+              "Allocate Resources": [
+                "Staff",
+                "System Admin"
+              ]
+            }
+          }
+        },
+        "required": [
+          "matrix"
+        ]
+      },
+      "RequestResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "REQ-101"
+          },
+          "resourceType": {
+            "type": "string",
+            "example": "High-Cap Battery"
+          },
+          "quantity": {
+            "type": "number",
+            "example": 1
+          },
+          "requestor": {
+            "type": "string",
+            "example": "RAVI CHANDRA"
+          },
+          "requestorId": {
+            "type": "string",
+            "example": "U1"
+          },
+          "department": {
+            "type": "string",
+            "example": "IT Services"
+          },
+          "status": {
+            "type": "string",
+            "example": "Allocated"
+          },
+          "priority": {
+            "type": "string",
+            "example": "Normal"
+          },
+          "date": {
+            "type": "string",
+            "example": "Oct 24, 2023"
+          },
+          "justification": {
+            "type": "string",
+            "example": "Restocking for field ops"
+          },
+          "assignedResources": {
+            "type": "string",
+            "example": "RES-1049"
+          },
+          "allocatedBy": {
+            "type": "string",
+            "example": "prem kumar"
+          }
+        },
+        "required": [
+          "id",
+          "resourceType",
+          "quantity",
+          "requestor",
+          "department",
+          "status",
+          "date",
+          "justification"
+        ]
+      },
+      "CreateRequestDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "REQ-1001"
+          },
+          "department": {
+            "type": "string",
+            "example": "IT Services"
+          },
+          "resourceType": {
+            "type": "string",
+            "example": "Laptop"
+          },
+          "quantity": {
+            "type": "number",
+            "example": 2
+          },
+          "requestor": {
+            "type": "string",
+            "example": "Asha Nair"
+          },
+          "requestorId": {
+            "type": "string",
+            "example": "U101"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "Pending",
+              "Approved",
+              "Allocated",
+              "Completed",
+              "Rejected"
+            ],
+            "example": "Pending"
+          },
+          "date": {
+            "type": "string",
+            "example": "May 4, 2026"
+          },
+          "justification": {
+            "type": "string",
+            "example": "Needed for onboarding new team members."
+          },
+          "priority": {
+            "type": "string",
+            "enum": [
+              "Low",
+              "Normal",
+              "High"
+            ],
+            "example": "Normal"
+          }
+        },
+        "required": [
+          "id",
+          "resourceType",
+          "quantity",
+          "justification"
+        ]
+      },
+      "UpdateRequestDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "REQ-1001"
+          },
+          "department": {
+            "type": "string",
+            "example": "IT Services"
+          },
+          "resourceType": {
+            "type": "string",
+            "example": "Laptop"
+          },
+          "quantity": {
+            "type": "number",
+            "example": 2
+          },
+          "requestor": {
+            "type": "string",
+            "example": "Asha Nair"
+          },
+          "requestorId": {
+            "type": "string",
+            "example": "U101"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "Pending",
+              "Approved",
+              "Allocated",
+              "Completed",
+              "Rejected"
+            ],
+            "example": "Pending"
+          },
+          "date": {
+            "type": "string",
+            "example": "May 4, 2026"
+          },
+          "justification": {
+            "type": "string",
+            "example": "Needed for onboarding new team members."
+          },
+          "priority": {
+            "type": "string",
+            "enum": [
+              "Low",
+              "Normal",
+              "High"
+            ],
+            "example": "Normal"
+          },
+          "assignedResources": {
+            "type": "string",
+            "example": "RES-1001, RES-1002"
+          },
+          "allocatedBy": {
+            "type": "string",
+            "example": "prem kumar"
+          }
+        }
+      },
+      "AllocateRequestDto": {
+        "type": "object",
+        "properties": {
+          "resourceIds": {
+            "example": [
+              "RES-ITL-001",
+              "RES-ITL-002"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "resourceIds"
+        ]
+      },
+      "DepartmentResourceCatalogResponseDto": {
+        "type": "object",
+        "properties": {
+          "department": {
+            "type": "string",
+            "example": "IT Services"
+          },
+          "resourceTypes": {
+            "example": [
+              "Laptop",
+              "Monitor",
+              "Router",
+              "Server Blade"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "department",
+          "resourceTypes"
+        ]
+      },
+      "ResourceAvailabilityResponseDto": {
+        "type": "object",
+        "properties": {
+          "department": {
+            "type": "string",
+            "example": "IT Services"
+          },
+          "resourceType": {
+            "type": "string",
+            "example": "Laptop"
+          },
+          "availableCount": {
+            "type": "number",
+            "example": 3
+          }
+        },
+        "required": [
+          "department",
+          "resourceType",
+          "availableCount"
+        ]
+      },
+      "ResourceResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "RES-1049"
+          },
+          "name": {
+            "type": "string",
+            "example": "Laptop - Dell XPS"
+          },
+          "type": {
+            "type": "string",
+            "example": "Laptop"
+          },
+          "department": {
+            "type": "string",
+            "example": "IT Services"
+          },
+          "serialNumber": {
+            "type": "string",
+            "example": "SN-998822"
+          },
+          "status": {
+            "type": "string",
+            "example": "Allocated"
+          },
+          "condition": {
+            "type": "string",
+            "example": "Good"
+          },
+          "assignedTo": {
+            "type": "string",
+            "example": "RAVI CHANDRA"
+          },
+          "assignedToId": {
+            "type": "string",
+            "example": "U1"
+          },
+          "date": {
+            "type": "string",
+            "example": "Jan 12, 2023"
+          },
+          "vendor": {
+            "type": "string",
+            "example": "Cisco Systems"
+          },
+          "invoice": {
+            "type": "string",
+            "example": "INV-8899"
+          },
+          "location": {
+            "type": "string",
+            "example": "IT Lab"
+          },
+          "returnRequestedBy": {
+            "type": "string",
+            "example": "RAVI CHANDRA"
+          },
+          "returnRequestedById": {
+            "type": "string",
+            "example": "U1"
+          }
+        },
+        "required": [
+          "id",
+          "type",
+          "department",
+          "status"
+        ]
+      },
+      "CreateResourceDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "RES-ITL-001"
+          },
+          "code": {
+            "type": "string",
+            "example": "RES-ITL-001"
+          },
+          "internalId": {
+            "type": "string",
+            "example": "r101"
+          },
+          "type": {
+            "type": "string",
+            "example": "Laptop"
+          },
+          "name": {
+            "type": "string",
+            "example": "Dell Latitude 5440"
+          },
+          "department": {
+            "type": "string",
+            "example": "IT Services"
+          },
+          "serialNumber": {
+            "type": "string",
+            "example": "SN-1001"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "Available",
+              "Allocated",
+              "Maintenance Requested",
+              "Maintenance",
+              "Repaired",
+              "Returned",
+              "Scrapped"
+            ],
+            "example": "Available"
+          },
+          "condition": {
+            "type": "string",
+            "enum": [
+              "New",
+              "Good",
+              "Average",
+              "Fair",
+              "Damaged",
+              "Bad"
+            ],
+            "example": "Good"
+          },
+          "vendor": {
+            "type": "string",
+            "example": "Dell"
+          },
+          "invoice": {
+            "type": "string",
+            "example": "INV-1001"
+          },
+          "location": {
+            "type": "string",
+            "example": "Block A - Room 12"
+          },
+          "assignedTo": {
+            "type": "string",
+            "example": "None"
+          },
+          "assignedToId": {
+            "type": "string",
+            "example": "U1"
+          },
+          "date": {
+            "type": "string",
+            "example": "May 4, 2026"
+          }
+        },
+        "required": [
+          "id",
+          "type"
+        ]
+      },
+      "UpdateResourceDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "RES-ITL-001"
+          },
+          "code": {
+            "type": "string",
+            "example": "RES-ITL-001"
+          },
+          "internalId": {
+            "type": "string",
+            "example": "r101"
+          },
+          "type": {
+            "type": "string",
+            "example": "Laptop"
+          },
+          "name": {
+            "type": "string",
+            "example": "Dell Latitude 5440"
+          },
+          "department": {
+            "type": "string",
+            "example": "IT Services"
+          },
+          "serialNumber": {
+            "type": "string",
+            "example": "SN-1001"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "Available",
+              "Allocated",
+              "Maintenance Requested",
+              "Maintenance",
+              "Repaired",
+              "Returned",
+              "Scrapped"
+            ],
+            "example": "Available"
+          },
+          "condition": {
+            "type": "string",
+            "enum": [
+              "New",
+              "Good",
+              "Average",
+              "Fair",
+              "Damaged",
+              "Bad"
+            ],
+            "example": "Good"
+          },
+          "vendor": {
+            "type": "string",
+            "example": "Dell"
+          },
+          "invoice": {
+            "type": "string",
+            "example": "INV-1001"
+          },
+          "location": {
+            "type": "string",
+            "example": "Block A - Room 12"
+          },
+          "assignedTo": {
+            "type": "string",
+            "example": "None"
+          },
+          "assignedToId": {
+            "type": "string",
+            "example": "U1"
+          },
+          "date": {
+            "type": "string",
+            "example": "May 4, 2026"
+          }
+        }
+      },
+      "ProcurementResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "PROC-819"
+          },
+          "resourceType": {
+            "type": "string",
+            "example": "Server Blades v2"
+          },
+          "item": {
+            "type": "string",
+            "example": "Server Blades v2"
+          },
+          "quantity": {
+            "type": "number",
+            "example": 10
+          },
+          "department": {
+            "type": "string",
+            "example": "IT Services"
+          },
+          "requestedBy": {
+            "type": "string",
+            "example": "pradhyum"
+          },
+          "requester": {
+            "type": "string",
+            "example": "pradhyum"
+          },
+          "requestedById": {
+            "type": "string",
+            "example": "U2"
+          },
+          "status": {
+            "type": "string",
+            "example": "Pending"
+          },
+          "date": {
+            "type": "string",
+            "example": "Oct 26, 2023"
+          },
+          "justification": {
+            "type": "string",
+            "example": "Capacity increase required."
+          },
+          "vendor": {
+            "type": "string",
+            "example": "Dell"
+          },
+          "invoice": {
+            "type": "string",
+            "example": "INV-2026-1001"
+          }
+        },
+        "required": [
+          "id",
+          "resourceType",
+          "quantity",
+          "department",
+          "status",
+          "date",
+          "justification"
+        ]
+      },
+      "CreateProcurementDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "PROC-1001"
+          },
+          "resourceType": {
+            "type": "string",
+            "example": "Server Blades v2"
+          },
+          "item": {
+            "type": "string",
+            "example": "Server Blades v2"
+          },
+          "quantity": {
+            "type": "number",
+            "example": 10
+          },
+          "department": {
+            "type": "string",
+            "example": "IT Services"
+          },
+          "requestedBy": {
+            "type": "string",
+            "example": "pradhyum"
+          },
+          "requester": {
+            "type": "string",
+            "example": "pradhyum"
+          },
+          "requestedById": {
+            "type": "string",
+            "example": "U2"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "Pending Approval",
+              "Pending",
+              "Approved",
+              "Rejected",
+              "Fulfilled",
+              "Registered"
+            ],
+            "example": "Pending Approval"
+          },
+          "priority": {
+            "type": "string",
+            "enum": [
+              "Low",
+              "Normal",
+              "High"
+            ],
+            "example": "Normal"
+          },
+          "date": {
+            "type": "string",
+            "example": "May 4, 2026"
+          },
+          "justification": {
+            "type": "string",
+            "example": "Capacity increase required."
+          }
+        },
+        "required": [
+          "resourceType",
+          "quantity",
+          "justification"
+        ]
+      },
+      "UpdateProcurementDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "PROC-1001"
+          },
+          "resourceType": {
+            "type": "string",
+            "example": "Server Blades v2"
+          },
+          "item": {
+            "type": "string",
+            "example": "Server Blades v2"
+          },
+          "quantity": {
+            "type": "number",
+            "example": 10
+          },
+          "department": {
+            "type": "string",
+            "example": "IT Services"
+          },
+          "requestedBy": {
+            "type": "string",
+            "example": "pradhyum"
+          },
+          "requester": {
+            "type": "string",
+            "example": "pradhyum"
+          },
+          "requestedById": {
+            "type": "string",
+            "example": "U2"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "Pending Approval",
+              "Pending",
+              "Approved",
+              "Rejected",
+              "Fulfilled",
+              "Registered"
+            ],
+            "example": "Pending Approval"
+          },
+          "priority": {
+            "type": "string",
+            "enum": [
+              "Low",
+              "Normal",
+              "High"
+            ],
+            "example": "Normal"
+          },
+          "date": {
+            "type": "string",
+            "example": "May 4, 2026"
+          },
+          "justification": {
+            "type": "string",
+            "example": "Capacity increase required."
+          },
+          "vendor": {
+            "type": "string",
+            "example": "Dell"
+          },
+          "invoice": {
+            "type": "string",
+            "example": "INV-2026-1001"
+          }
+        }
+      },
+      "LogPurchaseDto": {
+        "type": "object",
+        "properties": {
+          "vendor": {
+            "type": "string",
+            "example": "Dell"
+          },
+          "invoice": {
+            "type": "string",
+            "example": "INV-2026-1001"
+          }
+        },
+        "required": [
+          "vendor",
+          "invoice"
+        ]
+      },
+      "ProcurementRegistrationResourceDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "RES-ITL-001"
+          },
+          "code": {
+            "type": "string",
+            "example": "RES-ITL-001"
+          },
+          "internalId": {
+            "type": "string",
+            "example": "r501"
+          },
+          "type": {
+            "type": "string",
+            "example": "Laptop"
+          },
+          "name": {
+            "type": "string",
+            "example": "Dell Latitude 5440"
+          },
+          "serialNumber": {
+            "type": "string",
+            "example": "SN-1001"
+          },
+          "location": {
+            "type": "string",
+            "example": "Block A - Room 12"
+          },
+          "condition": {
+            "type": "string",
+            "enum": [
+              "New",
+              "Good",
+              "Average",
+              "Fair",
+              "Damaged",
+              "Bad"
+            ],
+            "example": "New"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "Available",
+              "Allocated",
+              "Maintenance Requested",
+              "Maintenance",
+              "Repaired",
+              "Returned",
+              "Scrapped"
+            ],
+            "example": "Available"
+          },
+          "assignedTo": {
+            "type": "string",
+            "example": "None"
+          }
+        },
+        "required": [
+          "id",
+          "type",
+          "serialNumber"
+        ]
+      },
+      "RegisterProcurementDto": {
+        "type": "object",
+        "properties": {
+          "resources": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProcurementRegistrationResourceDto"
+            }
+          }
+        },
+        "required": [
+          "resources"
+        ]
+      },
+      "MaintenanceHistoryResponseDto": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "example": "RES-2233"
+          },
+          "type": {
+            "type": "string",
+            "example": "Printer Color"
+          },
+          "allocatedTo": {
+            "type": "string",
+            "example": "None"
+          },
+          "issue": {
+            "type": "string",
+            "example": "Paper Jam"
+          },
+          "actionDate": {
+            "type": "string",
+            "example": "Oct 16, 2023"
+          },
+          "status": {
+            "type": "string",
+            "example": "Repaired"
+          },
+          "department": {
+            "type": "string",
+            "example": "Administration"
+          }
+        },
+        "required": [
+          "code",
+          "type",
+          "allocatedTo",
+          "issue",
+          "actionDate",
+          "status",
+          "department"
+        ]
+      },
+      "ReturnHistoryResponseDto": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "example": "RES-9988"
+          },
+          "type": {
+            "type": "string",
+            "example": "Laptop - Old"
+          },
+          "returnedBy": {
+            "type": "string",
+            "example": "Bob Builder"
+          },
+          "returnDate": {
+            "type": "string",
+            "example": "Oct 20, 2023"
+          },
+          "processDate": {
+            "type": "string",
+            "example": "Oct 21, 2023"
+          },
+          "condition": {
+            "type": "string",
+            "example": "Bad"
+          },
+          "finalStatus": {
+            "type": "string",
+            "example": "Scrapped"
+          },
+          "department": {
+            "type": "string",
+            "example": "Operations"
+          }
+        },
+        "required": [
+          "code",
+          "type",
+          "returnedBy",
+          "returnDate",
+          "processDate",
+          "condition",
+          "finalStatus",
+          "department"
+        ]
+      },
+      "ReturnProcessDto": {
+        "type": "object",
+        "properties": {
+          "condition": {
+            "type": "string",
+            "enum": [
+              "New",
+              "Good",
+              "Average",
+              "Fair",
+              "Damaged",
+              "Bad"
+            ],
+            "example": "Good"
+          }
+        },
+        "required": [
+          "condition"
+        ]
+      },
+      "NotificationResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "N1"
+          },
+          "title": {
+            "type": "string",
+            "example": "Welcome to ResourceX"
+          },
+          "description": {
+            "type": "string",
+            "example": "Your account has been created."
+          },
+          "time": {
+            "type": "string",
+            "example": "1 day ago"
+          },
+          "read": {
+            "type": "boolean",
+            "example": false
+          },
+          "recipientRole": {
+            "type": "string",
+            "example": "All"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "description",
+          "time",
+          "read",
+          "recipientRole"
+        ]
+      },
+      "UpdateNotificationDto": {
+        "type": "object",
+        "properties": {
+          "read": {
+            "type": "boolean",
+            "example": true
+          }
+        }
+      },
+      "RequestorSummaryResponseDto": {
+        "type": "object",
+        "properties": {
+          "totalRequests": {
+            "type": "number",
+            "example": 4
+          },
+          "pendingRequests": {
+            "type": "number",
+            "example": 2
+          },
+          "approvedRequests": {
+            "type": "number",
+            "example": 1
+          },
+          "allocatedRequests": {
+            "type": "number",
+            "example": 1
+          },
+          "resources": {
+            "type": "number",
+            "example": 2
+          },
+          "maintenance": {
+            "type": "number",
+            "example": 1
+          }
+        },
+        "required": [
+          "totalRequests",
+          "pendingRequests",
+          "approvedRequests",
+          "allocatedRequests",
+          "resources",
+          "maintenance"
+        ]
+      },
+      "DepartmentSummaryResponseDto": {
+        "type": "object",
+        "properties": {
+          "totalResources": {
+            "type": "number",
+            "example": 12
+          },
+          "available": {
+            "type": "number",
+            "example": 7
+          },
+          "allocated": {
+            "type": "number",
+            "example": 3
+          },
+          "maintenance": {
+            "type": "number",
+            "example": 1
+          },
+          "scrap": {
+            "type": "number",
+            "example": 1
+          },
+          "pendingRequests": {
+            "type": "number",
+            "example": 2
+          },
+          "procurements": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProcurementResponseDto"
+            }
+          }
+        },
+        "required": [
+          "totalResources",
+          "available",
+          "allocated",
+          "maintenance",
+          "scrap",
+          "pendingRequests",
+          "procurements"
+        ]
+      },
+      "RegistrarSummaryResponseDto": {
+        "type": "object",
+        "properties": {
+          "totalAssets": {
+            "type": "number",
+            "example": 14
+          },
+          "pendingRequests": {
+            "type": "number",
+            "example": 4
+          },
+          "pendingProcurements": {
+            "type": "number",
+            "example": 3
+          },
+          "approvedToday": {
+            "type": "number",
+            "example": 5
+          }
+        },
+        "required": [
+          "totalAssets",
+          "pendingRequests",
+          "pendingProcurements",
+          "approvedToday"
+        ]
+      },
+      "StockRowResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "TH-1"
+          },
+          "department": {
+            "type": "string",
+            "example": "IT Services"
+          },
+          "resourceType": {
+            "type": "string",
+            "example": "Laptop"
+          },
+          "thresholdLevel": {
+            "type": "number",
+            "example": 15
+          },
+          "currentQuantity": {
+            "type": "number",
+            "example": 18
+          },
+          "status": {
+            "type": "string",
+            "example": "Safe"
+          }
+        },
+        "required": [
+          "id",
+          "department",
+          "resourceType",
+          "thresholdLevel"
+        ]
+      },
+      "UpdateProfileDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "Asha Nair"
+          },
+          "notifications": {
+            "type": "boolean",
+            "example": true
+          }
+        }
+      },
+      "UpdatePasswordDto": {
+        "type": "object",
+        "properties": {
+          "currentPassword": {
+            "type": "string",
+            "example": "current123"
+          },
+          "newPassword": {
+            "type": "string",
+            "example": "newpassword123"
+          }
+        },
+        "required": [
+          "currentPassword",
+          "newPassword"
+        ]
+      }
+    }
+  }
+}

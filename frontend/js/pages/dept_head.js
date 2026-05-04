@@ -10,12 +10,13 @@ const deptApp = {
     editStockId: null,
     chartInstances: {},
 
-    init: function() {
+    init: async function() {
         const user = Store.getCurrentUser();
         if(!user || user.role !== 'Dept Head') {
             window.location.href = 'login.html';
             return;
         }
+        await Store.sync();
         
         // Update UI
         document.querySelector('.user-name').textContent = user.name;
@@ -26,6 +27,13 @@ const deptApp = {
         this.renderDeptResources();
         this.renderProcurements();
         this.renderDashboard();
+        this.populateProcurementTypeDropdown();
+        this.stockData = (Store.getData().stockThresholds || []).filter(item => item.department === user.department).map(item => ({
+            id: item.id,
+            resourceType: item.resourceType,
+            currentQuantity: 0,
+            thresholdLevel: item.thresholdLevel
+        }));
         this.renderStockMonitoring();
         
         // Wait briefly for Chart.js to initialize if it's loading over CDN asynchronously
@@ -54,6 +62,20 @@ const deptApp = {
         if(targetSection) {
             targetSection.classList.add('active');
         }
+    },
+
+    populateProcurementTypeDropdown: function() {
+        const select = document.getElementById('proc-type');
+        const user = Store.getCurrentUser();
+        if (!select || !user) return;
+
+        select.innerHTML = '<option value="" disabled selected>Select Resource Type</option>';
+        Store.getDepartmentResourceTypes(user.department).forEach(type => {
+            const option = document.createElement('option');
+            option.value = type;
+            option.textContent = type;
+            select.appendChild(option);
+        });
     },
 
     // 1. Incoming Requests
@@ -105,29 +127,29 @@ const deptApp = {
         });
     },
 
-    approveRequest: function(reqId) {
-        Store.updateItem('requests', reqId, { status: "Approved" });
+    approveRequest: async function(reqId) {
+        await Store.approveRequest(reqId);
         alert('Request approved. It has been passed to Staff for allocation.');
         this.renderIncomingRequests();
     },
 
-    rejectRequest: function(reqId) {
+    rejectRequest: async function(reqId) {
         if(confirm("Are you sure you want to reject this request?")) {
-            Store.updateItem('requests', reqId, { status: "Rejected" });
+            await Store.rejectRequest(reqId);
             this.renderIncomingRequests();
         }
     },
 
-    approveProcurement: function(procId) {
-        Store.updateItem('procurements', procId, { status: "Pending" });
+    approveProcurement: async function(procId) {
+        await Store.approveDeptProcurement(procId);
         Store.showToast("Procurement approved! Sent to Registrar.", "success");
         this.renderIncomingRequests();
         this.renderProcurements();
     },
 
-    rejectProcurement: function(procId) {
+    rejectProcurement: async function(procId) {
         if(confirm("Are you sure you want to reject this procurement request?")) {
-            Store.updateItem('procurements', procId, { status: "Rejected" });
+            await Store.rejectDeptProcurement(procId);
             Store.showToast("Procurement request rejected.", "error");
             this.renderIncomingRequests();
             this.renderProcurements();
@@ -281,7 +303,7 @@ const deptApp = {
         });
     },
 
-    submitProcurement: function(e) {
+    submitProcurement: async function(e) {
         e.preventDefault();
         const type = document.getElementById('proc-type').value;
         const qty = parseInt(document.getElementById('proc-qty').value);
@@ -293,7 +315,7 @@ const deptApp = {
             return;
         }
 
-        Store.addItem('procurements', {
+        await Store.createProcurement({
             id: `PROC-${Math.floor(100 + Math.random() * 900)}`,
             item: type,
             resourceType: type,
@@ -301,6 +323,7 @@ const deptApp = {
             department: user.department,
             requester: user.name,
             requestedBy: user.name,
+            requestedById: user.id,
             status: "Pending", // Dept Head self-approves their own requests, so it bypasses them and goes to Registrar
             date: new Date().toLocaleDateString('en-US', {month: 'short', day: 'numeric', year:'numeric'}),
             justification: reason
@@ -321,6 +344,11 @@ const deptApp = {
         let nearCount = 0;
         let lowCount = 0;
 
+        const backendThresholds = (Store.getData().stockThresholds || []).filter(item => item.department === Store.getCurrentUser().department);
+        this.stockData = backendThresholds.map(item => {
+            const qty = Store.getData().resources.filter(r => r.department === item.department && r.status === 'Available' && (r.type === item.resourceType || r.name === item.resourceType)).length;
+            return { id: item.id, resourceType: item.resourceType, currentQuantity: qty, thresholdLevel: item.thresholdLevel };
+        });
         this.stockData.forEach(item => {
             let status = '';
             let statusBadge = '';
@@ -386,7 +414,7 @@ const deptApp = {
         document.getElementById('stock-threshold-input').value = '';
     },
 
-    saveStockThreshold: function() {
+    saveStockThreshold: async function() {
         if (!this.editStockId) return;
         const val = parseInt(document.getElementById('stock-threshold-input').value);
         if (isNaN(val) || val < 0) {
@@ -396,6 +424,7 @@ const deptApp = {
 
         const itemIndex = this.stockData.findIndex(i => i.id === this.editStockId);
         if(itemIndex > -1) {
+            await Store.updateStockThreshold(this.editStockId, val);
             this.stockData[itemIndex].thresholdLevel = val;
             Store.showToast("Threshold updated successfully.", "success");
             this.renderStockMonitoring();
@@ -566,6 +595,6 @@ const deptApp = {
     }
 };
 
-document.addEventListener('DOMContentLoaded', () => {
-    deptApp.init();
+document.addEventListener('DOMContentLoaded', async () => {
+    await deptApp.init();
 });

@@ -7,22 +7,15 @@ const staffApp = {
         { id: "s5", resourceType: "Router", currentQuantity: 12, thresholdLevel: 10 },
         { id: "s6", resourceType: "Printer", currentQuantity: 6, thresholdLevel: 6 }
     ],
-    departments: ["IT Services", "Engineering", "Administration", "Library", "Science"],
-    resourceTypes: {
-        "IT Services": ["Laptop", "Monitor", "Router"],
-        "Engineering": ["Projector", "Workstation"],
-        "Administration": ["Printer", "Desk"],
-        "Library": ["Tablet", "Scanner"],
-        "Science": ["Microscope", "Sensor"]
-    },
     editStockId: null,
 
-    init: function () {
+    init: async function () {
         const user = Store.getCurrentUser();
         if (!user || user.role !== 'Staff') {
             window.location.href = 'login.html';
             return;
         }
+        await Store.sync();
 
         // Update UI
         document.querySelector('.user-name').textContent = user.name;
@@ -30,11 +23,17 @@ const staffApp = {
 
         this.bindNav();
         this.renderDashboard();
-        this.renderAllocations();
+        await this.renderAllocations();
         this.renderInventory();
         this.renderMaintenance();
         this.renderReturns();
         this.renderProcurementTasks();
+        this.stockData = (Store.getData().stockThresholds || []).filter(item => item.department === user.department).map(item => ({
+            id: item.id,
+            resourceType: item.resourceType,
+            currentQuantity: 0,
+            thresholdLevel: item.thresholdLevel
+        }));
         this.renderStockMonitoring();
         this.renderRegistrationCards();
     },
@@ -76,6 +75,69 @@ const staffApp = {
         return Store.getData().procurements.find(p => {
             const statusMatches = status ? p.status === status : true;
             return p.id === id && p.department === userDept && statusMatches;
+        });
+    },
+
+    getDepartmentCatalogTypes: function () {
+        const userDept = this.getStaffDepartment();
+        return Store.getDepartmentResourceTypes(userDept).slice().sort();
+    },
+
+    normalizeResourceToken: function (value) {
+        return String(value || '')
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, ' ')
+            .replace(/\b(v\d+|inch|inches|sets|set|bundles|bundle)\b/g, ' ')
+            .replace(/\s+/g, ' ')
+            .trim();
+    },
+
+    getResourceTypeAliases: function (resourceType) {
+        const normalized = this.normalizeResourceToken(resourceType);
+        const aliasMap = {
+            'laptop': ['laptop', 'developer laptop', 'laptop bundle'],
+            'developer laptops': ['laptop', 'developer laptop'],
+            'laptop bundles': ['laptop', 'laptop bundle'],
+            'monitor': ['monitor', 'electronics'],
+            'projector': ['projector', 'electronics'],
+            'projector screens': ['projector', 'electronics'],
+            'tablet': ['tablet', 'electronics'],
+            'printer': ['printer', 'electronics'],
+            'router': ['router', 'switch', 'network switch', 'hardware'],
+            'cisco routers': ['router', 'switch', 'network switch', 'hardware'],
+            'server blades': ['server blade', 'hardware'],
+            'server blades v2': ['server blade', 'hardware'],
+            'accessories': ['accessories', 'keyboard', 'mouse', 'remote', 'headset'],
+            'ergonomic keyboards': ['keyboard', 'accessories'],
+            'electronics': ['electronics', 'monitor', 'projector', 'tablet', 'printer'],
+            'furniture': ['furniture', 'desk', 'chair', 'table', 'whiteboard'],
+            'standing desks': ['desk', 'furniture'],
+            'office desks': ['desk', 'furniture'],
+            'conference tables': ['table', 'furniture'],
+            'whiteboards': ['whiteboard', 'furniture'],
+            'hardware': ['hardware', 'server blade', 'router', 'switch'],
+            'appliance': ['appliance', 'coffee machine'],
+            'walkie talkies': ['electronics', 'accessories', 'walkie talkie'],
+            'microscope sets': ['microscope', 'electronics'],
+        };
+        const aliases = aliasMap[normalized] || [];
+        return [...new Set([normalized, ...aliases].map(item => this.normalizeResourceToken(item)).filter(Boolean))];
+    },
+
+    resourceMatchesType: function (resource, requestedType) {
+        const aliases = this.getResourceTypeAliases(requestedType);
+        const resourceType = this.normalizeResourceToken(resource.type);
+        const resourceName = this.normalizeResourceToken(resource.name);
+
+        return aliases.some(alias => {
+            return (
+                resourceType === alias ||
+                resourceName === alias ||
+                resourceType.includes(alias) ||
+                resourceName.includes(alias) ||
+                alias.includes(resourceType) ||
+                alias.includes(resourceName)
+            );
         });
     },
 
@@ -136,7 +198,7 @@ const staffApp = {
     },
 
     // 1. Allocation Requests
-    renderAllocations: function () {
+    renderAllocations: async function () {
         const tbody = document.getElementById('allocation-tbody');
         if (!tbody) return;
         tbody.innerHTML = '';
@@ -145,21 +207,16 @@ const staffApp = {
         const userDept = user.department;
         const db = Store.getData();
         const approvedRequests = db.requests.filter(r => r.status === 'Approved' && r.department === userDept);
-        const availableResources = db.resources.filter(res => res.status === 'Available' && res.department === userDept);
 
-        approvedRequests.forEach(req => {
+        for (const req of approvedRequests) {
             let checkboxesHTML = '';
-
-            let matchingResources = availableResources.filter(res => {
-                let t1 = (res.type || "").toLowerCase().trim();
-                let t2 = (req.resourceType || "").toLowerCase().trim();
-                let n1 = (res.name || "").toLowerCase().trim();
-
-                // Strict matching to ensure absolute proper allocation.
-                return t1 === t2 || n1 === t2;
+            const matchingResources = await Store.fetchResources({
+                department: userDept,
+                status: 'Available',
+                type: req.resourceType
             });
 
-            matchingResources.forEach(res => {
+            (matchingResources || []).forEach(res => {
                 checkboxesHTML += `
                     <label>
                         <input type="checkbox" value="${res.id}" class="alloc-cb-${req.id}" onchange="staffApp.updateMultiSelect('${req.id}', ${req.quantity})"> 
@@ -194,7 +251,7 @@ const staffApp = {
                 </td>
             `;
             tbody.appendChild(tr);
-        });
+        }
     },
 
     toggleMultiDropdown: function (reqId) {
@@ -239,7 +296,7 @@ const staffApp = {
         }
     },
 
-    allocateResource: function (reqId) {
+    allocateResource: async function (reqId) {
         const checkboxes = document.querySelectorAll(`.alloc-cb-${reqId}:checked`);
         const selectedOptions = Array.from(checkboxes).map(cb => cb.value);
 
@@ -257,34 +314,10 @@ const staffApp = {
             return;
         }
 
-        // Strict Backend Check: Verify that all selected resources properly match the requested type
-        const allMatch = selectedOptions.every(id => {
-            const r = db.resources.find(res => res.id === id && res.department === userDept && res.status === 'Available');
-            if (!r) return false;
-            return (r.type || "").toLowerCase().trim() === (req.resourceType || "").toLowerCase().trim() ||
-                (r.name || "").toLowerCase().trim() === (req.resourceType || "").toLowerCase().trim();
-        });
-
-        if (!allMatch) {
-            Store.showToast("Validation Error: Selected resources do not match the requested resource type.", "error");
-            return;
-        }
-
-        // Update Request
-        Store.updateItem('requests', reqId, { status: "Allocated", assignedResources: selectedOptions.join(', ') });
-
-        // Update all Selected Resources
-        selectedOptions.forEach(resourceId => {
-            Store.updateItem('resources', resourceId, {
-                status: "Allocated",
-                assignedTo: req ? req.requestor : "Unknown Requestor",
-                department: req ? req.department : "Unknown Department",
-                date: new Date().toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' })
-            });
-        });
+        await Store.allocateRequest(reqId, selectedOptions);
 
         Store.showToast(`Request ${reqId} Allocated. ${selectedOptions.length} resource(s) assigned successfully.`, "success");
-        this.renderAllocations();
+        await this.renderAllocations();
         this.renderInventory();
     },
 
@@ -382,7 +415,7 @@ const staffApp = {
         });
     },
 
-    submitRegistrationCard: function (procId) {
+    submitRegistrationCard: async function (procId) {
         const tbody = document.getElementById(`reg-tbody-${procId}`);
         if (!tbody) return;
 
@@ -476,11 +509,7 @@ const staffApp = {
         }
 
         if (count > 0) {
-            // Push all to resources
-            newResources.forEach(res => Store.addItem('resources', res));
-
-            // Mark Procurement as Registered
-            Store.updateItem('procurements', procId, { status: "Registered" });
+            await Store.registerProcurement(procId, newResources);
 
             Store.showToast(`Successfully registered ${count} assets to ${userDept} inventory.`, "success");
 
@@ -516,8 +545,8 @@ const staffApp = {
                 <td>${statusBadge}</td>
                 <td>${res.vendor || 'N/A'}</td>
                 <td>${res.invoice || 'N/A'}</td>
-                <td style="text-align:right">
-                    <button class="btn-secondary" style="font-size:0.75rem" onclick="staffApp.openEditResourceModal('${res.id}')">Edit</button>
+                <td style="text-align:right; white-space:nowrap;">
+                    <button class="btn-secondary" style="font-size:0.75rem; margin-right:4px;" onclick="staffApp.openEditResourceModal('${res.id}')">Edit</button>
                     ${res.status !== 'Scrapped' ? `<button class="btn-danger" style="font-size:0.75rem" onclick="staffApp.scrapResource('${res.id}')">Scrap</button>` : ''}
                 </td>
             `;
@@ -525,13 +554,13 @@ const staffApp = {
         });
     },
 
-    scrapResource: function (resId) {
+    scrapResource: async function (resId) {
         if (!this.getDepartmentResource(resId)) {
             Store.showToast("You can only scrap resources in your department.", "error");
             return;
         }
         if (confirm("Permanently mark this resource as scrapped?")) {
-            Store.updateItem('resources', resId, { status: "Scrapped" });
+            await Store.scrapResource(resId);
             Store.showToast(`Resource ${resId} marked as scrapped!`, "error");
             this.renderInventory();
             this.renderDashboard();
@@ -567,7 +596,7 @@ const staffApp = {
         document.getElementById('editResourceForm').reset();
     },
 
-    submitEditResource: function (e) {
+    submitEditResource: async function (e) {
         e.preventDefault();
         const id = document.getElementById('er-id').value;
         const sn = document.getElementById('er-sn').value.trim();
@@ -596,7 +625,7 @@ const staffApp = {
             return;
         }
 
-        Store.updateItem('resources', id, {
+        await Store.updateResource(id, {
             serialNumber: sn,
             vendor: vendor,
             invoice: invoice,
@@ -616,13 +645,7 @@ const staffApp = {
     openAddResourceModal: function () {
         const typeSelect = document.getElementById('ar-type');
         typeSelect.innerHTML = '<option value="">Select Resource Type...</option>';
-
-        const userDept = this.getStaffDepartment();
-        let allTypes = this.resourceTypes[userDept] || [];
-        Store.getData().resources
-            .filter(r => r.department === userDept && r.type)
-            .forEach(r => allTypes.push(r.type));
-        allTypes = [...new Set(allTypes)].sort();
+        const allTypes = this.getDepartmentCatalogTypes();
 
         allTypes.forEach(type => {
             const opt = document.createElement('option');
@@ -639,7 +662,7 @@ const staffApp = {
         document.getElementById('addResourceForm').reset();
     },
 
-    submitAddResource: function (e) {
+    submitAddResource: async function (e) {
         e.preventDefault();
 
         const type = document.getElementById('ar-type').value;
@@ -700,7 +723,7 @@ const staffApp = {
             date: new Date().toLocaleDateString('en-US')
         };
 
-        Store.addItem('resources', newResource);
+        await Store.createResource(newResource);
         Store.showToast(`Resource ${generatedCode} added successfully!`, "success");
 
         this.renderInventory();
@@ -775,48 +798,36 @@ const staffApp = {
         }
     },
 
-    acceptMaintenance: function (id) {
+    acceptMaintenance: async function (id) {
         if (!this.getDepartmentResource(id)) {
             Store.showToast("You can only process maintenance for your department.", "error");
             return;
         }
-        Store.updateItem('resources', id, { status: 'Maintenance' });
+        await Store.acceptMaintenance(id);
         Store.showToast("Maintenance accepted. Resource is now under maintenance.", "success");
         this.renderMaintenance();
         this.renderDashboard();
     },
 
-    markRepaired: function (id) {
+    markRepaired: async function (id) {
         const res = this.getDepartmentResource(id);
         if (!res) {
             Store.showToast("You can only process maintenance for your department.", "error");
             return;
         }
-        Store.updateItem('resources', id, { status: 'Available', condition: 'Good' });
-        const db = Store.getData();
-        if (!db.maintenanceHistory) db.maintenanceHistory = [];
-        db.maintenanceHistory.unshift({
-            code: res.id, type: res.type, department: res.department, allocatedTo: res.assignedTo, issue: "Repaired", actionDate: new Date().toLocaleDateString(), status: "Repaired"
-        });
-        Store.saveData(db);
+        await Store.repairMaintenance(id);
         Store.showToast("Resource marked as repaired. User notified.", "success");
         this.renderMaintenance();
         this.renderDashboard();
     },
 
-    markScrapMaint: function (id) {
+    markScrapMaint: async function (id) {
         const res = this.getDepartmentResource(id);
         if (!res) {
             Store.showToast("You can only process maintenance for your department.", "error");
             return;
         }
-        Store.updateItem('resources', id, { status: 'Scrapped' });
-        const db = Store.getData();
-        if (!db.maintenanceHistory) db.maintenanceHistory = [];
-        db.maintenanceHistory.unshift({
-            code: res.id, type: res.type, department: res.department, allocatedTo: res.assignedTo, issue: "Unrepairable", actionDate: new Date().toLocaleDateString(), status: "Scrap"
-        });
-        Store.saveData(db);
+        await Store.scrapMaintenance(id);
         Store.showToast("Resource marked as scrap. User notified.", "error");
         this.renderMaintenance();
         this.renderDashboard();
@@ -890,26 +901,16 @@ const staffApp = {
         if (btn) btn.disabled = val === "";
     },
 
-    processReturn: function (id) {
+    processReturn: async function (id) {
         const cond = document.getElementById(`return-cond-${id}`).value;
-        const newStatus = cond === "Bad" ? "Scrapped" : "Available";
 
         const res = this.getDepartmentResource(id);
         if (!res) {
             Store.showToast("You can only process returns for your department.", "error");
             return;
         }
-        Store.updateItem('resources', id, { status: newStatus, condition: cond, assignedTo: "None" });
-
-        const db = Store.getData();
-        if (!db.returnHistory) db.returnHistory = [];
-        db.returnHistory.unshift({
-            code: res.id, type: res.type, department: res.department, returnedBy: res.assignedTo || 'Unknown',
-            returnDate: res.date || new Date().toLocaleDateString(),
-            processDate: new Date().toLocaleDateString(),
-            condition: cond, finalStatus: newStatus
-        });
-        Store.saveData(db);
+        await Store.processReturn(id, cond);
+        const newStatus = cond === "Bad" ? "Scrapped" : "Available";
 
         if (newStatus === 'Available') {
             Store.showToast("Return processed. Resource marked as Available.", "success");
@@ -965,7 +966,7 @@ const staffApp = {
         });
     },
 
-    logPurchase: function (id) {
+    logPurchase: async function (id) {
         const vendorInput = document.getElementById('vend-' + id);
         const invoiceInput = document.getElementById('inv-' + id);
 
@@ -1000,11 +1001,7 @@ const staffApp = {
             return;
         }
 
-        Store.updateItem('procurements', id, {
-            status: 'Fulfilled',
-            vendor: vendor,
-            invoice: invoice
-        });
+        await Store.logPurchase(id, vendor, invoice);
 
         Store.showToast(`Purchase logged for Invoice ${invoice}. Assets are now pending Serial Registration.`, "success");
         this.renderProcurementTasks();
@@ -1018,6 +1015,13 @@ const staffApp = {
         tbody.innerHTML = '';
 
         const userDept = this.getStaffDepartment();
+        const backendThresholds = (Store.getData().stockThresholds || []).filter(item => item.department === userDept);
+        this.stockData = backendThresholds.map(item => ({
+            id: item.id,
+            resourceType: item.resourceType,
+            currentQuantity: 0,
+            thresholdLevel: item.thresholdLevel
+        }));
         const deptResources = Store.getData().resources.filter(r => r.department === userDept);
         const countsByType = {};
         deptResources.forEach(res => {
@@ -1112,7 +1116,7 @@ const staffApp = {
         document.getElementById('stock-threshold-input').value = '';
     },
 
-    saveStockThreshold: function () {
+    saveStockThreshold: async function () {
         if (!this.editStockId) return;
         const val = parseInt(document.getElementById('stock-threshold-input').value);
         if (isNaN(val) || val < 0) {
@@ -1122,6 +1126,7 @@ const staffApp = {
 
         const itemIndex = this.stockData.findIndex(i => i.id === this.editStockId);
         if (itemIndex > -1) {
+            await Store.updateStockThreshold(this.editStockId, val);
             this.stockData[itemIndex].thresholdLevel = val;
             Store.showToast("Threshold updated successfully.", "success");
             this.renderStockMonitoring();
@@ -1147,6 +1152,6 @@ const staffApp = {
     }
 };
 
-document.addEventListener('DOMContentLoaded', () => {
-    staffApp.init();
+document.addEventListener('DOMContentLoaded', async () => {
+    await staffApp.init();
 });

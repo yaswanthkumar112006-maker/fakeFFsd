@@ -1,249 +1,474 @@
-const initialData = {
-    users: [
-        { id: "U1", name: "RAVI CHANDRA", email: "ravi@resourcex.com", role: "Requestor", status: "Active" },
-        { id: "U2", name: "pradhyum", email: "pradhyum@resourcex.com", role: "Dept Head", department: "IT Services", status: "Active" },
-        { id: "U3", name: "HARSHA TEJ", email: "harsha@resourcex.com", role: "Registrar", department: "Administration", status: "Active" },
-        { id: "U4", name: "prem kumar", email: "prem@resourcex.com", role: "Staff", department: "IT Services", status: "Active" },
-        { id: "U5", name: "yashwath", email: "yashwath@resourcex.com", role: "System Admin", department: "Administration", status: "Active" },
-        { id: "U6", name: "Alice Worker", email: "alice@resourcex.com", role: "Requestor", status: "Active" },
-        { id: "U7", name: "John Doe", email: "john@resourcex.com", role: "Dept Head", department: "HR Dept", status: "Active" },
-        { id: "U8", name: "Jane Smith", email: "jane@resourcex.com", role: "Dept Head", department: "Operations", status: "Active" },
-        { id: "U9", name: "Bob Builder", email: "bob@resourcex.com", role: "Requestor", status: "Active" }
-    ],
-    departments: [
-        { id: "D1", name: "IT Services", head: "pradhyum", memberCount: 15 },
-        { id: "D2", name: "HR Dept", head: "John Doe", memberCount: 8 },
-        { id: "D3", name: "Operations", head: "Jane Smith", memberCount: 20 },
-        { id: "D4", name: "Administration", head: "HARSHA TEJ", memberCount: 5 },
-        { id: "D5", name: "Facilities", head: "prem kumar", memberCount: 12 }
-    ],
-    requests: [
-        // RAVI CHANDRA's Requests (Requestor) & pradhyum's Incoming (Dept Head in IT)
-        { id: "REQ-101", resourceType: "High-Cap Battery", quantity: 1, requestor: "RAVI CHANDRA", department: "IT Services", status: "Allocated", priority: "Normal", date: "Oct 24, 2023", justification: "Restocking for field ops" },
-        { id: "REQ-102", resourceType: "Server Blades v2", quantity: 2, requestor: "RAVI CHANDRA", department: "IT Services", status: "Pending", priority: "High", date: "Oct 25, 2023", justification: "Server upgrade capacity" },
-        { id: "REQ-103", resourceType: "Developer Laptops", quantity: 3, requestor: "RAVI CHANDRA", department: "IT Services", status: "Pending", priority: "Normal", date: "Oct 26, 2023", justification: "New team members joining" },
-        { id: "REQ-104", resourceType: "External Hard Drives", quantity: 5, requestor: "RAVI CHANDRA", department: "IT Services", status: "Approved", priority: "Normal", date: "Oct 27, 2023", justification: "Local backup storage" }, // Appears in Staff Allocation
-
-        // Alice's Requests (Requestor) & John's Incoming (Dept Head in HR)
-        { id: "REQ-201", resourceType: "Laptop Bundles", quantity: 2, requestor: "Alice Worker", department: "HR Dept", status: "Approved", priority: "Normal", date: "Oct 22, 2023", justification: "New hires onboarding" }, // Appears in Staff Allocation
-        { id: "REQ-202", resourceType: "Standing Desks", quantity: 2, requestor: "Alice Worker", department: "HR Dept", status: "Pending", priority: "Normal", date: "Oct 27, 2023", justification: "Employee wellness program" },
-        { id: "REQ-203", resourceType: "Ergonomic Keyboards", quantity: 3, requestor: "Alice Worker", department: "HR Dept", status: "Pending", priority: "Low", date: "Oct 28, 2023", justification: "Ergonomic setup requested" },
-
-        // Bob's Requests (Requestor) & Jane's Incoming (Dept Head in Ops)
-        { id: "REQ-301", resourceType: "Projector Screens", quantity: 2, requestor: "Bob Builder", department: "Operations", status: "Rejected", priority: "Low", date: "Oct 18, 2023", justification: "Not enough budget" },
-        { id: "REQ-302", resourceType: "Whiteboards", quantity: 4, requestor: "Bob Builder", department: "Operations", status: "Allocated", priority: "Low", date: "Oct 01, 2023", justification: "New meeting rooms" },
-        { id: "REQ-303", resourceType: "Walkie Talkies", quantity: 6, requestor: "Bob Builder", department: "Operations", status: "Pending", priority: "High", date: "Oct 29, 2023", justification: "Facility comms" }
-    ],
-    resources: [
-        // RAVI CHANDRA's Assigned Resources (Requestor)
-        { id: "RES-1049", name: "Laptop - Dell XPS", type: "Laptop", department: "IT Services", serialNumber: "SN-998822", status: "Allocated", condition: "Good", assignedTo: "RAVI CHANDRA", date: "Jan 12, 2023" },
-        { id: "RES-9055", name: "Mechanical Keyboard", type: "Accessories", department: "IT Services", serialNumber: "SN-778899", status: "Allocated", condition: "Good", assignedTo: "RAVI CHANDRA", date: "Sep 22, 2023" },
-
-        // Alice's Assigned Resources (Requestor)
-        { id: "RES-8044", name: "Monitor 27 inch", type: "Electronics", department: "HR Dept", serialNumber: "SN-556677", status: "Allocated", condition: "Good", assignedTo: "Alice Worker", date: "Aug 12, 2023" },
-        { id: "RES-2933", name: "Projector X1", type: "Electronics", department: "HR Dept", serialNumber: "SN-112233", status: "Allocated", condition: "Fair", assignedTo: "Alice Worker", date: "Feb 05, 2023" },
-
-        // Bob's Assigned Resources (Requestor)
-        { id: "RES-4050", name: "Ergonomic Chair", type: "Furniture", department: "Operations", serialNumber: "SN-221144", status: "Allocated", condition: "Good", assignedTo: "Bob Builder", date: "Apr 15, 2023" },
-        { id: "RES-1122", name: "Tablet Pro", type: "Electronics", department: "Operations", serialNumber: "SN-889900", status: "Allocated", condition: "Fair", assignedTo: "Bob Builder", date: "Oct 01, 2023" },
-
-        // Maintenance Queue (Staff)
-        { id: "RES-5011", name: "Server Blade", type: "Hardware", department: "IT Services", serialNumber: "SN-990088", status: "Maintenance Requested", condition: "Damaged", assignedTo: "RAVI CHANDRA", date: "May 20, 2023", vendor: "Cisco Systems", invoice: "INV-8899" },
-        { id: "RES-5012", name: "Printer X", type: "Electronics", department: "HR Dept", serialNumber: "SN-880099", status: "Maintenance Requested", condition: "Damaged", assignedTo: "Alice Worker", date: "May 21, 2023" },
-        { id: "RES-5013", name: "Coffee Machine", type: "Appliance", department: "Facilities", serialNumber: "SN-770088", status: "Maintenance", condition: "Damaged", assignedTo: "None", date: "May 22, 2023" },
-
-        // Returned Queue (Staff)
-        { id: "RES-6001", name: "Wireless Mouse", type: "Accessories", department: "IT Services", serialNumber: "SN-112233", status: "Returned", condition: "Fair", assignedTo: "RAVI CHANDRA", date: "Oct 28, 2023" },
-        { id: "RES-6002", name: "Presentation Remote", type: "Accessories", department: "Operations", serialNumber: "SN-223344", status: "Returned", condition: "Fair", assignedTo: "Bob Builder", date: "Oct 29, 2023" },
-        { id: "RES-6003", name: "Headset", type: "Accessories", department: "HR Dept", serialNumber: "SN-334455", status: "Returned", condition: "Fair", assignedTo: "Alice Worker", date: "Oct 29, 2023" },
-
-        // Available / Global
-        { id: "RES-6022", name: "Network Switch", type: "Hardware", department: "IT Services", serialNumber: "SN-110022", status: "Available", condition: "Good", assignedTo: "None", date: "Jun 10, 2023" },
-        { id: "RES-2233", name: "Printer Color", type: "Electronics", department: "Administration", serialNumber: "SN-001122", status: "Available", condition: "Fair", assignedTo: "None", date: "Oct 15, 2023" }
-    ],
-    procurements: [
-        // Pending (For Registrar Approval)
-        { id: "PROC-819", resourceType: "Server Blades v2", quantity: 10, department: "IT Services", requestedBy: "pradhyum", status: "Pending", date: "Oct 26, 2023", justification: "Capacity increase required." },
-        { id: "PROC-820", resourceType: "HR Software Licenses", quantity: 5, department: "HR Dept", requestedBy: "John Doe", status: "Pending", date: "Oct 28, 2023", justification: "New system rollout." },
-        { id: "PROC-821", resourceType: "Logistics Software", quantity: 2, department: "Operations", requestedBy: "Jane Smith", status: "Pending", date: "Oct 29, 2023", justification: "Tracking upgrade." },
-
-        // Approved (For Staff Fulfillment)
-        { id: "PROC-901", resourceType: "Microscope Sets", quantity: 5, department: "Operations", requestedBy: "Jane Smith", status: "Approved", date: "Oct 21, 2023", justification: "Lab equipment upgrade." },
-        { id: "PROC-911", resourceType: "Cisco Routers", quantity: 4, department: "IT Services", requestedBy: "pradhyum", status: "Approved", date: "Oct 25, 2023", justification: "Network infrastructure upgrade." },
-        { id: "PROC-912", resourceType: "Office Desks", quantity: 8, department: "HR Dept", requestedBy: "John Doe", status: "Approved", date: "Oct 26, 2023", justification: "New expansion." },
-
-        // Rejected / Fulfilled
-        { id: "PROC-905", resourceType: "OLED Monitors", quantity: 20, department: "IT Services", requestedBy: "pradhyum", status: "Rejected", date: "Oct 15, 2023", justification: "Exceeds annual budget." },
-        { id: "PROC-850", resourceType: "Conference Tables", quantity: 2, department: "Facilities", requestedBy: "prem kumar", status: "Fulfilled", date: "Sep 10, 2023", justification: "New building setup." }
-    ],
-    notifications: [
-        { id: "N1", title: "Welcome to ResourceX", description: "Your account has been created.", time: "1 day ago", read: false, recipientRole: "All" },
-        { id: "N2", title: "Maintenance Alert", description: "RES-5011 requires urgent repair.", time: "2 hours ago", read: false, recipientRole: "Staff" },
-        { id: "N3", title: "Procurement Approved", description: "Microscope Sets Approved by Registrar.", time: "5 mins ago", read: false, recipientRole: "Dept Head" }
-    ],
-    maintenanceHistory: [
-        { code: "RES-2233", type: "Printer Color", allocatedTo: "None", issue: "Paper Jam", actionDate: "Oct 16, 2023", status: "Repaired" },
-        { code: "RES-1122", type: "Tablet Pro", allocatedTo: "Jane Smith", issue: "Shattered Screen", actionDate: "Oct 10, 2023", status: "Scrap" },
-        { code: "RES-3311", type: "Coffee Maker", allocatedTo: "HQ Lounge", issue: "Heating Element", actionDate: "Oct 01, 2023", status: "Repaired" }
-    ],
-    returnHistory: [
-        { code: "RES-9988", type: "Laptop - Old", returnedBy: "Bob Builder", returnDate: "Oct 20, 2023", processDate: "Oct 21, 2023", condition: "Bad", finalStatus: "Scrapped" },
-        { code: "RES-7766", type: "Office Desk", returnedBy: "Alice Worker", returnDate: "Oct 22, 2023", processDate: "Oct 23, 2023", condition: "Good", finalStatus: "Available" },
-        { code: "RES-5544", type: "Monitor Mount", returnedBy: "pradhyum", returnDate: "Oct 25, 2023", processDate: "Oct 26, 2023", condition: "Good", finalStatus: "Available" }
-    ],
-    permissionsMatrix: {
-        "Request Resources": ["Requestor", "System Admin"],
-        "View Own Resources": ["Requestor", "Dept Head", "System Admin"],
-        "Return Resources": ["Requestor", "System Admin"],
-        "Request Maintenance": ["Requestor", "System Admin"],
-        "Approve/Reject Requests": ["Dept Head", "System Admin"],
-        "View Department Resources": ["Dept Head", "System Admin"],
-        "Department Analytics": ["Dept Head", "System Admin"],
-        "Stock Monitoring": ["Dept Head", "System Admin"],
-        "Initiate Procurement": ["Dept Head", "System Admin"],
-        "Procurement Approval": ["Registrar", "System Admin"],
-        "System Analytics": ["Registrar", "System Admin"],
-        "Allocate Resources": ["Staff", "System Admin"],
-        "Manage Resources": ["Staff", "System Admin"],
-        "Add Resource Types": ["Staff", "System Admin"],
-        "Handle Maintenance": ["Staff", "System Admin"],
-        "Handle Returns": ["Staff", "System Admin"],
-        "Receive Procurement": ["Staff", "System Admin"],
-        "User Management": ["System Admin"],
-        "Department Management": ["System Admin"],
-        "Role Management": ["System Admin"],
-        "System Settings": ["System Admin"]
-    },
-    currentUser: null
-};
+const apiBase = 'http://localhost:3000/api';
 
 class DataStore {
     constructor() {
-        this.isInitialized = false;
+        this.fallbackData = {
+            users: [],
+            departments: [],
+            requests: [],
+            resources: [],
+            procurements: [],
+            notifications: [],
+            maintenanceHistory: [],
+            returnHistory: [],
+            permissionsMatrix: {},
+            stockThresholds: [],
+            resourceCatalog: [],
+            currentUser: null
+        };
         this.init();
     }
 
     init() {
-        if (localStorage.getItem('rx_initialized') !== 'v9') {
-            this.resetToDefaults();
-            localStorage.setItem('rx_initialized', 'v9');
+        if (!localStorage.getItem('rx_data')) {
+            this.saveData(this.fallbackData);
         }
     }
 
-    resetToDefaults() {
-        localStorage.setItem('rx_data', JSON.stringify(initialData));
-    }
-
     getData() {
-        return JSON.parse(localStorage.getItem('rx_data')) || initialData;
+        return JSON.parse(localStorage.getItem('rx_data')) || { ...this.fallbackData };
     }
 
     saveData(data) {
         localStorage.setItem('rx_data', JSON.stringify(data));
     }
 
-    async sync() {
-        try {
-            const collections = ['users', 'departments', 'requests', 'resources', 'procurements', 'notifications', 'maintenanceHistory', 'returnHistory', 'permissionsMatrix'];
-            const user = this.getCurrentUser();
-            const role = user ? user.role : 'System Admin';
-
-            const data = this.getData();
-            for (const col of collections) {
-                const res = await fetch(`http://localhost:3000/api/${col}`, {
-                    headers: { 'x-user-role': role }
-                });
-                if (res.ok) {
-                    data[col] = await res.json();
-                }
-            }
-            this.saveData(data);
-        } catch (error) {
-            console.error('Failed to sync with API:', error);
-        }
+    getCurrentUser() {
+        return this.getData().currentUser;
     }
 
-    // Auth
-    login(email, password) {
+    setCurrentUser(user) {
         const data = this.getData();
-        const user = data.users.find(u => u.email === email);
-        if (user) {
-            data.currentUser = user;
-            this.saveData(data);
+        data.currentUser = user || null;
+        this.saveData(data);
+    }
+
+    getHeaders(extra = {}) {
+        const user = this.getCurrentUser();
+        const headers = {};
+        if (user && user.role) headers['x-user-role'] = user.role;
+        if (user && user.id) headers['x-user-id'] = user.id;
+        return { ...headers, ...extra };
+    }
+
+    buildQuery(params = {}) {
+        const search = new URLSearchParams();
+        Object.entries(params).forEach(([key, value]) => {
+            if (value !== undefined && value !== null && value !== '' && value !== 'All') {
+                search.append(key, value);
+            }
+        });
+        const query = search.toString();
+        return query ? `?${query}` : '';
+    }
+
+    async api(path, options = {}) {
+        const config = {
+            method: options.method || 'GET',
+            headers: this.getHeaders(options.headers || {}),
+        };
+
+        if (options.body !== undefined) {
+            config.headers['Content-Type'] = 'application/json';
+            config.body = JSON.stringify(options.body);
+        }
+
+        const res = await fetch(`${apiBase}${path}`, config);
+        if (!res.ok) {
+            let message = `Request failed (${res.status})`;
+            try {
+                const error = await res.json();
+                message = error.message || error.error || message;
+            } catch (e) {}
+            throw new Error(message);
+        }
+
+        if (res.status === 204) return null;
+        const contentType = res.headers.get('content-type') || '';
+        return contentType.includes('application/json') ? res.json() : null;
+    }
+
+    async sync() {
+        const collections = {
+            users: '/users',
+            departments: '/departments',
+            requests: '/requests',
+            resources: '/resources',
+            procurements: '/procurements',
+            notifications: '/notifications',
+            maintenanceHistory: '/maintenance/history',
+            returnHistory: '/returns/history',
+            permissionsMatrix: '/permissionsMatrix',
+            stockThresholds: '/analytics/stock',
+            resourceCatalog: '/resources/catalog'
+        };
+        const currentUser = this.getCurrentUser();
+        const next = { ...this.getData() };
+
+        for (const [col, path] of Object.entries(collections)) {
+            try {
+                next[col] = await this.api(path);
+            } catch (error) {
+                console.error(`Failed to sync ${col}:`, error);
+            }
+        }
+
+        next.currentUser = currentUser;
+        this.saveData(next);
+        return next;
+    }
+
+    async login(email, password) {
+        const users = await this.api('/users', {
+            headers: {
+                'x-user-role': 'System Admin'
+            }
+        });
+        const user = (users || []).find(u => String(u.email).toLowerCase() === email.toLowerCase().trim());
+        if (user && user.password === password) {
+            this.setCurrentUser(user);
+            await this.sync();
             return user;
         }
         return null;
     }
 
     logout() {
-        const data = this.getData();
-        data.currentUser = null;
-        this.saveData(data);
+        this.setCurrentUser(null);
     }
 
-    getCurrentUser() {
-        return this.getData().currentUser;
+    async fetchUsers() {
+        return this.api('/users');
     }
 
-    // CRUD Helper
+    async createUser(payload) {
+        const result = await this.api('/users', { method: 'POST', body: payload });
+        await this.sync();
+        return result;
+    }
+
+    async updateUser(id, payload) {
+        const result = await this.api(`/users/${id}`, { method: 'PATCH', body: payload });
+        await this.sync();
+        return result;
+    }
+
+    async deactivateUser(id) {
+        const result = await this.api(`/users/${id}`, { method: 'DELETE' });
+        await this.sync();
+        return result;
+    }
+
+    async fetchDepartments() {
+        return this.api('/departments');
+    }
+
+    async createDepartment(payload) {
+        const result = await this.api('/departments', { method: 'POST', body: payload });
+        await this.sync();
+        return result;
+    }
+
+    async updateDepartment(id, payload) {
+        const result = await this.api(`/departments/${id}`, { method: 'PATCH', body: payload });
+        await this.sync();
+        return result;
+    }
+
+    async deleteDepartment(id) {
+        const result = await this.api(`/departments/${id}`, { method: 'DELETE' });
+        await this.sync();
+        return result;
+    }
+
+    async fetchRequests(params = {}) {
+        return this.api(`/requests${this.buildQuery(params)}`);
+    }
+
+    async createRequest(payload) {
+        const result = await this.api('/requests', { method: 'POST', body: payload });
+        await this.sync();
+        return result;
+    }
+
+    async fetchResources(params = {}) {
+        return this.api(`/resources${this.buildQuery(params)}`);
+    }
+
+    async fetchResourceAvailability(department, type) {
+        return this.api(`/resources/availability${this.buildQuery({ department, type })}`);
+    }
+
+    async fetchResourceCatalog(params = {}) {
+        try {
+            return await this.api(`/resources/catalog${this.buildQuery(params)}`);
+        } catch (error) {
+            console.warn('Failed to fetch resource catalog:', error);
+            return [];
+        }
+    }
+
+    getDepartmentResourceTypes(department) {
+        const catalog = this.getData().resourceCatalog || [];
+        const entry = catalog.find(item => item.department === department);
+        return entry ? [...entry.resourceTypes] : [];
+    }
+
+    async createResource(payload) {
+        const result = await this.api('/resources', { method: 'POST', body: payload });
+        await this.sync();
+        return result;
+    }
+
+    async updateResource(id, payload) {
+        const result = await this.api(`/resources/${id}`, { method: 'PATCH', body: payload });
+        await this.sync();
+        return result;
+    }
+
+    async scrapResource(id) {
+        const result = await this.api(`/resources/${id}/scrap`, { method: 'POST' });
+        await this.sync();
+        return result;
+    }
+
+    async fetchProcurements(params = {}) {
+        return this.api(`/procurements${this.buildQuery(params)}`);
+    }
+
+    async createProcurement(payload) {
+        const result = await this.api('/procurements', { method: 'POST', body: payload });
+        await this.sync();
+        return result;
+    }
+
+    async fetchNotifications() {
+        return this.api('/notifications');
+    }
+
+    async updateNotification(id, payload) {
+        const result = await this.api(`/notifications/${id}`, { method: 'PATCH', body: payload });
+        await this.sync();
+        return result;
+    }
+
+    async fetchPermissionsMatrix() {
+        return this.api('/permissionsMatrix');
+    }
+
+    async updatePermissionsMatrix(payload) {
+        const result = await this.api('/permissionsMatrix', { method: 'POST', body: payload });
+        await this.sync();
+        return result;
+    }
+
+    async resetPermissionsMatrix() {
+        const result = await this.api('/permissionsMatrix/reset', { method: 'POST' });
+        await this.sync();
+        return result;
+    }
+
+    async fetchRequestorSummary() {
+        return this.api('/analytics/requestor-summary');
+    }
+
+    async fetchDepartmentSummary() {
+        return this.api('/analytics/department-summary');
+    }
+
+    async fetchRegistrarSummary() {
+        return this.api('/analytics/registrar-summary');
+    }
+
+    async fetchStock() {
+        return this.api('/analytics/stock');
+    }
+
+    async fetchMaintenanceHistory() {
+        return this.api('/maintenance/history');
+    }
+
+    async fetchReturnHistory() {
+        return this.api('/returns/history');
+    }
+
     addItem(collection, item) {
         const data = this.getData();
-        data[collection].unshift(item); // Add to beginning
+        if (!Array.isArray(data[collection])) data[collection] = [];
+        data[collection].unshift(item);
         this.saveData(data);
 
-        // Backend API Call
-        const user = this.getCurrentUser();
-        fetch(`http://localhost:3000/api/${collection}`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'x-user-role': user ? user.role : 'System Admin'
-            },
-            body: JSON.stringify(item)
-        }).catch(err => console.error('API Error:', err));
+        this.api(`/${collection}`, { method: 'POST', body: item })
+            .then(() => this.sync())
+            .catch(err => console.error('API Error:', err));
 
         return item;
     }
 
     updateItem(collection, id, updates) {
         const data = this.getData();
-        const index = data[collection].findIndex(i => (i.id || i.code) === id);
+        const items = Array.isArray(data[collection]) ? data[collection] : [];
+        const index = items.findIndex(i => (i.id || i.code) === id);
         if (index > -1) {
-            data[collection][index] = { ...data[collection][index], ...updates };
+            items[index] = { ...items[index], ...updates };
             this.saveData(data);
-
-            // Backend API Call
-            const user = this.getCurrentUser();
-            fetch(`http://localhost:3000/api/${collection}/${id}`, {
-                method: 'PATCH',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'x-user-role': user ? user.role : 'System Admin'
-                },
-                body: JSON.stringify(updates)
-            }).catch(err => console.error('API Error:', err));
-
-            return data[collection][index];
         }
-        return null;
+
+        this.api(`/${collection}/${id}`, { method: 'PATCH', body: updates })
+            .then(() => this.sync())
+            .catch(err => console.error('API Error:', err));
+
+        return index > -1 ? items[index] : null;
     }
 
     deleteItem(collection, id) {
         const data = this.getData();
-        data[collection] = data[collection].filter(i => (i.id || i.code) !== id);
+        data[collection] = (data[collection] || []).filter(i => (i.id || i.code) !== id);
         this.saveData(data);
 
-        // Backend API Call
-        const user = this.getCurrentUser();
-        fetch(`http://localhost:3000/api/${collection}/${id}`, {
-            method: 'DELETE',
-            headers: {
-                'x-user-role': user ? user.role : 'System Admin'
-            }
-        }).catch(err => console.error('API Error:', err));
+        this.api(`/${collection}/${id}`, { method: 'DELETE' })
+            .then(() => this.sync())
+            .catch(err => console.error('API Error:', err));
     }
 
-    // Global Toast Notification
+    async approveRequest(id) {
+        const result = await this.api(`/requests/${id}/approve`, { method: 'POST' });
+        await this.sync();
+        return result;
+    }
+
+    async rejectRequest(id) {
+        const result = await this.api(`/requests/${id}/reject`, { method: 'POST' });
+        await this.sync();
+        return result;
+    }
+
+    async allocateRequest(id, resourceIds) {
+        const result = await this.api(`/requests/${id}/allocate`, {
+            method: 'POST',
+            body: { resourceIds }
+        });
+        await this.sync();
+        return result;
+    }
+
+    async confirmReceipt(id) {
+        const result = await this.api(`/requests/${id}/receipt`, { method: 'POST' });
+        await this.sync();
+        return result;
+    }
+
+    async requestMaintenance(id) {
+        const result = await this.api(`/resources/${id}/maintenance-request`, { method: 'POST' });
+        await this.sync();
+        return result;
+    }
+
+    async initiateReturn(id) {
+        const result = await this.api(`/resources/${id}/initiate-return`, { method: 'POST' });
+        await this.sync();
+        return result;
+    }
+
+    async confirmRepairedAllocation(id) {
+        const result = await this.api(`/resources/${id}/confirm-repaired`, { method: 'POST' });
+        await this.sync();
+        return result;
+    }
+
+    async approveDeptProcurement(id) {
+        const result = await this.api(`/procurements/${id}/department-approve`, { method: 'POST' });
+        await this.sync();
+        return result;
+    }
+
+    async rejectDeptProcurement(id) {
+        const result = await this.api(`/procurements/${id}/department-reject`, { method: 'POST' });
+        await this.sync();
+        return result;
+    }
+
+    async approveRegistrarProcurement(id) {
+        const result = await this.api(`/procurements/${id}/registrar-approve`, { method: 'POST' });
+        await this.sync();
+        return result;
+    }
+
+    async rejectRegistrarProcurement(id) {
+        const result = await this.api(`/procurements/${id}/registrar-reject`, { method: 'POST' });
+        await this.sync();
+        return result;
+    }
+
+    async logPurchase(id, vendor, invoice) {
+        const result = await this.api(`/procurements/${id}/log-purchase`, {
+            method: 'POST',
+            body: { vendor, invoice }
+        });
+        await this.sync();
+        return result;
+    }
+
+    async registerProcurement(id, resources) {
+        const result = await this.api(`/procurements/${id}/register`, {
+            method: 'POST',
+            body: { resources }
+        });
+        await this.sync();
+        return result;
+    }
+
+    async acceptMaintenance(id) {
+        const result = await this.api(`/maintenance/${id}/accept`, { method: 'POST' });
+        await this.sync();
+        return result;
+    }
+
+    async repairMaintenance(id) {
+        const result = await this.api(`/maintenance/${id}/repair`, { method: 'POST' });
+        await this.sync();
+        return result;
+    }
+
+    async scrapMaintenance(id) {
+        const result = await this.api(`/maintenance/${id}/scrap`, { method: 'POST' });
+        await this.sync();
+        return result;
+    }
+
+    async processReturn(id, condition) {
+        const result = await this.api(`/returns/${id}/process`, {
+            method: 'POST',
+            body: { condition }
+        });
+        await this.sync();
+        return result;
+    }
+
+    async updateStockThreshold(id, level) {
+        const result = await this.api(`/analytics/stock-thresholds/${id}/${level}`, {
+            method: 'PATCH'
+        });
+        await this.sync();
+        return result;
+    }
+
+    async getProfile() {
+        return this.api('/profile/me');
+    }
+
+    async updateProfile(payload) {
+        const result = await this.api('/profile/me', { method: 'PATCH', body: payload });
+        const current = this.getCurrentUser();
+        this.setCurrentUser({ ...current, ...result });
+        await this.sync();
+        return result;
+    }
+
+    async updatePassword(payload) {
+        return this.api('/profile/me/password', { method: 'POST', body: payload });
+    }
+
     showToast(message, type = 'success') {
         let container = document.getElementById('toast-container');
         if (!container) {
@@ -260,7 +485,6 @@ class DataStore {
 
         container.appendChild(toast);
 
-        // Remove from DOM after animation
         setTimeout(() => {
             if (container.contains(toast)) {
                 container.removeChild(toast);
@@ -287,5 +511,4 @@ class DataStore {
     }
 }
 
-// Instantiate global store
 const Store = new DataStore();

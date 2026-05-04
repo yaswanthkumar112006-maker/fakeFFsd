@@ -157,9 +157,6 @@
                                 <label class="form-label">Managing Department</label>
                                 <select class="form-control" id="req-dept" required onchange="app.updateResourceDropdown()">
                                     <option value="" disabled selected>Select Department</option>
-                                    <option value="IT Services">IT Services</option>
-                                    <option value="Logistics Ops">Logistics Ops</option>
-                                    <option value="HR Dept">HR Dept</option>
                                 </select>
                             </div>
                             <div class="form-group">
@@ -300,19 +297,15 @@
                     <form id="procurementForm" onsubmit="app.submitProcurement(event)" novalidate>
                         <div class="form-group">
                             <label class="form-label">Requesting Department</label>
-                            <select class="form-control" id="proc-dept" required>
+                            <select class="form-control" id="proc-dept" required onchange="app.updateProcurementTypeDropdown()">
                                 <option value="" disabled selected>Select Department</option>
-                                <option value="IT Services">IT Services</option>
-                                <option value="Logistics Ops">Logistics Ops</option>
-                                <option value="HR Dept">HR Dept</option>
-                                <option value="Operations">Operations</option>
-                                <option value="Facilities">Facilities</option>
-                                <option value="Administration">Administration</option>
                             </select>
                         </div>
                         <div class="form-group">
                             <label class="form-label">Resource Type / Name</label>
-                            <input type="text" class="form-control" id="proc-type" placeholder="e.g. Ergonomic Office Chairs" required>
+                            <select class="form-control" id="proc-type" required>
+                                <option value="" disabled selected>Select Resource Type</option>
+                            </select>
                         </div>
 
                         <div class="form-group">

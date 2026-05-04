@@ -1,10 +1,17 @@
 const regApp = {
-    init: function() {
+    state: {
+        summary: null,
+        requests: [],
+        procurements: [],
+        resources: []
+    },
+    init: async function() {
         const user = Store.getCurrentUser();
         if(!user || user.role !== 'Registrar') {
             window.location.href = 'login.html';
             return;
         }
+        await this.refreshData();
         
         // Update UI
         document.querySelector('.user-name').textContent = user.name;
@@ -17,18 +24,34 @@ const regApp = {
         this.renderAnalytics();
     },
 
+    refreshData: async function() {
+        const [summary, requests, procurements, resources] = await Promise.all([
+            Store.fetchRegistrarSummary(),
+            Store.fetchRequests(),
+            Store.fetchProcurements(),
+            Store.fetchResources()
+        ]);
+
+        this.state = {
+            summary: summary || null,
+            requests: requests || [],
+            procurements: procurements || [],
+            resources: resources || []
+        };
+    },
+
     // 0. Dashboard Overview
     renderDashboard: function() {
-        const data = Store.getData();
-        const resources = data.resources || [];
-        const requests = data.requests || [];
-        const procurements = data.procurements || [];
+        const summary = this.state.summary || {};
+        const resources = this.state.resources || [];
+        const requests = this.state.requests || [];
+        const procurements = this.state.procurements || [];
 
         // Stats
-        document.getElementById('dash-main-assets').textContent = resources.length.toLocaleString();
-        document.getElementById('dash-main-reqs').textContent = requests.filter(r => r.status === 'Pending').length;
-        document.getElementById('dash-main-procs').textContent = procurements.filter(p => p.status === 'Pending').length;
-        document.getElementById('dash-main-approved').textContent = requests.filter(r => r.status === 'Approved').length + procurements.filter(p => p.status === 'Approved').length;
+        document.getElementById('dash-main-assets').textContent = String(summary.activeAssets ?? resources.length).toLocaleString();
+        document.getElementById('dash-main-reqs').textContent = summary.pendingRequests ?? requests.filter(r => r.status === 'Pending').length;
+        document.getElementById('dash-main-procs').textContent = summary.pendingProcurements ?? procurements.filter(p => p.status === 'Pending').length;
+        document.getElementById('dash-main-approved').textContent = summary.approvedTotals ?? (requests.filter(r => r.status === 'Approved').length + procurements.filter(p => p.status === 'Approved').length);
 
         // Recent Requests
         const reqTbody = document.getElementById('dash-req-tbody');
@@ -91,7 +114,7 @@ const regApp = {
         if(!tbody) return;
         tbody.innerHTML = '';
 
-        const procs = Store.getData().procurements;
+        const procs = this.state.procurements;
         
         // Calculate Stats
         let pending = 0, accepted = 0, rejected = 0;
@@ -147,41 +170,37 @@ const regApp = {
         });
     },
 
-    acceptProcurement: function(id) {
-        Store.updateItem('procurements', id, { status: "Approved" });
+    acceptProcurement: async function(id) {
+        await Store.approveRegistrarProcurement(id);
+        await this.refreshData();
         alert('Procurement Approved. Task passed to Staff for fulfillment.');
         this.renderProcurementApprovals();
         this.renderDashboard();
     },
 
-    rejectProcurement: function(id) {
+    rejectProcurement: async function(id) {
         if(confirm("Reject this procurement request?")) {
-            Store.updateItem('procurements', id, { status: "Rejected" });
+            await Store.rejectRegistrarProcurement(id);
+            await this.refreshData();
             this.renderProcurementApprovals();
             this.renderDashboard();
         }
     },
 
     // 2. Global Requests Overview
-    renderGlobalRequests: function() {
+    renderGlobalRequests: async function() {
         const tbody = document.querySelector('#sys-overview-view tbody');
         if(!tbody) return;
         tbody.innerHTML = '';
 
-        // All requests or filtered
-        let requests = Store.getData().requests || [];
-
         const filterStatus = document.getElementById('filterStatus')?.value || 'All';
         const filterDept = document.getElementById('filterDept')?.value || 'All';
+        const requests = await Store.fetchRequests({
+            status: filterStatus,
+            department: filterDept
+        });
 
-        if(filterStatus !== 'All') {
-            requests = requests.filter(r => r.status === filterStatus);
-        }
-        if(filterDept !== 'All') {
-            requests = requests.filter(r => r.department === filterDept);
-        }
-
-        requests.forEach(r => {
+        (requests || []).forEach(r => {
             let statusBadge = `<span class="badge ${r.status.toLowerCase()}">${r.status}</span>`;
             if (r.status === 'Approved' || r.status === 'Allocated') {
                 statusBadge = `<span class="badge allocated">${r.status}</span>`;
@@ -204,12 +223,12 @@ const regApp = {
 
     // 3. System Analytics
     renderAnalytics: function() {
-        const stats = Store.getData();
-        const activeAssets = stats.resources.length;
+        const stats = this.state.summary || {};
+        const activeAssets = stats.activeAssets ?? this.state.resources.length;
         
-        let itDemand = stats.requests.filter(r => r.department === "IT Services").length;
-        let hrDemand = stats.requests.filter(r => r.department === "HR Dept").length;
-        let opsDemand = stats.requests.filter(r => r.department === "Operations").length;
+        let itDemand = this.state.requests.filter(r => r.department === "IT Services").length;
+        let hrDemand = this.state.requests.filter(r => r.department === "HR Dept").length;
+        let opsDemand = this.state.requests.filter(r => r.department === "Operations").length;
         
         let max = Math.max(itDemand, hrDemand, opsDemand);
         let highDemand = "IT Services";
@@ -230,6 +249,6 @@ const regApp = {
     }
 };
 
-document.addEventListener('DOMContentLoaded', () => {
-    regApp.init();
+document.addEventListener('DOMContentLoaded', async () => {
+    await regApp.init();
 });
