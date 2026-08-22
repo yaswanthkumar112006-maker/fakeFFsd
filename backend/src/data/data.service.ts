@@ -1,24 +1,18 @@
-import {
-  BadRequestException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { seedState } from './seed';
 import {
   AppState,
-  DepartmentResourceCatalogRecord,
   DepartmentRecord,
   NotificationRecord,
-  PermissionsMatrixRecord,
-  ProcurementRegistrationResourceInput,
   ProcurementRecord,
   RequestRecord,
-  ResourceCondition,
   ResourceRecord,
-  StockThresholdRecord,
   UserRecord,
+  StockThresholdRecord,
+  MaintenanceHistoryRecord,
+  ReturnHistoryRecord,
+  PermissionsMatrixRecord,
 } from '../common/domain';
-import { RequestContext } from '../common/roles';
-import { seedState } from './seed';
 
 @Injectable()
 export class DataService {
@@ -29,7 +23,7 @@ export class DataService {
     return JSON.parse(JSON.stringify(value));
   }
 
-  reset() {
+  reset(): AppState {
     this.state = this.clone(this.initialState);
     return this.getState();
   }
@@ -38,287 +32,221 @@ export class DataService {
     return this.clone(this.state);
   }
 
-  getCollection(name: keyof AppState, context: RequestContext): AppState[keyof AppState] {
-    switch (name) {
-      case 'users':
-        return this.listUsers(context);
-      case 'departments':
-        return this.clone(this.state.departments);
-      case 'requests':
-        return this.listRequests(context);
-      case 'resources':
-        return this.listResources(context);
-      case 'procurements':
-        return this.listProcurements(context);
-      case 'notifications':
-        return this.listNotifications(context);
-      case 'maintenanceHistory':
-        return this.listMaintenanceHistory(context);
-      case 'returnHistory':
-        return this.listReturnHistory(context);
-      case 'permissionsMatrix':
-        return this.clone(this.state.permissionsMatrix);
-      case 'stockThresholds':
-        return this.listStockThresholds(context);
-      case 'resourceCatalog':
-        return this.clone(this.state.resourceCatalog);
-      default:
-        throw new NotFoundException(`Collection ${String(name)} not found.`);
-    }
+  // --- GENERAL COLLECTIONS CRUD ---
+
+  getUsers(): UserRecord[] {
+    return this.clone(this.state.users);
   }
 
-  getUserById(userId?: string): UserRecord | undefined {
-    if (!userId) {
-      return undefined;
-    }
-    return this.state.users.find((user) => user.id === userId);
+  getUserById(id: string): UserRecord | undefined {
+    return this.clone(this.state.users.find((u) => u.id === id));
   }
 
   getUserByEmail(email: string): UserRecord | undefined {
-    return this.state.users.find(
-      (user) => user.email.toLowerCase() === email.toLowerCase(),
+    return this.clone(
+      this.state.users.find((u) => u.email.toLowerCase() === email.toLowerCase())
     );
   }
 
-  getActingUser(context: RequestContext): UserRecord | undefined {
-    return this.getUserById(context.userId);
+  insertUser(user: UserRecord): UserRecord {
+    this.state.users.unshift(user);
+    return this.clone(user);
   }
 
-  ensureActor(context: RequestContext): UserRecord {
-    const user = this.getActingUser(context);
+  updateUser(id: string, updates: Partial<UserRecord>): UserRecord {
+    const user = this.state.users.find((u) => u.id === id);
     if (!user) {
-      throw new BadRequestException('A valid x-user-id header is required for this action.');
-    }
-    return user;
-  }
-
-  listUsers(context: RequestContext) {
-    if (context.role === 'System Admin' || context.role === 'Guest') {
-      return this.clone(this.state.users);
-    }
-
-    const user = this.getActingUser(context);
-    if (!user) {
-      return [];
-    }
-    return this.clone([user]);
-  }
-
-  listRequests(context: RequestContext) {
-    const user = this.getActingUser(context);
-    if (context.role === 'System Admin' || context.role === 'Registrar') {
-      return this.clone(this.state.requests);
-    }
-    if (context.role === 'Dept Head' || context.role === 'Staff') {
-      return this.clone(
-        this.state.requests.filter((request) => request.department === user?.department),
-      );
-    }
-    if (context.role === 'Requestor') {
-      return this.clone(
-        this.state.requests.filter(
-          (request) =>
-            request.requestorId === user?.id || request.requestor === user?.name,
-        ),
-      );
-    }
-    return [];
-  }
-
-  listResources(context: RequestContext) {
-    const user = this.getActingUser(context);
-    if (context.role === 'System Admin' || context.role === 'Registrar') {
-      return this.clone(this.state.resources);
-    }
-    if (context.role === 'Dept Head' || context.role === 'Staff') {
-      return this.clone(
-        this.state.resources.filter((resource) => resource.department === user?.department),
-      );
-    }
-    if (context.role === 'Requestor') {
-      return this.clone(
-        this.state.resources.filter(
-          (resource) =>
-            resource.assignedToId === user?.id || resource.assignedTo === user?.name,
-        ),
-      );
-    }
-    return [];
-  }
-
-  listProcurements(context: RequestContext) {
-    const user = this.getActingUser(context);
-    if (context.role === 'System Admin' || context.role === 'Registrar') {
-      return this.clone(this.state.procurements);
-    }
-    if (context.role === 'Dept Head' || context.role === 'Staff') {
-      return this.clone(
-        this.state.procurements.filter((procurement) => procurement.department === user?.department),
-      );
-    }
-    if (context.role === 'Requestor') {
-      return this.clone(
-        this.state.procurements.filter(
-          (procurement) =>
-            procurement.requestedById === user?.id ||
-            procurement.requester === user?.name,
-        ),
-      );
-    }
-    return [];
-  }
-
-  listNotifications(context: RequestContext) {
-    return this.clone(
-      this.state.notifications.filter(
-        (notification) =>
-          notification.recipientRole === 'All' ||
-          notification.recipientRole === context.role,
-      ),
-    );
-  }
-
-  listMaintenanceHistory(context: RequestContext) {
-    const user = this.getActingUser(context);
-    if (context.role === 'System Admin' || context.role === 'Registrar') {
-      return this.clone(this.state.maintenanceHistory);
-    }
-    return this.clone(
-      this.state.maintenanceHistory.filter(
-        (item) =>
-          item.department === user?.department ||
-          item.allocatedTo === user?.name,
-      ),
-    );
-  }
-
-  listReturnHistory(context: RequestContext) {
-    const user = this.getActingUser(context);
-    if (context.role === 'System Admin' || context.role === 'Registrar') {
-      return this.clone(this.state.returnHistory);
-    }
-    return this.clone(
-      this.state.returnHistory.filter(
-        (item) =>
-          item.department === user?.department ||
-          item.returnedBy === user?.name,
-      ),
-    );
-  }
-
-  listStockThresholds(context: RequestContext) {
-    const user = this.getActingUser(context);
-    if (context.role === 'System Admin' || context.role === 'Registrar') {
-      return this.clone(this.state.stockThresholds);
-    }
-    return this.clone(
-      this.state.stockThresholds.filter((item) => item.department === user?.department),
-    );
-  }
-
-  listResourceCatalog(department?: string): DepartmentResourceCatalogRecord[] {
-    const catalog = this.clone(this.state.resourceCatalog);
-    if (!department || department === 'All') {
-      return catalog;
-    }
-    return catalog.filter((item) => item.department === department);
-  }
-
-  getDepartmentResourceTypes(department: string): string[] {
-    const entry = this.state.resourceCatalog.find((item) => item.department === department);
-    return entry ? [...entry.resourceTypes] : [];
-  }
-
-  ensureValidDepartmentResourceType(department: string, resourceType: string) {
-    const allowedTypes = this.getDepartmentResourceTypes(department);
-    if (allowedTypes.length === 0) {
-      return;
-    }
-    if (!allowedTypes.includes(resourceType)) {
-      throw new BadRequestException(
-        `Resource type "${resourceType}" is not configured for department "${department}".`,
-      );
-    }
-  }
-
-  updateUser(id: string, updates: Partial<UserRecord>) {
-    const user = this.state.users.find((item) => item.id === id);
-    if (!user) {
-      throw new NotFoundException('User not found.');
+      throw new NotFoundException(`User with ID ${id} not found.`);
     }
     Object.assign(user, updates);
     return this.clone(user);
   }
 
-  addUser(payload: UserRecord) {
-    this.state.users.unshift(payload);
-    return this.clone(payload);
+  deleteUser(id: string): UserRecord {
+    const idx = this.state.users.findIndex((u) => u.id === id);
+    if (idx === -1) {
+      throw new NotFoundException(`User with ID ${id} not found.`);
+    }
+    const [deleted] = this.state.users.splice(idx, 1);
+    return this.clone(deleted);
   }
 
-  addDepartment(payload: DepartmentRecord): DepartmentRecord {
-    this.state.departments.unshift(payload);
-    return this.clone(payload);
+  // --- DEPARTMENTS ---
+
+  getDepartments(): DepartmentRecord[] {
+    return this.clone(this.state.departments);
+  }
+
+  getDepartmentById(id: string): DepartmentRecord | undefined {
+    return this.clone(this.state.departments.find((d) => d.id === id));
+  }
+
+  insertDepartment(dept: DepartmentRecord): DepartmentRecord {
+    this.state.departments.unshift(dept);
+    return this.clone(dept);
   }
 
   updateDepartment(id: string, updates: Partial<DepartmentRecord>): DepartmentRecord {
-    const department = this.state.departments.find((item) => item.id === id);
-    if (!department) {
-      throw new NotFoundException('Department not found.');
+    const dept = this.state.departments.find((d) => d.id === id);
+    if (!dept) {
+      throw new NotFoundException(`Department with ID ${id} not found.`);
     }
-    Object.assign(department, updates);
-    return this.clone(department);
+    Object.assign(dept, updates);
+    return this.clone(dept);
   }
 
-  deleteDepartment(id: string) {
-    this.state.departments = this.state.departments.filter((item) => item.id !== id);
-    return { success: true };
+  deleteDepartment(id: string): DepartmentRecord {
+    const idx = this.state.departments.findIndex((d) => d.id === id);
+    if (idx === -1) {
+      throw new NotFoundException(`Department with ID ${id} not found.`);
+    }
+    const [deleted] = this.state.departments.splice(idx, 1);
+    return this.clone(deleted);
   }
 
-  addRequest(payload: RequestRecord): RequestRecord {
-    this.state.requests.unshift(payload);
-    return this.clone(payload);
+  // --- REQUESTS ---
+
+  getRequests(): RequestRecord[] {
+    return this.clone(this.state.requests);
+  }
+
+  getRequestById(id: string): RequestRecord | undefined {
+    return this.clone(this.state.requests.find((r) => r.id === id));
+  }
+
+  insertRequest(req: RequestRecord): RequestRecord {
+    this.state.requests.unshift(req);
+    return this.clone(req);
   }
 
   updateRequest(id: string, updates: Partial<RequestRecord>): RequestRecord {
-    const request = this.state.requests.find((item) => item.id === id);
-    if (!request) {
-      throw new NotFoundException('Request not found.');
+    const req = this.state.requests.find((r) => r.id === id);
+    if (!req) {
+      throw new NotFoundException(`Request with ID ${id} not found.`);
     }
-    Object.assign(request, updates);
-    return this.clone(request);
+    Object.assign(req, updates);
+    return this.clone(req);
   }
 
-  deleteRequest(id: string) {
-    this.state.requests = this.state.requests.filter((item) => item.id !== id);
-    return { success: true };
+  // --- RESOURCES ---
+
+  getResources(): ResourceRecord[] {
+    return this.clone(this.state.resources);
   }
 
-  addResource(payload: ResourceRecord): ResourceRecord {
-    this.state.resources.unshift(payload);
-    return this.clone(payload);
+  getResourceById(id: string): ResourceRecord | undefined {
+    return this.clone(this.state.resources.find((r) => r.id === id));
+  }
+
+  insertResource(res: ResourceRecord): ResourceRecord {
+    this.state.resources.unshift(res);
+    return this.clone(res);
   }
 
   updateResource(id: string, updates: Partial<ResourceRecord>): ResourceRecord {
-    const resource = this.state.resources.find((item) => item.id === id);
-    if (!resource) {
-      throw new NotFoundException('Resource not found.');
+    const res = this.state.resources.find((r) => r.id === id);
+    if (!res) {
+      throw new NotFoundException(`Resource with ID ${id} not found.`);
     }
-    Object.assign(resource, updates);
-    return this.clone(resource);
+    Object.assign(res, updates);
+    return this.clone(res);
   }
 
-  addProcurement(payload: ProcurementRecord): ProcurementRecord {
-    this.state.procurements.unshift(payload);
-    return this.clone(payload);
+  // --- PROCUREMENTS ---
+
+  getProcurements(): ProcurementRecord[] {
+    return this.clone(this.state.procurements);
+  }
+
+  getProcurementById(id: string): ProcurementRecord | undefined {
+    return this.clone(this.state.procurements.find((p) => p.id === id));
+  }
+
+  insertProcurement(proc: ProcurementRecord): ProcurementRecord {
+    this.state.procurements.unshift(proc);
+    return this.clone(proc);
   }
 
   updateProcurement(id: string, updates: Partial<ProcurementRecord>): ProcurementRecord {
-    const procurement = this.state.procurements.find((item) => item.id === id);
-    if (!procurement) {
-      throw new NotFoundException('Procurement not found.');
+    const proc = this.state.procurements.find((p) => p.id === id);
+    if (!proc) {
+      throw new NotFoundException(`Procurement with ID ${id} not found.`);
     }
-    Object.assign(procurement, updates);
-    return this.clone(procurement);
+    Object.assign(proc, updates);
+    return this.clone(proc);
+  }
+
+  // --- NOTIFICATIONS ---
+
+  getNotifications(): NotificationRecord[] {
+    return this.clone(this.state.notifications);
+  }
+
+  getNotificationById(id: string): NotificationRecord | undefined {
+    return this.clone(this.state.notifications.find((n) => n.id === id));
+  }
+
+  insertNotification(notif: NotificationRecord): NotificationRecord {
+    this.state.notifications.unshift(notif);
+    return this.clone(notif);
+  }
+
+  updateNotification(id: string, updates: Partial<NotificationRecord>): NotificationRecord {
+    const notif = this.state.notifications.find((n) => n.id === id);
+    if (!notif) {
+      throw new NotFoundException(`Notification with ID ${id} not found.`);
+    }
+    Object.assign(notif, updates);
+    return this.clone(notif);
+  }
+
+  // --- STOCK THRESHOLDS ---
+
+  getStockThresholds(): StockThresholdRecord[] {
+    return this.clone(this.state.stockThresholds);
+  }
+
+  getStockThresholdById(id: string): StockThresholdRecord | undefined {
+    return this.clone(this.state.stockThresholds.find((s) => s.id === id));
+  }
+
+  updateStockThreshold(id: string, updates: Partial<StockThresholdRecord>): StockThresholdRecord {
+    const st = this.state.stockThresholds.find((s) => s.id === id);
+    if (!st) {
+      throw new NotFoundException(`Stock threshold with ID ${id} not found.`);
+    }
+    Object.assign(st, updates);
+    return this.clone(st);
+  }
+
+  // --- HISTORY RECORDS (READ-ONLY INSERTS) ---
+
+  getMaintenanceHistory(): MaintenanceHistoryRecord[] {
+    return this.clone(this.state.maintenanceHistory);
+  }
+
+  insertMaintenanceHistory(item: MaintenanceHistoryRecord): MaintenanceHistoryRecord {
+    this.state.maintenanceHistory.unshift(item);
+    return this.clone(item);
+  }
+
+  getReturnHistory(): ReturnHistoryRecord[] {
+    return this.clone(this.state.returnHistory);
+  }
+
+  insertReturnHistory(item: ReturnHistoryRecord): ReturnHistoryRecord {
+    this.state.returnHistory.unshift(item);
+    return this.clone(item);
+  }
+
+  getResourceCatalog(): any[] {
+    return this.clone(this.state.resourceCatalog);
+  }
+
+  // --- PERMISSIONS MATRIX CRUD ---
+
+  getPermissionsMatrix(): PermissionsMatrixRecord {
+    return this.clone(this.state.permissionsMatrix);
   }
 
   updatePermissions(matrix: PermissionsMatrixRecord): PermissionsMatrixRecord {
@@ -326,382 +254,8 @@ export class DataService {
     return this.clone(this.state.permissionsMatrix);
   }
 
-  resetPermissions() {
+  resetPermissions(): PermissionsMatrixRecord {
     this.state.permissionsMatrix = this.clone(this.initialState.permissionsMatrix);
     return this.clone(this.state.permissionsMatrix);
-  }
-
-  updateNotification(id: string, updates: Partial<NotificationRecord>): NotificationRecord {
-    const notification = this.state.notifications.find((item) => item.id === id);
-    if (!notification) {
-      throw new NotFoundException('Notification not found.');
-    }
-    Object.assign(notification, updates);
-    return this.clone(notification);
-  }
-
-  findRequest(id: string): RequestRecord {
-    const request = this.state.requests.find((item) => item.id === id);
-    if (!request) {
-      throw new NotFoundException('Request not found.');
-    }
-    return request;
-  }
-
-  findResource(id: string): ResourceRecord {
-    const resource = this.state.resources.find((item) => item.id === id);
-    if (!resource) {
-      throw new NotFoundException('Resource not found.');
-    }
-    return resource;
-  }
-
-  findProcurement(id: string): ProcurementRecord {
-    const procurement = this.state.procurements.find((item) => item.id === id);
-    if (!procurement) {
-      throw new NotFoundException('Procurement not found.');
-    }
-    return procurement;
-  }
-
-  ensureDepartmentScoped(context: RequestContext, department?: string) {
-    if (context.role !== 'Staff' && context.role !== 'Dept Head') {
-      return;
-    }
-    const user = this.getActingUser(context);
-    if (!user || user.department !== department) {
-      throw new BadRequestException('Action is restricted to your department.');
-    }
-  }
-
-  private normalizeResourceToken(value?: string): string {
-    return String(value || '')
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, ' ')
-      .replace(/\b(v\d+|inch|inches|sets|set|bundles|bundle)\b/g, ' ')
-      .replace(/\s+/g, ' ')
-      .trim();
-  }
-
-  private getResourceTypeAliases(resourceType: string): string[] {
-    const normalized = this.normalizeResourceToken(resourceType);
-    const aliasMap: Record<string, string[]> = {
-      laptop: ['laptop', 'developer laptop', 'laptop bundle'],
-      'developer laptops': ['laptop', 'developer laptop'],
-      'laptop bundles': ['laptop', 'laptop bundle'],
-      monitor: ['monitor', 'electronics'],
-      projector: ['projector', 'electronics'],
-      'projector screens': ['projector', 'electronics'],
-      tablet: ['tablet', 'electronics'],
-      printer: ['printer', 'electronics'],
-      router: ['router', 'switch', 'network switch', 'hardware'],
-      'cisco routers': ['router', 'switch', 'network switch', 'hardware'],
-      'server blades': ['server blade', 'hardware'],
-      'server blades v2': ['server blade', 'hardware'],
-      accessories: ['accessories', 'keyboard', 'mouse', 'remote', 'headset'],
-      'ergonomic keyboards': ['keyboard', 'accessories'],
-      electronics: ['electronics', 'monitor', 'projector', 'tablet', 'printer'],
-      furniture: ['furniture', 'desk', 'chair', 'table', 'whiteboard'],
-      'standing desks': ['desk', 'furniture'],
-      'office desks': ['desk', 'furniture'],
-      'conference tables': ['table', 'furniture'],
-      'whiteboards': ['whiteboard', 'furniture'],
-      hardware: ['hardware', 'server blade', 'router', 'switch'],
-      appliance: ['appliance', 'coffee machine'],
-      'walkie talkies': ['electronics', 'accessories', 'walkie talkie'],
-      'microscope sets': ['microscope', 'electronics'],
-    };
-
-    const aliases = aliasMap[normalized] || [];
-    return [...new Set([normalized, ...aliases].map((item) => this.normalizeResourceToken(item)).filter(Boolean))];
-  }
-
-  resourceMatchesType(resource: ResourceRecord, requestedType: string): boolean {
-    const aliases = this.getResourceTypeAliases(requestedType);
-    const resourceType = this.normalizeResourceToken(resource.type);
-    const resourceName = this.normalizeResourceToken(resource.name);
-
-    return aliases.some((alias) => {
-      return (
-        resourceType === alias ||
-        resourceName === alias ||
-        resourceType.includes(alias) ||
-        resourceName.includes(alias) ||
-        alias.includes(resourceType) ||
-        alias.includes(resourceName)
-      );
-    });
-  }
-
-  countAvailableResourcesByDepartmentType(department: string, resourceType: string): number {
-    return this.state.resources.filter((resource) => {
-      return (
-        resource.department === department &&
-        resource.status === 'Available' &&
-        this.resourceMatchesType(resource, resourceType)
-      );
-    }).length;
-  }
-
-  allocateRequest(requestId: string, resourceIds: string[], context: RequestContext) {
-    const request = this.findRequest(requestId);
-    const user = this.ensureActor(context);
-
-    if (context.role === 'Staff') {
-      this.ensureDepartmentScoped(context, request.department);
-    }
-
-    if (request.status !== 'Approved') {
-      throw new BadRequestException('Only approved requests can be allocated.');
-    }
-
-    if (resourceIds.length !== Number(request.quantity)) {
-      throw new BadRequestException('Selected resources must match request quantity.');
-    }
-
-    const resources = resourceIds.map((resourceId) => this.findResource(resourceId));
-    resources.forEach((resource) => {
-      if (resource.department !== request.department) {
-        throw new BadRequestException('Selected resources must be in the same department.');
-      }
-      if (resource.status !== 'Available') {
-        throw new BadRequestException('Selected resources must be available.');
-      }
-      const typeMatch = this.resourceMatchesType(resource, request.resourceType);
-      if (!typeMatch) {
-        throw new BadRequestException('Selected resources do not match the request type.');
-      }
-      resource.status = 'Allocated';
-      resource.assignedTo = request.requestor;
-      resource.assignedToId = request.requestorId;
-      resource.date = new Date().toLocaleDateString('en-US', {
-        month: 'short',
-        day: '2-digit',
-        year: 'numeric',
-      });
-    });
-
-    request.status = 'Allocated';
-    request.assignedResources = resourceIds.join(', ');
-    request.allocatedBy = user?.name || context.role;
-
-    return this.clone(request);
-  }
-
-  confirmReceipt(requestId: string, context: RequestContext) {
-    const request = this.findRequest(requestId);
-    const user = this.ensureActor(context);
-    if (request.status !== 'Allocated') {
-      throw new BadRequestException('Only allocated requests can be confirmed.');
-    }
-    if (!user || request.requestorId !== user.id) {
-      throw new BadRequestException('You can only confirm your own allocated requests.');
-    }
-    request.status = 'Completed';
-    return this.clone(request);
-  }
-
-  requestMaintenance(resourceId: string, context: RequestContext) {
-    const resource = this.findResource(resourceId);
-    const user = this.ensureActor(context);
-    if (resource.status !== 'Allocated' && resource.status !== 'Repaired') {
-      throw new BadRequestException('Only allocated resources can enter maintenance.');
-    }
-    if (!user || resource.assignedToId !== user.id) {
-      throw new BadRequestException('You can only request maintenance for your own resource.');
-    }
-    resource.status = 'Maintenance Requested';
-    return this.clone(resource);
-  }
-
-  initiateReturn(resourceId: string, context: RequestContext) {
-    const resource = this.findResource(resourceId);
-    const user = this.ensureActor(context);
-    if (resource.status !== 'Allocated' && resource.status !== 'Repaired') {
-      throw new BadRequestException('Only allocated resources can be returned.');
-    }
-    if (!user || resource.assignedToId !== user.id) {
-      throw new BadRequestException('You can only return your own resource.');
-    }
-    resource.status = 'Returned';
-    resource.returnRequestedBy = user.name;
-    resource.returnRequestedById = user.id;
-    return this.clone(resource);
-  }
-
-  confirmRepairedAllocation(resourceId: string, context: RequestContext) {
-    const resource = this.findResource(resourceId);
-    const user = this.ensureActor(context);
-    if (resource.status !== 'Repaired') {
-      throw new BadRequestException('Only repaired resources can be confirmed.');
-    }
-    if (!user || resource.assignedToId !== user.id) {
-      throw new BadRequestException('You can only confirm your own repaired resource.');
-    }
-    resource.status = 'Allocated';
-    return this.clone(resource);
-  }
-
-  acceptMaintenance(resourceId: string, context: RequestContext) {
-    const resource = this.findResource(resourceId);
-    this.ensureDepartmentScoped(context, resource.department);
-    if (resource.status !== 'Maintenance Requested') {
-      throw new BadRequestException('Only maintenance-requested resources can be accepted.');
-    }
-    resource.status = 'Maintenance';
-    return this.clone(resource);
-  }
-
-  resolveMaintenance(resourceId: string, status: 'Repaired' | 'Scrapped', context: RequestContext) {
-    const resource = this.findResource(resourceId);
-    this.ensureDepartmentScoped(context, resource.department);
-    if (!['Maintenance Requested', 'Maintenance'].includes(resource.status)) {
-      throw new BadRequestException('Only active maintenance items can be resolved.');
-    }
-    resource.status = status === 'Repaired' ? 'Repaired' : 'Scrapped';
-    resource.condition = status === 'Repaired' ? 'Good' : resource.condition;
-    this.state.maintenanceHistory.unshift({
-      code: resource.id,
-      type: resource.type,
-      department: resource.department,
-      allocatedTo: resource.assignedTo,
-      issue: status === 'Repaired' ? 'Repaired' : 'Unrepairable',
-      actionDate: new Date().toLocaleDateString(),
-      status: status === 'Repaired' ? 'Repaired' : 'Scrap',
-    });
-    return this.clone(resource);
-  }
-
-  processReturn(resourceId: string, condition: ResourceCondition, context: RequestContext) {
-    const resource = this.findResource(resourceId);
-    this.ensureDepartmentScoped(context, resource.department);
-    if (resource.status !== 'Returned') {
-      throw new BadRequestException('Only returned resources can be processed.');
-    }
-    const finalStatus = condition === 'Bad' ? 'Scrapped' : 'Available';
-    this.state.returnHistory.unshift({
-      code: resource.id,
-      type: resource.type,
-      department: resource.department,
-      returnedBy: resource.assignedTo || resource.returnRequestedBy || 'Unknown',
-      returnDate: resource.date || new Date().toLocaleDateString(),
-      processDate: new Date().toLocaleDateString(),
-      condition,
-      finalStatus,
-    });
-    resource.status = finalStatus;
-    resource.condition = condition;
-    resource.assignedTo = 'None';
-    resource.assignedToId = undefined;
-    resource.returnRequestedBy = undefined;
-    resource.returnRequestedById = undefined;
-    return this.clone(resource);
-  }
-
-  approveDeptProcurement(id: string, context: RequestContext) {
-    const procurement = this.findProcurement(id);
-    this.ensureDepartmentScoped(context, procurement.department);
-    if (procurement.status !== 'Pending Approval') {
-      throw new BadRequestException('Only requestor-submitted procurements can be department approved.');
-    }
-    procurement.status = 'Pending';
-    return this.clone(procurement);
-  }
-
-  rejectDeptProcurement(id: string, context: RequestContext) {
-    const procurement = this.findProcurement(id);
-    this.ensureDepartmentScoped(context, procurement.department);
-    if (procurement.status !== 'Pending Approval') {
-      throw new BadRequestException('Only requestor-submitted procurements can be department rejected.');
-    }
-    procurement.status = 'Rejected';
-    return this.clone(procurement);
-  }
-
-  approveRegistrarProcurement(id: string) {
-    const procurement = this.findProcurement(id);
-    if (procurement.status !== 'Pending') {
-      throw new BadRequestException('Only pending procurements can be registrar approved.');
-    }
-    procurement.status = 'Approved';
-    return this.clone(procurement);
-  }
-
-  rejectRegistrarProcurement(id: string) {
-    const procurement = this.findProcurement(id);
-    if (procurement.status !== 'Pending') {
-      throw new BadRequestException('Only pending procurements can be registrar rejected.');
-    }
-    procurement.status = 'Rejected';
-    return this.clone(procurement);
-  }
-
-  logPurchase(id: string, vendor: string, invoice: string, context: RequestContext) {
-    const procurement = this.findProcurement(id);
-    this.ensureDepartmentScoped(context, procurement.department);
-    if (procurement.status !== 'Approved') {
-      throw new BadRequestException('Only approved procurements can be logged.');
-    }
-    procurement.vendor = vendor;
-    procurement.invoice = invoice;
-    procurement.status = 'Fulfilled';
-    return this.clone(procurement);
-  }
-
-  registerProcurement(id: string, resources: ProcurementRegistrationResourceInput[], context: RequestContext) {
-    const procurement = this.findProcurement(id);
-    this.ensureDepartmentScoped(context, procurement.department);
-    if (procurement.status !== 'Fulfilled') {
-      throw new BadRequestException('Only fulfilled procurements can be registered.');
-    }
-    if (resources.length === 0) {
-      throw new BadRequestException('At least one resource must be registered.');
-    }
-    const existingSerials = new Set(
-      this.state.resources.map((resource) =>
-        String(resource.serialNumber || '').toLowerCase(),
-      ),
-    );
-    for (const resource of resources) {
-      const serial = String(resource.serialNumber || '').toLowerCase();
-      if (!serial || existingSerials.has(serial)) {
-        throw new BadRequestException('Serial numbers must be unique.');
-      }
-      existingSerials.add(serial);
-      this.state.resources.unshift({
-        ...resource,
-        department: procurement.department,
-        status: resource.status || 'Available',
-        condition: resource.condition || 'New',
-        assignedTo: resource.assignedTo || 'None',
-      });
-    }
-    procurement.status = 'Registered';
-    return this.clone(procurement);
-  }
-
-  updateStockThreshold(id: string, thresholdLevel: number, context: RequestContext) {
-    const threshold = this.state.stockThresholds.find((item) => item.id === id);
-    if (!threshold) {
-      throw new NotFoundException('Threshold not found.');
-    }
-    this.ensureDepartmentScoped(context, threshold.department);
-    threshold.thresholdLevel = thresholdLevel;
-    return this.clone(threshold);
-  }
-
-  createOrUpdateStockThreshold(payload: StockThresholdRecord, context: RequestContext) {
-    this.ensureDepartmentScoped(context, payload.department);
-    const existing = this.state.stockThresholds.find(
-      (item) =>
-        item.department === payload.department &&
-        item.resourceType === payload.resourceType,
-    );
-    if (existing) {
-      existing.thresholdLevel = payload.thresholdLevel;
-      return this.clone(existing);
-    }
-    this.state.stockThresholds.push(payload);
-    return this.clone(payload);
   }
 }

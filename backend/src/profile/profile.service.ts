@@ -1,19 +1,24 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { UserRecord } from '../common/domain';
 import { RequestContext } from '../common/roles';
 import { DataService } from '../data/data.service';
 import { UpdatePasswordDto, UpdateProfileDto } from './dto/profile.dto';
+import { getActingUser } from '../common/utils';
 
 @Injectable()
 export class ProfileService {
   constructor(private readonly dataService: DataService) {}
 
-  getMe(context: RequestContext) {
-    return this.dataService.getActingUser(context);
+  getMe(context: RequestContext): UserRecord {
+    const user = getActingUser(this.dataService, context);
+    if (!user) {
+      throw new NotFoundException('Active user profile not found.');
+    }
+    return user;
   }
 
   updateProfile(context: RequestContext, payload: UpdateProfileDto): UserRecord {
-    const user = this.dataService.getActingUser(context);
+    const user = getActingUser(this.dataService, context);
     if (!user) {
       throw new BadRequestException('Active demo user not found.');
     }
@@ -29,7 +34,7 @@ export class ProfileService {
   }
 
   updatePassword(context: RequestContext, payload: UpdatePasswordDto): UserRecord {
-    const user = this.dataService.getActingUser(context);
+    const user = getActingUser(this.dataService, context);
     if (!user) {
       throw new BadRequestException('Active demo user not found.');
     }

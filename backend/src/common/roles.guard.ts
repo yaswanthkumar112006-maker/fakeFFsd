@@ -8,6 +8,12 @@ import { Reflector } from '@nestjs/core';
 import { ROLES_KEY } from './roles.decorator';
 import { RequestContext, ROLES, Role } from './roles';
 
+export function normalizeUserId(id?: string): string {
+  if (!id) return '';
+  const match = id.match(/^U-0*([1-9]\d*)$/i);
+  return match ? `U${match[1]}` : id;
+}
+
 @Injectable()
 export class RolesGuard implements CanActivate {
   constructor(private readonly reflector: Reflector) {}
@@ -25,11 +31,13 @@ export class RolesGuard implements CanActivate {
       ? (normalizedRole as Role)
       : 'Guest';
 
+    const rawUserId = Array.isArray(request.headers['x-user-id'])
+      ? request.headers['x-user-id'][0]
+      : request.headers['x-user-id'];
+
     request.context = {
       role,
-      userId: Array.isArray(request.headers['x-user-id'])
-        ? request.headers['x-user-id'][0]
-        : request.headers['x-user-id'],
+      userId: normalizeUserId(rawUserId),
     } satisfies RequestContext;
 
     if (!requiredRoles || requiredRoles.length === 0) {

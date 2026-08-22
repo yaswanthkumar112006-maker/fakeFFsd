@@ -1,15 +1,39 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
 import { RequestRecord } from '../common/domain';
 import { RequestContext } from '../common/roles';
 import { DataService } from '../data/data.service';
 import { CreateRequestDto, UpdateRequestDto } from './dto/request.dto';
+import {
+  getActingUser,
+  ensureActor,
+  ensureDepartmentScoped,
+  ensureValidDepartmentResourceType,
+  resourceMatchesType,
+} from '../common/utils';
 
 @Injectable()
 export class RequestsService {
   constructor(private readonly dataService: DataService) {}
 
-  getAll(context: RequestContext, filters?: { status?: string; department?: string }) {
-    let items = this.dataService.getCollection('requests', context) as RequestRecord[];
+  getAll(context: RequestContext, filters?: { status?: string; department?: string }): RequestRecord[] {
+    const user = getActingUser(this.dataService, context);
+    let items = this.dataService.getRequests();
+
+    // 1. Role-based scoping
+    if (context.role !== 'System Admin' && context.role !== 'Registrar') {
+      if (context.role === 'Dept Head' || context.role === 'Staff') {
+        items = items.filter((request) => request.department === user?.department);
+      } else if (context.role === 'Requestor') {
+        items = items.filter(
+          (request) =>
+            request.requestorId === user?.id || request.requestor === user?.name
+        );
+      } else {
+        items = [];
+      }
+    }
+
+    // 2. Query filters
     if (filters?.status && filters.status !== 'All') {
       const statuses = filters.status.split(',').map((value) => value.trim());
       items = items.filter((item) => statuses.includes(item.status));
@@ -21,36 +45,97 @@ export class RequestsService {
   }
 
   create(payload: CreateRequestDto, context: RequestContext): RequestRecord {
-    const user = this.dataService.getActingUser(context);
+    const user = getActingUser(this.dataService, context);
     const department = payload.department || user?.department || 'Unassigned';
-    this.dataService.ensureValidDepartmentResourceType(department, payload.resourceType);
-    return this.dataService.addRequest({
+
+    ensureValidDepartmentResourceType(this.dataService, department, payload.resourceType);
+
+    const request: RequestRecord = {
       ...payload,
+      id: payload.id || `REQ-${Date.now()}`,
       department,
       requestor: payload.requestor || user?.name || 'Unknown User',
       requestorId: payload.requestorId || user?.id,
       status: payload.status || 'Pending',
       date: payload.date || new Date().toLocaleDateString('en-US'),
-    });
+    };
+
+    return this.dataService.insertRequest(request);
   }
 
   update(id: string, payload: UpdateRequestDto): RequestRecord {
     return this.dataService.updateRequest(id, payload);
   }
 
-  approve(id: string) {
+  approve(id: string): RequestRecord {
+    const request = this.dataService.getRequestById(id);
+    if (!request) {
+      throw new NotFoundException(`Request with ID ${id} not found.`);
+    }
     return this.dataService.updateRequest(id, { status: 'Approved' });
   }
 
-  reject(id: string) {
+  reject(id: string): RequestRecord {
+    const request = this.dataService.getRequestById(id);
+    if (!request) {
+      throw new NotFoundException(`Request with ID ${id} not found.`);
+    }
     return this.dataService.updateRequest(id, { status: 'Rejected' });
   }
 
-  allocate(id: string, resourceIds: string[], context: RequestContext) {
-    return this.dataService.allocateRequest(id, resourceIds, context);
+  allocate(id: string, resourceIds: string[], context: RequestContext): RequestRecord {
+    const request = this.dataService.getRequestById(id);
+    if (!request) {
+      throw new NotFoundException(`Request with ID ${id} not found.`);
+    }
+
+    ensureDepartmentScoped(this.dataService, context, request.department);
+    if (request.status !== 'Approved') {
+      throw new BadRequestException('Can only allocate resources for approved requests.');
+    }
+
+    if (resourceIds.length !== request.quantity) {
+      throw new BadRequestException('Number of allocated resources must match requested quantity.');
+    }
+
+    // Validate resource statuses and types
+    for (const resId of resourceIds) {
+      const resource = this.dataService.getResourceById(resId);
+      if (!resource) {
+        throw new NotFoundException(`Resource with ID ${resId} not found.`);
+      }
+      if (resource.status !== 'Available') {
+        throw new BadRequestException('Only available resources can be allocated.');
+      }
+      if (!resourceMatchesType(resource, request.resourceType)) {
+        throw new BadRequestException('Resource type does not match request.');
+      }
+    }
+
+    // Allocate resources
+    for (const resId of resourceIds) {
+      this.dataService.updateResource(resId, {
+        status: 'Allocated',
+        assignedTo: request.requestor,
+        assignedToId: request.requestorId,
+        date: new Date().toLocaleDateString('en-US'),
+      });
+    }
+
+    return this.dataService.updateRequest(id, { status: 'Allocated' });
   }
 
-  confirmReceipt(id: string, context: RequestContext) {
-    return this.dataService.confirmReceipt(id, context);
+  confirmReceipt(id: string, context: RequestContext): RequestRecord {
+    const request = this.dataService.getRequestById(id);
+    if (!request) {
+      throw new NotFoundException(`Request with ID ${id} not found.`);
+    }
+
+    ensureActor(this.dataService, context);
+    if (request.status !== 'Allocated') {
+      throw new BadRequestException('Can only confirm receipt for allocated requests.');
+    }
+
+    return this.dataService.updateRequest(id, { status: 'Completed' });
   }
 }

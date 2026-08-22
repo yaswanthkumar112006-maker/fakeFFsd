@@ -7,15 +7,15 @@ import { DataService } from '../data/data.service';
 export class PermissionsService {
   constructor(private readonly dataService: DataService) {}
 
-  getMatrix(context: RequestContext) {
-    return this.dataService.getCollection('permissionsMatrix', context);
+  getMatrix(context: RequestContext): PermissionsMatrixRecord {
+    return this.dataService.getPermissionsMatrix();
   }
 
-  updateMatrix(payload: PermissionsMatrixRecord) {
+  updateMatrix(payload: PermissionsMatrixRecord): PermissionsMatrixRecord {
     return this.dataService.updatePermissions(payload);
   }
 
-  resetMatrix() {
+  resetMatrix(): PermissionsMatrixRecord {
     return this.dataService.resetPermissions();
   }
 }

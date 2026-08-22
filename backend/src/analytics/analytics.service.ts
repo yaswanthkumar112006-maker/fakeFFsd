@@ -1,15 +1,70 @@
-import { Injectable } from '@nestjs/common';
-import { ProcurementRecord, RequestRecord, ResourceRecord, StockThresholdRecord } from '../common/domain';
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { ProcurementRecord, RequestRecord, ResourceRecord } from '../common/domain';
 import { RequestContext } from '../common/roles';
 import { DataService } from '../data/data.service';
+import { getActingUser, ensureDepartmentScoped, resourceMatchesType } from '../common/utils';
 
 @Injectable()
 export class AnalyticsService {
   constructor(private readonly dataService: DataService) {}
 
+  private getScopedRequests(context: RequestContext): RequestRecord[] {
+    const user = getActingUser(this.dataService, context);
+    const items = this.dataService.getRequests();
+    if (context.role === 'System Admin' || context.role === 'Registrar') {
+      return items;
+    }
+    if (context.role === 'Dept Head' || context.role === 'Staff') {
+      return items.filter((request) => request.department === user?.department);
+    }
+    if (context.role === 'Requestor') {
+      return items.filter(
+        (request) =>
+          request.requestorId === user?.id || request.requestor === user?.name
+      );
+    }
+    return [];
+  }
+
+  private getScopedResources(context: RequestContext): ResourceRecord[] {
+    const user = getActingUser(this.dataService, context);
+    const items = this.dataService.getResources();
+    if (context.role === 'System Admin' || context.role === 'Registrar') {
+      return items;
+    }
+    if (context.role === 'Dept Head' || context.role === 'Staff') {
+      return items.filter((resource) => resource.department === user?.department);
+    }
+    if (context.role === 'Requestor') {
+      return items.filter(
+        (resource) =>
+          resource.assignedToId === user?.id || resource.assignedTo === user?.name
+      );
+    }
+    return [];
+  }
+
+  private getScopedProcurements(context: RequestContext): ProcurementRecord[] {
+    const user = getActingUser(this.dataService, context);
+    const items = this.dataService.getProcurements();
+    if (context.role === 'System Admin' || context.role === 'Registrar') {
+      return items;
+    }
+    if (context.role === 'Dept Head' || context.role === 'Staff') {
+      return items.filter((procurement) => procurement.department === user?.department);
+    }
+    if (context.role === 'Requestor') {
+      return items.filter(
+        (procurement) =>
+          procurement.requestedById === user?.id || procurement.requester === user?.name
+      );
+    }
+    return [];
+  }
+
   getRequestorSummary(context: RequestContext) {
-    const requests = this.dataService.getCollection('requests', context) as RequestRecord[];
-    const resources = this.dataService.getCollection('resources', context) as ResourceRecord[];
+    const requests = this.getScopedRequests(context);
+    const resources = this.getScopedResources(context);
     return {
       totalRequests: requests.length,
       pendingRequests: requests.filter((item) => item.status === 'Pending').length,
@@ -21,9 +76,9 @@ export class AnalyticsService {
   }
 
   getDepartmentSummary(context: RequestContext) {
-    const resources = this.dataService.getCollection('resources', context) as ResourceRecord[];
-    const requests = this.dataService.getCollection('requests', context) as RequestRecord[];
-    const procurements = this.dataService.getCollection('procurements', context) as ProcurementRecord[];
+    const resources = this.getScopedResources(context);
+    const requests = this.getScopedRequests(context);
+    const procurements = this.getScopedProcurements(context);
     return {
       totalResources: resources.length,
       available: resources.filter((item) => item.status === 'Available').length,
@@ -36,9 +91,9 @@ export class AnalyticsService {
   }
 
   getRegistrarSummary(context: RequestContext) {
-    const resources = this.dataService.getCollection('resources', context) as ResourceRecord[];
-    const requests = this.dataService.getCollection('requests', context) as RequestRecord[];
-    const procurements = this.dataService.getCollection('procurements', context) as ProcurementRecord[];
+    const resources = this.getScopedResources(context);
+    const requests = this.getScopedRequests(context);
+    const procurements = this.getScopedProcurements(context);
     return {
       totalAssets: resources.length,
       pendingRequests: requests.filter((item) => item.status === 'Pending').length,
@@ -50,14 +105,14 @@ export class AnalyticsService {
   }
 
   getStock(context: RequestContext) {
-    const thresholds = this.dataService.getCollection('stockThresholds', context) as StockThresholdRecord[];
-    const resources = this.dataService.getCollection('resources', context) as ResourceRecord[];
+    const thresholds = this.dataService.getStockThresholds();
+    const resources = this.dataService.getResources();
     return thresholds.map((threshold) => {
       const currentQuantity = resources.filter(
         (resource) =>
           resource.department === threshold.department &&
           resource.status === 'Available' &&
-          (resource.type === threshold.resourceType || resource.name === threshold.resourceType),
+          resourceMatchesType(resource, threshold.resourceType)
       ).length;
       const status =
         currentQuantity >= threshold.thresholdLevel
@@ -70,6 +125,11 @@ export class AnalyticsService {
   }
 
   updateStockThreshold(id: string, level: number, context: RequestContext) {
-    return this.dataService.updateStockThreshold(id, level, context);
+    const threshold = this.dataService.getStockThresholdById(id);
+    if (!threshold) {
+      throw new NotFoundException('Threshold not found.');
+    }
+    ensureDepartmentScoped(this.dataService, context, threshold.department);
+    return this.dataService.updateStockThreshold(id, { thresholdLevel: level });
   }
 }

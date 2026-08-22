@@ -8,19 +8,26 @@ import { CreateDepartmentDto, UpdateDepartmentDto } from './dto/department.dto';
 export class DepartmentsService {
   constructor(private readonly dataService: DataService) {}
 
-  getAll(context: RequestContext) {
-    return this.dataService.getCollection('departments', context);
+  getAll(context: RequestContext): DepartmentRecord[] {
+    return this.dataService.getDepartments();
   }
 
   create(payload: CreateDepartmentDto): DepartmentRecord {
-    return this.dataService.addDepartment(payload);
+    const depts = this.dataService.getDepartments();
+    const newId = `D${depts.length + 1}_${Date.now()}`;
+    const dept: DepartmentRecord = {
+      id: newId,
+      ...payload,
+      memberCount: payload.memberCount || 0
+    };
+    return this.dataService.insertDepartment(dept);
   }
 
   update(id: string, payload: UpdateDepartmentDto): DepartmentRecord {
     return this.dataService.updateDepartment(id, payload);
   }
 
-  remove(id: string) {
+  remove(id: string): DepartmentRecord {
     return this.dataService.deleteDepartment(id);
   }
 }
