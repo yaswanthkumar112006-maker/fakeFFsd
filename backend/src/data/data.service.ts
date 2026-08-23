@@ -20,6 +20,9 @@ export class DataService {
   private state: AppState = JSON.parse(JSON.stringify(seedState));
 
   private clone<T>(value: T): T {
+    if (value === undefined) {
+      return undefined as any;
+    }
     return JSON.parse(JSON.stringify(value));
   }
 
