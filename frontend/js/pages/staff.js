@@ -28,13 +28,6 @@ const staffApp = {
         this.renderMaintenance();
         this.renderReturns();
         this.renderProcurementTasks();
-        this.stockData = (Store.getData().stockThresholds || []).filter(item => item.department === user.department).map(item => ({
-            id: item.id,
-            resourceType: item.resourceType,
-            currentQuantity: 0,
-            thresholdLevel: item.thresholdLevel
-        }));
-        this.renderStockMonitoring();
         this.renderRegistrationCards();
     },
 
