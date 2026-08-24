@@ -22,7 +22,12 @@ export class ProcurementsService {
     const user = getActingUser(this.dataService, context);
     let items = this.dataService.getProcurements();
 
-    // 1. Role-based scoping
+    // 0. Organization isolation — always scope to the user's org first
+    if (context.organizationId) {
+      items = items.filter((p) => p.organizationId === context.organizationId);
+    }
+
+    // 1. Role-based scoping within the org
     if (context.role !== 'System Admin' && context.role !== 'Registrar') {
       if (context.role === 'Dept Head' || context.role === 'Staff') {
         items = items.filter((procurement) => procurement.department === user?.department);
@@ -57,6 +62,7 @@ export class ProcurementsService {
     const procurement: ProcurementRecord = {
       ...payload,
       id: payload.id || `PROC-${Date.now()}`,
+      organizationId: context.organizationId || 'ORG-001',
       resourceType,
       item: payload.item || payload.resourceType,
       department,
@@ -173,6 +179,7 @@ export class ProcurementsService {
         department: procurement.department,
         serialNumber: r.serialNumber,
         status: 'Available',
+        organizationId: context.organizationId || 'ORG-001',
         condition: 'New',
         assignedTo: 'None',
         date: new Date().toLocaleDateString('en-US'),

@@ -25,8 +25,8 @@ export class DepartmentsController {
   @ApiBody({ type: CreateDepartmentDto })
   @ApiOperation({ summary: 'Create a department' })
   @ApiCreatedResponse({ description: 'Department created successfully.', type: DepartmentResponseDto })
-  create(@Body() dto: CreateDepartmentDto) {
-    return this.departmentsService.create(dto);
+  create(@Req() req: any, @Body() body: CreateDepartmentDto) {
+    return this.departmentsService.create(req.context, body);
   }
 
   @Patch(':id')

@@ -324,6 +324,7 @@ const deptApp = {
             requester: user.name,
             requestedBy: user.name,
             requestedById: user.id,
+            requesterRole: user.role,
             status: "Pending", // Dept Head self-approves their own requests, so it bypasses them and goes to Registrar
             date: new Date().toLocaleDateString('en-US', {month: 'short', day: 'numeric', year:'numeric'}),
             justification: reason

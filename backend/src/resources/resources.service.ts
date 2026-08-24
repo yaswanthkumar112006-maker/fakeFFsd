@@ -22,7 +22,12 @@ export class ResourcesService {
     const user = getActingUser(this.dataService, context);
     let items = this.dataService.getResources();
 
-    // 1. Role-based scoping
+    // 0. Organization isolation — always scope to the user's org first
+    if (context.organizationId) {
+      items = items.filter((r) => r.organizationId === context.organizationId);
+    }
+
+    // 1. Role-based scoping within the org
     if (context.role !== 'System Admin' && context.role !== 'Registrar') {
       if (context.role === 'Dept Head' || context.role === 'Staff') {
         items = items.filter((resource) => resource.department === user?.department);
@@ -83,6 +88,7 @@ export class ResourcesService {
 
     const resource: ResourceRecord = {
       id: `RES-${Date.now()}`,
+      organizationId: context.organizationId || 'ORG-001',
       ...payload,
       department,
       status: payload.status || 'Available',

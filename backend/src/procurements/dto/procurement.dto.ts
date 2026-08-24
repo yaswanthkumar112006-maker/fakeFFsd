@@ -44,6 +44,11 @@ export class CreateProcurementDto {
   @IsString()
   requestedById?: string;
 
+  @ApiPropertyOptional({ example: 'Requestor' })
+  @IsOptional()
+  @IsString()
+  requesterRole?: string;
+
   @ApiPropertyOptional({ enum: PROCUREMENT_STATUSES, example: 'Pending Approval' })
   @IsOptional()
   @IsEnum(PROCUREMENT_STATUSES)

@@ -8,6 +8,11 @@ import {
   RequestRecord,
   ResourceRecord,
   UserRecord,
+  OrganizationRecord,
+  SupportTicketRecord,
+  AnnouncementRecord,
+  InvoiceRecord,
+  SubscriptionPlanRecord,
   StockThresholdRecord,
   MaintenanceHistoryRecord,
   ReturnHistoryRecord,
@@ -36,6 +41,64 @@ export class DataService {
   }
 
   // --- GENERAL COLLECTIONS CRUD ---
+
+  getSubscriptionPlans(): SubscriptionPlanRecord[] {
+    return this.clone(this.state.subscriptionPlans);
+  }
+
+  getOrganizations(): OrganizationRecord[] {
+    return this.clone(this.state.organizations);
+  }
+
+  getOrganizationById(id: string): OrganizationRecord | undefined {
+    return this.clone(this.state.organizations.find(o => o.id === id));
+  }
+
+  insertOrganization(org: OrganizationRecord): OrganizationRecord {
+    this.state.organizations.unshift(org);
+    return this.clone(org);
+  }
+
+  updateOrganization(id: string, updates: Partial<OrganizationRecord>): OrganizationRecord {
+    const org = this.state.organizations.find(o => o.id === id);
+    if (!org) throw new NotFoundException(`Organization with id ${id} not found`);
+    Object.assign(org, updates);
+    return this.clone(org);
+  }
+
+  getSupportTickets(): SupportTicketRecord[] {
+    return this.clone(this.state.supportTickets);
+  }
+
+  insertSupportTicket(ticket: SupportTicketRecord): SupportTicketRecord {
+    this.state.supportTickets.unshift(ticket);
+    return this.clone(ticket);
+  }
+
+  updateSupportTicket(id: string, updates: Partial<SupportTicketRecord>): SupportTicketRecord {
+    const ticket = this.state.supportTickets.find(q => q.id === id);
+    if (!ticket) throw new NotFoundException(`Ticket with id ${id} not found`);
+    Object.assign(ticket, updates);
+    return this.clone(ticket);
+  }
+
+  getAnnouncements(): AnnouncementRecord[] {
+    return this.clone(this.state.announcements);
+  }
+
+  insertAnnouncement(ann: AnnouncementRecord): AnnouncementRecord {
+    this.state.announcements.unshift(ann);
+    return this.clone(ann);
+  }
+
+  getInvoices(): InvoiceRecord[] {
+    return this.clone(this.state.invoices);
+  }
+
+  insertInvoice(invoice: InvoiceRecord): InvoiceRecord {
+    this.state.invoices.unshift(invoice);
+    return this.clone(invoice);
+  }
 
   getUsers(): UserRecord[] {
     return this.clone(this.state.users);

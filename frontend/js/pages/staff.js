@@ -413,7 +413,11 @@ const staffApp = {
         if (!tbody) return;
 
         const userDept = this.getStaffDepartment();
-        const procurement = this.getDepartmentProcurement(procId, 'Fulfilled');
+        // Allow 'Fulfilled' or 'Registered' — sync() inside logPurchase/registerProcurement
+        // can update localStorage status before this check runs, causing a false rejection
+        const procurement = this.getDepartmentProcurement(procId, 'Fulfilled') ||
+                            this.getDepartmentProcurement(procId, 'Registered') ||
+                            this.getDepartmentProcurement(procId);   // fallback: any status, dept-scoped
         if (!userDept || !procurement) {
             Store.showToast("You can only register fulfilled purchases for your department.", "error");
             return;
@@ -502,13 +506,54 @@ const staffApp = {
         }
 
         if (count > 0) {
+            // Capture procurement data BEFORE registerProcurement() because sync() changes status to 'Registered'
+            const procData = Store.getData().procurements.find(p => p.id === procId);
+
             await Store.registerProcurement(procId, newResources);
 
-            Store.showToast(`Successfully registered ${count} assets to ${userDept} inventory.`, "success");
+            // Look up the requester's role to distinguish between Requestor and Dept Head
+            const requesterUser = procData ? Store.getData().users.find(u => u.id === procData.requestedById) : null;
+            const requesterRole = (procData && procData.requesterRole) ? procData.requesterRole : (requesterUser ? requesterUser.role : null);
 
-            this.renderRegistrationCards();
-            this.renderInventory();
-            this.renderDashboard();
+            // AUTO-CREATE an Approved allocation request ONLY if requested by a Requestor
+            // (Department Head procurements go straight to inventory without auto-allocation)
+            if (procData && procData.requestedById && requesterRole === 'Requestor') {
+                const allocationReqId = `REQ-PRC-${procId.replace(/[^a-zA-Z0-9]/g, '')}`;
+                const dateStr = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+                try {
+                    await Store.createRequest({
+                        id: allocationReqId,
+                        department: userDept,
+                        resourceType: procData.resourceType || procData.item,
+                        quantity: count,
+                        requestor: procData.requester || 'Unknown',
+                        requestorId: procData.requestedById,
+                        status: 'Approved',
+                        priority: 'Normal',
+                        date: dateStr,
+                        justification: `Auto-generated from Procurement ${procId} — ${count} assets registered and pending allocation.`,
+                        procurementId: procId
+                    });
+                    await this.renderAllocations();
+                    this.renderRegistrationCards();
+                    this.renderInventory();
+                    this.renderDashboard();
+                    // Navigate directly to Allocation Requests so staff can allocate immediately
+                    this.switchView('allocations-view');
+                    Store.showToast(`✅ ${count} asset(s) registered! Now allocate them to ${procData.requester} using the Allocate button below.`, 'success');
+                } catch (err) {
+                    console.error('Allocation request creation failed:', err);
+                    this.renderRegistrationCards();
+                    this.renderInventory();
+                    this.renderDashboard();
+                    Store.showToast(`✅ ${count} asset(s) registered to inventory. (Could not auto-create allocation: ${err.message})`, 'warning');
+                }
+            } else {
+                Store.showToast(`Successfully registered ${count} assets to ${userDept} inventory.`, 'success');
+                this.renderRegistrationCards();
+                this.renderInventory();
+                this.renderDashboard();
+            }
         }
     },
 
@@ -520,7 +565,8 @@ const staffApp = {
 
         const user = Store.getCurrentUser();
         const userDept = user.department;
-        const resources = Store.getData().resources.filter(r => r.department === userDept);
+        // Erase allocated resources from inventory view
+        const resources = Store.getData().resources.filter(r => r.department === userDept && r.status !== 'Allocated');
 
         resources.forEach(res => {
             const tr = document.createElement('tr');

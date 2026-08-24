@@ -7,6 +7,7 @@ import {
   Patch,
   Post,
   Req,
+  Query
 } from '@nestjs/common';
 import {
   ApiBody,
@@ -22,6 +23,7 @@ import { UserResponseDto } from '../common/swagger-models';
 import { ApiRoleHeaders, ApiStandardErrorResponses } from '../common/swagger';
 import { UsersService } from './users.service';
 import { CreateUserDto, UpdateUserDto } from './dto/user.dto';
+import { Public } from '../auth/public.decorator';
 
 @ApiTags('users')
 @ApiRoleHeaders()
@@ -37,6 +39,13 @@ export class UsersController {
     return this.usersService.getAll(req.context);
   }
 
+  @Public()
+  @Get('mock')
+  @ApiOperation({ summary: 'Get a mock user for login testing' })
+  getMockUser(@Query('role') role: string, @Query('orgId') orgId?: string) {
+    return this.usersService.getMockUser(role, orgId);
+  }
+
   @Post()
   @Roles('System Admin')
   @ApiBody({ type: CreateUserDto })
@@ -45,6 +54,13 @@ export class UsersController {
   @ApiResponse({ status: 403, description: 'Only System Admin can create users.' })
   create(@Body() dto: CreateUserDto) {
     return this.usersService.create(dto);
+  }
+
+  @Post('create-employee')
+  @Roles('Owner')
+  @ApiOperation({ summary: 'Owner creates a new platform Employee' })
+  createEmployee(@Body('name') name: string, @Body('email') email: string) {
+    return this.usersService.createEmployee(name, email);
   }
 
   @Patch(':id')
@@ -64,5 +80,19 @@ export class UsersController {
   @ApiOkResponse({ description: 'User deactivated successfully.', type: UserResponseDto })
   remove(@Param('id') id: string) {
     return this.usersService.deactivate(id);
+  }
+
+  @Patch(':id/suspend')
+  @Roles('System Admin', 'Owner')
+  @ApiOperation({ summary: 'Suspend a user account' })
+  suspendUser(@Param('id') id: string) {
+    return this.usersService.updateStatus(id, 'Suspended');
+  }
+
+  @Patch(':id/reactivate')
+  @Roles('System Admin', 'Owner')
+  @ApiOperation({ summary: 'Reactivate a user account' })
+  reactivateUser(@Param('id') id: string) {
+    return this.usersService.updateStatus(id, 'Active');
   }
 }

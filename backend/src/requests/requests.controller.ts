@@ -23,7 +23,7 @@ export class RequestsController {
   }
 
   @Post()
-  @Roles('Requestor', 'System Admin')
+  @Roles('Requestor', 'Staff', 'System Admin')
   @ApiBody({ type: CreateRequestDto })
   @ApiOperation({ summary: 'Create a resource request' })
   @ApiCreatedResponse({ description: 'Request created successfully.', type: RequestResponseDto })

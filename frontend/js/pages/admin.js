@@ -8,6 +8,17 @@ const adminApp = {
         }
         await Store.sync();
         
+        try {
+            this.myOrg = await Store.fetchMyOrganization();
+            this.plans = await Store.fetchSubscriptionPlans();
+        } catch (e) {
+            console.error('Failed to load subscription data:', e);
+        }
+
+        // Init Bootstrap modals
+        this.newTicketModal = new bootstrap.Modal(document.getElementById('newTicketModal'));
+        this.replyAnnModal  = new bootstrap.Modal(document.getElementById('replyAnnModal'));
+
         // Update UI
         document.querySelector('.user-name').textContent = user.name;
         document.querySelector('.user-role').textContent = 'Administrator';
@@ -16,6 +27,9 @@ const adminApp = {
         this.renderUsers();
         this.renderDepartments();
         this.renderRolesMatrix();
+        this.renderSubscription();
+        await this.renderSupportTickets();
+        await this.renderAdminAnnouncements();
     },
 
     bindNav: function() {
@@ -529,9 +543,219 @@ const adminApp = {
             });
     },
 
+    renderSubscription: function() {
+        if (!this.myOrg || !this.plans) return;
+
+        const activePlanId = this.myOrg.subscriptionPlanId;
+        const activePlan = this.plans.find(p => p.id === activePlanId);
+
+        const currentDetailsEl = document.getElementById('current-plan-details');
+        if (activePlan) {
+            currentDetailsEl.innerHTML = `
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <div>
+                        <strong>Plan Name:</strong> ${activePlan.name} <br/>
+                        <strong>Max Users:</strong> ${activePlan.maxUsers} <br/>
+                        <strong>Price:</strong> $${activePlan.pricePerYear} / year
+                    </div>
+                    <div style="text-align:right;">
+                        <span class="status-badge status-active">Active</span>
+                        <div style="margin-top:0.5rem; font-size:0.9rem; color:#64748b;">
+                            No expiry (In-Memory)
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        const grid = document.getElementById('subscription-plans-grid');
+        grid.innerHTML = '';
+
+        this.plans.forEach(plan => {
+            const isActive = plan.id === activePlanId;
+            const btnHtml = isActive 
+                ? `<button class="btn-secondary" style="width:100%;" disabled>Current Plan</button>`
+                : `<button class="btn-primary" style="width:100%;" onclick="adminApp.changeSubscription('${plan.id}')">Select Plan</button>`;
+
+            const card = document.createElement('div');
+            card.style.cssText = `
+                background: white; 
+                border: 2px solid ${isActive ? 'var(--primary-color)' : '#e2e8f0'}; 
+                border-radius: 12px; 
+                padding: 2rem; 
+                display: flex; 
+                flex-direction: column; 
+                justify-content: space-between;
+                position: relative;
+            `;
+
+            if (isActive) {
+                card.innerHTML += `<div style="position:absolute; top:-12px; right:20px; background:var(--primary-color); color:white; padding:4px 12px; border-radius:20px; font-size:0.8rem; font-weight:bold;">ACTIVE</div>`;
+            }
+
+            card.innerHTML += `
+                <div>
+                    <h3 style="margin-top:0; font-size:1.25rem;">${plan.name}</h3>
+                    <div style="font-size:2rem; font-weight:bold; margin: 1rem 0;">$${plan.pricePerYear} <span style="font-size:1rem; color:#64748b; font-weight:normal;">/yr</span></div>
+                    <p style="color:#64748b; margin-bottom:1.5rem;">For up to ${plan.maxUsers} users.</p>
+                </div>
+                <div>
+                    ${btnHtml}
+                </div>
+            `;
+            grid.appendChild(card);
+        });
+    },
+
+    changeSubscription: async function(planId) {
+        try {
+            await Store.updateSubscription(planId);
+            Store.showToast("Subscription plan updated successfully", "success");
+            this.myOrg = await Store.fetchMyOrganization();
+            this.renderSubscription();
+        } catch (e) {
+            console.error('Failed to update subscription:', e);
+            alert(e.message || "Failed to update subscription.");
+        }
+    },
+
     logout: function() {
         Store.logout();
         window.location.href = 'login.html';
+    },
+
+    // ─── SUPPORT QUERIES ────────────────────────────────────────────────────────
+    renderSupportTickets: async function() {
+        const tbody = document.getElementById('supportTicketsBody');
+        if (!tbody) return;
+        try {
+            const tickets = await Store.api('/support');
+            const myOrgId = Store.getCurrentUser().organizationId;
+            // Show only tickets from this org
+            const mine = (tickets || []).filter(t => t.organizationId === myOrgId);
+
+            // Sidebar badge
+            const open = mine.filter(t => t.status === 'Open').length;
+            const badge = document.getElementById('adminOpenTicketsBadge');
+            if (badge) { badge.textContent = open; badge.style.display = open > 0 ? 'inline' : 'none'; }
+
+            tbody.innerHTML = '';
+            if (mine.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">No queries raised yet. Click "Raise New Query" to get help.</td></tr>';
+                return;
+            }
+            mine.slice().reverse().forEach(t => {
+                const statusMap = { Open: 'badge-pending', Resolved: 'badge-success', 'In Progress': 'badge-secondary' };
+                const badge = `<span class="badge ${statusMap[t.status] || 'badge-secondary'}">${t.status}</span>`;
+                const reply = t.reply
+                    ? `<span style="font-size:0.8rem;color:#166534">${t.reply}</span>`
+                    : '<span style="color:#94a3b8;font-size:0.8rem">Awaiting reply…</span>';
+                tbody.innerHTML += `
+                    <tr>
+                        <td>${t.id}</td>
+                        <td><strong>${t.title}</strong></td>
+                        <td style="font-size:0.8rem;color:var(--text-muted)">${t.description}</td>
+                        <td>${badge}</td>
+                        <td>${t.date || '—'}</td>
+                        <td>${reply}</td>
+                    </tr>`;
+            });
+        } catch(e) {
+            console.error('Failed to load support tickets:', e);
+        }
+    },
+
+    openNewTicketModal: function() {
+        document.getElementById('newTicketForm').reset();
+        this.newTicketModal.show();
+    },
+
+    handleSubmitTicket: async function(e) {
+        e.preventDefault();
+        const title = document.getElementById('ticketTitle').value.trim();
+        const description = document.getElementById('ticketDesc').value.trim();
+        const user = Store.getCurrentUser();
+        try {
+            await Store.api('/support', {
+                method: 'POST',
+                body: { title, description, organizationId: user.organizationId }
+            });
+            this.newTicketModal.hide();
+            Store.showToast('Support query raised! Your assigned employee will respond shortly.', 'success');
+            await this.renderSupportTickets();
+        } catch(err) {
+            Store.showToast('Failed to raise query: ' + err.message, 'error');
+        }
+    },
+
+    // ─── ANNOUNCEMENTS ──────────────────────────────────────────────────────────
+    renderAdminAnnouncements: async function() {
+        const tbody = document.getElementById('adminAnnouncementsBody');
+        if (!tbody) return;
+        try {
+            const all = await Store.api('/announcements');
+            const myOrgId = Store.getCurrentUser().organizationId;
+            // Show announcements targeted to this org or broadcast (ALL)
+            const mine = (all || []).filter(a =>
+                a.targetOrgId === myOrgId || a.targetOrgId === 'ALL'
+            );
+
+            // Sidebar badge
+            const badge = document.getElementById('adminAnnBadge');
+            if (badge) { badge.textContent = mine.length; badge.style.display = mine.length > 0 ? 'inline' : 'none'; }
+
+            tbody.innerHTML = '';
+            if (mine.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">No announcements from your Platform Employee yet.</td></tr>';
+                return;
+            }
+            mine.slice().reverse().forEach(a => {
+                const typeColors = {
+                    'Maintenance': '#92400e', 'New Feature': '#1d4ed8',
+                    'Policy': '#7c3aed', 'Subscription': '#166534', 'General': '#334155'
+                };
+                const color = typeColors[a.type] || '#334155';
+                const typeBadge = `<span class="badge" style="background:#f1f5f9;color:${color};font-weight:600">${a.type}</span>`;
+                const replyBtn = `<button class="btn-secondary" style="font-size:0.75rem;padding:0.2rem 0.5rem;margin-top:0.3rem"
+                    onclick='adminApp.openReplyAnnModal(${JSON.stringify(a)})'>Reply</button>`;
+                tbody.innerHTML += `
+                    <tr>
+                        <td>${a.id}</td>
+                        <td>${typeBadge}</td>
+                        <td><strong>${a.title}</strong>${a.adminReply ? '<br><span style="font-size:0.75rem;color:#166534">✓ Replied</span>' : ''}</td>
+                        <td style="font-size:0.85rem;color:var(--text-muted);max-width:240px">${a.message || '—'}</td>
+                        <td>${a.date || '—'}<br>${replyBtn}</td>
+                    </tr>`;
+            });
+        } catch(e) {
+            console.error('Failed to load announcements:', e);
+        }
+    },
+
+    openReplyAnnModal: function(ann) {
+        document.getElementById('replyAnnId').value = ann.id;
+        document.getElementById('replyAnnDetails').innerHTML = `
+            <strong>${ann.type}:</strong> ${ann.title}<br>
+            <span style="color:#64748b">${ann.message || ''}</span>`;
+        document.getElementById('replyAnnText').value = '';
+        this.replyAnnModal.show();
+    },
+
+    handleReplyAnn: async function(e) {
+        e.preventDefault();
+        const annId = document.getElementById('replyAnnId').value;
+        const reply = document.getElementById('replyAnnText').value.trim();
+        try {
+            await Store.api(`/announcements/${annId}/reply`, {
+                method: 'PATCH',
+                body: { reply }
+            });
+            this.replyAnnModal.hide();
+            Store.showToast('Reply sent successfully.', 'success');
+            await this.renderAdminAnnouncements();
+        } catch(err) {
+            Store.showToast('Failed to send reply: ' + err.message, 'error');
+        }
     }
 };
 

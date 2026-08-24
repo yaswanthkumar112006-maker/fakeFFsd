@@ -55,8 +55,42 @@ export interface UserPreferences {
   notifications: boolean;
 }
 
+export interface SubscriptionPlanRecord {
+  id: string;
+  name: string;
+  maxUsers: number;
+  pricePerYear: number;
+  features: string[];
+}
+
+export type OrganizationStatus = 'Pending' | 'Active' | 'Suspended';
+
+export interface OrganizationRecord {
+  id: string;
+  name: string;
+  adminEmail: string;
+  subscriptionPlanId: string;
+  status: OrganizationStatus;
+  assignedEmployeeId?: string;
+  subscriptionExpiryDate?: string;
+  revenueGenerated?: number;
+}
+
+export interface QueryRecord {
+  id: string;
+  organizationId: string;
+  title: string;
+  description: string;
+  status: 'Open' | 'Resolved';
+  createdBy: string;
+  createdById: string;
+  date: string;
+  reply?: string;
+}
+
 export interface UserRecord {
   id: string;
+  organizationId?: string;
   name: string;
   email: string;
   password?: string;
@@ -68,6 +102,7 @@ export interface UserRecord {
 
 export interface DepartmentRecord {
   id: string;
+  organizationId: string;
   name: string;
   head: string;
   memberCount: number;
@@ -75,6 +110,7 @@ export interface DepartmentRecord {
 
 export interface RequestRecord {
   id: string;
+  organizationId: string;
   resourceType: string;
   quantity: number;
   requestor: string;
@@ -86,10 +122,12 @@ export interface RequestRecord {
   justification: string;
   assignedResources?: string;
   allocatedBy?: string;
+  procurementId?: string;  // set when auto-generated from a completed procurement
 }
 
 export interface ResourceRecord {
   id: string;
+  organizationId: string;
   code?: string;
   internalId?: string;
   name?: string;
@@ -115,6 +153,7 @@ export interface ProcurementRegistrationResourceInput
 
 export interface ProcurementRecord {
   id: string;
+  organizationId: string;
   resourceType: string;
   item?: string;
   quantity: number;
@@ -122,6 +161,7 @@ export interface ProcurementRecord {
   requestedBy?: string;
   requester?: string;
   requestedById?: string;
+  requesterRole?: string;
   status: ProcurementStatus;
   priority?: RequestPriority;
   date: string;
@@ -132,6 +172,7 @@ export interface ProcurementRecord {
 
 export interface NotificationRecord {
   id: string;
+  organizationId: string;
   title: string;
   description: string;
   time: string;
@@ -141,6 +182,7 @@ export interface NotificationRecord {
 
 export interface MaintenanceHistoryRecord {
   code: string;
+  organizationId: string;
   type: string;
   allocatedTo?: string;
   issue: string;
@@ -151,6 +193,7 @@ export interface MaintenanceHistoryRecord {
 
 export interface ReturnHistoryRecord {
   code: string;
+  organizationId: string;
   type: string;
   returnedBy: string;
   returnDate: string;
@@ -164,17 +207,59 @@ export type PermissionsMatrixRecord = Record<string, Role[]>;
 
 export interface StockThresholdRecord {
   id: string;
+  organizationId: string;
   department: string;
   resourceType: string;
   thresholdLevel: number;
 }
 
 export interface DepartmentResourceCatalogRecord {
+  organizationId: string;
   department: string;
   resourceTypes: string[];
 }
 
+export type TicketStatus = 'Open' | 'In Progress' | 'Resolved';
+
+export interface SupportTicketRecord {
+  id: string;
+  organizationId: string;
+  title: string;
+  description: string;
+  status: TicketStatus;
+  createdBy: string;
+  createdById: string;
+  date: string;
+  reply?: string;
+}
+
+export type AnnouncementType = 'Maintenance' | 'New Feature' | 'Policy' | 'General';
+
+export interface AnnouncementRecord {
+  id: string;
+  targetOrgId: string | 'ALL';
+  title: string;
+  message: string;
+  type: AnnouncementType;
+  date: string;
+  authorId: string;
+}
+
+export interface InvoiceRecord {
+  id: string;
+  organizationId: string;
+  amount: number;
+  planName: string;
+  date: string;
+  status: 'Paid' | 'Unpaid';
+}
+
 export interface AppState {
+  subscriptionPlans: SubscriptionPlanRecord[];
+  organizations: OrganizationRecord[];
+  supportTickets: SupportTicketRecord[];
+  announcements: AnnouncementRecord[];
+  invoices: InvoiceRecord[];
   users: UserRecord[];
   departments: DepartmentRecord[];
   requests: RequestRecord[];

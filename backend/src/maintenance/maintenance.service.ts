@@ -10,7 +10,12 @@ export class MaintenanceService {
 
   getHistory(context: RequestContext): MaintenanceHistoryRecord[] {
     const user = getActingUser(this.dataService, context);
-    const history = this.dataService.getMaintenanceHistory();
+    let history = this.dataService.getMaintenanceHistory();
+
+    // 0. Organization isolation — always scope to the user's org first
+    if (context.organizationId) {
+      history = history.filter((h) => h.organizationId === context.organizationId);
+    }
 
     if (context.role === 'System Admin' || context.role === 'Registrar') {
       return history;
@@ -52,6 +57,7 @@ export class MaintenanceService {
     // Log the maintenance action
     this.dataService.insertMaintenanceHistory({
       code: resource.id,
+      organizationId: context.organizationId || 'ORG-001',
       type: resource.type,
       department: resource.department,
       allocatedTo: resource.assignedTo,

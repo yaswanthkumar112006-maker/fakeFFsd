@@ -1,31 +1,35 @@
 {
   "openapi": "3.0.0",
   "paths": {
+    "/api/auth/login": {
+      "post": {
+        "operationId": "AuthController_signIn",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful login"
+          }
+        },
+        "summary": "Login to get JWT token",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
     "/api/users": {
       "get": {
         "operationId": "UsersController_getAll",
-        "parameters": [
-          {
-            "name": "x-user-role",
-            "in": "header",
-            "description": "Acting role for RBAC. Allowed values: Requestor, Dept Head, Registrar, Staff, System Admin.",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "example": "Staff"
-            }
-          },
-          {
-            "name": "x-user-id",
-            "in": "header",
-            "description": "Acting user id used for department scoping and own-record views. Example: U100.",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "example": "U100"
-            }
-          }
-        ],
+        "parameters": [],
         "responses": {
           "200": {
             "description": "Users returned for the current actor scope.",
@@ -73,10 +77,7 @@
         },
         "security": [
           {
-            "role-header": []
-          },
-          {
-            "user-id-header": []
+            "JWT-auth": []
           }
         ],
         "summary": "List users visible to the acting role",
@@ -86,28 +87,7 @@
       },
       "post": {
         "operationId": "UsersController_create",
-        "parameters": [
-          {
-            "name": "x-user-role",
-            "in": "header",
-            "description": "Acting role for RBAC. Allowed values: Requestor, Dept Head, Registrar, Staff, System Admin.",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "example": "Staff"
-            }
-          },
-          {
-            "name": "x-user-id",
-            "in": "header",
-            "description": "Acting user id used for department scoping and own-record views. Example: U100.",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "example": "U100"
-            }
-          }
-        ],
+        "parameters": [],
         "requestBody": {
           "required": true,
           "content": {
@@ -155,13 +135,127 @@
         },
         "security": [
           {
-            "role-header": []
-          },
-          {
-            "user-id-header": []
+            "JWT-auth": []
           }
         ],
         "summary": "Create a new user",
+        "tags": [
+          "users"
+        ]
+      }
+    },
+    "/api/users/mock": {
+      "get": {
+        "operationId": "UsersController_getMockUser",
+        "parameters": [
+          {
+            "name": "role",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "orgId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "400": {
+            "description": "Validation error or invalid workflow transition.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Role or department scope does not allow this action.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Requested entity was not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Get a mock user for login testing",
+        "tags": [
+          "users"
+        ]
+      }
+    },
+    "/api/users/create-employee": {
+      "post": {
+        "operationId": "UsersController_createEmployee",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          },
+          "400": {
+            "description": "Validation error or invalid workflow transition.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Role or department scope does not allow this action.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Requested entity was not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Owner creates a new platform Employee",
         "tags": [
           "users"
         ]
@@ -171,26 +265,6 @@
       "patch": {
         "operationId": "UsersController_update",
         "parameters": [
-          {
-            "name": "x-user-role",
-            "in": "header",
-            "description": "Acting role for RBAC. Allowed values: Requestor, Dept Head, Registrar, Staff, System Admin.",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "example": "Staff"
-            }
-          },
-          {
-            "name": "x-user-id",
-            "in": "header",
-            "description": "Acting user id used for department scoping and own-record views. Example: U100.",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "example": "U100"
-            }
-          },
           {
             "name": "id",
             "required": true,
@@ -255,10 +329,7 @@
         },
         "security": [
           {
-            "role-header": []
-          },
-          {
-            "user-id-header": []
+            "JWT-auth": []
           }
         ],
         "summary": "Update a user",
@@ -269,26 +340,6 @@
       "delete": {
         "operationId": "UsersController_remove",
         "parameters": [
-          {
-            "name": "x-user-role",
-            "in": "header",
-            "description": "Acting role for RBAC. Allowed values: Requestor, Dept Head, Registrar, Staff, System Admin.",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "example": "Staff"
-            }
-          },
-          {
-            "name": "x-user-id",
-            "in": "header",
-            "description": "Acting user id used for department scoping and own-record views. Example: U100.",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "example": "U100"
-            }
-          },
           {
             "name": "id",
             "required": true,
@@ -343,10 +394,7 @@
         },
         "security": [
           {
-            "role-header": []
-          },
-          {
-            "user-id-header": []
+            "JWT-auth": []
           }
         ],
         "summary": "Deactivate a user",
@@ -355,31 +403,504 @@
         ]
       }
     },
-    "/api/departments": {
-      "get": {
-        "operationId": "DepartmentsController_getAll",
+    "/api/users/{id}/suspend": {
+      "patch": {
+        "operationId": "UsersController_suspendUser",
         "parameters": [
           {
-            "name": "x-user-role",
-            "in": "header",
-            "description": "Acting role for RBAC. Allowed values: Requestor, Dept Head, Registrar, Staff, System Admin.",
+            "name": "id",
             "required": true,
+            "in": "path",
             "schema": {
-              "type": "string",
-              "example": "Staff"
-            }
-          },
-          {
-            "name": "x-user-id",
-            "in": "header",
-            "description": "Acting user id used for department scoping and own-record views. Example: U100.",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "example": "U100"
+              "type": "string"
             }
           }
         ],
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "400": {
+            "description": "Validation error or invalid workflow transition.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Role or department scope does not allow this action.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Requested entity was not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Suspend a user account",
+        "tags": [
+          "users"
+        ]
+      }
+    },
+    "/api/users/{id}/reactivate": {
+      "patch": {
+        "operationId": "UsersController_reactivateUser",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "400": {
+            "description": "Validation error or invalid workflow transition.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Role or department scope does not allow this action.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Requested entity was not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Reactivate a user account",
+        "tags": [
+          "users"
+        ]
+      }
+    },
+    "/api/organizations": {
+      "get": {
+        "operationId": "OrganizationsController_getAll",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "List all organizations (Owner and Employee)",
+        "tags": [
+          "Organizations"
+        ]
+      }
+    },
+    "/api/organizations/public": {
+      "get": {
+        "operationId": "OrganizationsController_getPublicOrganizations",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "List all active organizations for login selection",
+        "tags": [
+          "Organizations"
+        ]
+      }
+    },
+    "/api/organizations/register": {
+      "post": {
+        "operationId": "OrganizationsController_register",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterOrgDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "summary": "Register a new organization (Public)",
+        "tags": [
+          "Organizations"
+        ]
+      }
+    },
+    "/api/organizations/{id}/approve": {
+      "patch": {
+        "operationId": "OrganizationsController_approveOrganization",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "Approve an organization and assign an employee",
+        "tags": [
+          "Organizations"
+        ]
+      }
+    },
+    "/api/organizations/{id}/suspend": {
+      "patch": {
+        "operationId": "OrganizationsController_suspendOrganization",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "Suspend an organization",
+        "tags": [
+          "Organizations"
+        ]
+      }
+    },
+    "/api/organizations/{id}/reactivate": {
+      "patch": {
+        "operationId": "OrganizationsController_reactivateOrganization",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "Reactivate an organization",
+        "tags": [
+          "Organizations"
+        ]
+      }
+    },
+    "/api/organizations/my-org/details": {
+      "get": {
+        "operationId": "OrganizationsController_getMyOrganization",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "Get details of the current organization (System Admin)",
+        "tags": [
+          "Organizations"
+        ]
+      }
+    },
+    "/api/organizations/my-org/subscription": {
+      "patch": {
+        "operationId": "OrganizationsController_updateMySubscription",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "Update subscription plan for the current organization",
+        "tags": [
+          "Organizations"
+        ]
+      }
+    },
+    "/api/support": {
+      "get": {
+        "operationId": "SupportController_getAll",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get all support tickets (scoped by role/org)",
+        "tags": [
+          "Support Tickets"
+        ]
+      },
+      "post": {
+        "operationId": "SupportController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateTicketDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Create a new support ticket",
+        "tags": [
+          "Support Tickets"
+        ]
+      }
+    },
+    "/api/support/{id}/resolve": {
+      "patch": {
+        "operationId": "SupportController_resolve",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResolveTicketDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Resolve or reply to a support ticket",
+        "tags": [
+          "Support Tickets"
+        ]
+      }
+    },
+    "/api/announcements": {
+      "get": {
+        "operationId": "AnnouncementsController_getAll",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get all announcements (scoped by role/org)",
+        "tags": [
+          "Announcements"
+        ]
+      },
+      "post": {
+        "operationId": "AnnouncementsController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateAnnouncementDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Create an announcement (broadcast or single org)",
+        "tags": [
+          "Announcements"
+        ]
+      }
+    },
+    "/api/announcements/{id}/reply": {
+      "patch": {
+        "operationId": "AnnouncementsController_reply",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "System Admin replies to an announcement",
+        "tags": [
+          "Announcements"
+        ]
+      }
+    },
+    "/api/platform-analytics": {
+      "get": {
+        "operationId": "PlatformAnalyticsController_getAnalytics",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get platform wide analytics for Owner",
+        "tags": [
+          "Platform Analytics"
+        ]
+      }
+    },
+    "/api/invoices": {
+      "get": {
+        "operationId": "InvoicesController_getAll",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get all invoices",
+        "tags": [
+          "Invoices"
+        ]
+      }
+    },
+    "/api/subscriptions/plans": {
+      "get": {
+        "operationId": "SubscriptionsController_getPlans",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "List available subscription plans (Public)",
+        "tags": [
+          "subscriptions"
+        ]
+      }
+    },
+    "/api/departments": {
+      "get": {
+        "operationId": "DepartmentsController_getAll",
+        "parameters": [],
         "responses": {
           "200": {
             "description": "Department list returned successfully.",
@@ -427,10 +948,7 @@
         },
         "security": [
           {
-            "role-header": []
-          },
-          {
-            "user-id-header": []
+            "JWT-auth": []
           }
         ],
         "summary": "List departments",
@@ -440,28 +958,7 @@
       },
       "post": {
         "operationId": "DepartmentsController_create",
-        "parameters": [
-          {
-            "name": "x-user-role",
-            "in": "header",
-            "description": "Acting role for RBAC. Allowed values: Requestor, Dept Head, Registrar, Staff, System Admin.",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "example": "Staff"
-            }
-          },
-          {
-            "name": "x-user-id",
-            "in": "header",
-            "description": "Acting user id used for department scoping and own-record views. Example: U100.",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "example": "U100"
-            }
-          }
-        ],
+        "parameters": [],
         "requestBody": {
           "required": true,
           "content": {
@@ -516,10 +1013,7 @@
         },
         "security": [
           {
-            "role-header": []
-          },
-          {
-            "user-id-header": []
+            "JWT-auth": []
           }
         ],
         "summary": "Create a department",
@@ -532,26 +1026,6 @@
       "patch": {
         "operationId": "DepartmentsController_update",
         "parameters": [
-          {
-            "name": "x-user-role",
-            "in": "header",
-            "description": "Acting role for RBAC. Allowed values: Requestor, Dept Head, Registrar, Staff, System Admin.",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "example": "Staff"
-            }
-          },
-          {
-            "name": "x-user-id",
-            "in": "header",
-            "description": "Acting user id used for department scoping and own-record views. Example: U100.",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "example": "U100"
-            }
-          },
           {
             "name": "id",
             "required": true,
@@ -616,10 +1090,7 @@
         },
         "security": [
           {
-            "role-header": []
-          },
-          {
-            "user-id-header": []
+            "JWT-auth": []
           }
         ],
         "summary": "Update a department",
@@ -630,26 +1101,6 @@
       "delete": {
         "operationId": "DepartmentsController_remove",
         "parameters": [
-          {
-            "name": "x-user-role",
-            "in": "header",
-            "description": "Acting role for RBAC. Allowed values: Requestor, Dept Head, Registrar, Staff, System Admin.",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "example": "Staff"
-            }
-          },
-          {
-            "name": "x-user-id",
-            "in": "header",
-            "description": "Acting user id used for department scoping and own-record views. Example: U100.",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "example": "U100"
-            }
-          },
           {
             "name": "id",
             "required": true,
@@ -704,10 +1155,7 @@
         },
         "security": [
           {
-            "role-header": []
-          },
-          {
-            "user-id-header": []
+            "JWT-auth": []
           }
         ],
         "summary": "Delete a department",
@@ -719,28 +1167,7 @@
     "/api/permissionsMatrix": {
       "get": {
         "operationId": "PermissionsController_get",
-        "parameters": [
-          {
-            "name": "x-user-role",
-            "in": "header",
-            "description": "Acting role for RBAC. Allowed values: Requestor, Dept Head, Registrar, Staff, System Admin.",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "example": "Staff"
-            }
-          },
-          {
-            "name": "x-user-id",
-            "in": "header",
-            "description": "Acting user id used for department scoping and own-record views. Example: U100.",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "example": "U100"
-            }
-          }
-        ],
+        "parameters": [],
         "responses": {
           "200": {
             "description": "Current permissions matrix returned successfully.",
@@ -801,10 +1228,7 @@
         },
         "security": [
           {
-            "role-header": []
-          },
-          {
-            "user-id-header": []
+            "JWT-auth": []
           }
         ],
         "summary": "Get the permissions matrix",
@@ -814,28 +1238,7 @@
       },
       "post": {
         "operationId": "PermissionsController_update",
-        "parameters": [
-          {
-            "name": "x-user-role",
-            "in": "header",
-            "description": "Acting role for RBAC. Allowed values: Requestor, Dept Head, Registrar, Staff, System Admin.",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "example": "Staff"
-            }
-          },
-          {
-            "name": "x-user-id",
-            "in": "header",
-            "description": "Acting user id used for department scoping and own-record views. Example: U100.",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "example": "U100"
-            }
-          }
-        ],
+        "parameters": [],
         "requestBody": {
           "required": true,
           "content": {
@@ -896,10 +1299,7 @@
         },
         "security": [
           {
-            "role-header": []
-          },
-          {
-            "user-id-header": []
+            "JWT-auth": []
           }
         ],
         "summary": "Replace the permissions matrix",
@@ -911,28 +1311,7 @@
     "/api/permissionsMatrix/reset": {
       "post": {
         "operationId": "PermissionsController_reset",
-        "parameters": [
-          {
-            "name": "x-user-role",
-            "in": "header",
-            "description": "Acting role for RBAC. Allowed values: Requestor, Dept Head, Registrar, Staff, System Admin.",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "example": "Staff"
-            }
-          },
-          {
-            "name": "x-user-id",
-            "in": "header",
-            "description": "Acting user id used for department scoping and own-record views. Example: U100.",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "example": "U100"
-            }
-          }
-        ],
+        "parameters": [],
         "responses": {
           "200": {
             "description": "Permissions matrix reset successfully.",
@@ -983,10 +1362,7 @@
         },
         "security": [
           {
-            "role-header": []
-          },
-          {
-            "user-id-header": []
+            "JWT-auth": []
           }
         ],
         "summary": "Reset permissions matrix to defaults",
@@ -999,26 +1375,6 @@
       "get": {
         "operationId": "RequestsController_getAll",
         "parameters": [
-          {
-            "name": "x-user-role",
-            "in": "header",
-            "description": "Acting role for RBAC. Allowed values: Requestor, Dept Head, Registrar, Staff, System Admin.",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "example": "Staff"
-            }
-          },
-          {
-            "name": "x-user-id",
-            "in": "header",
-            "description": "Acting user id used for department scoping and own-record views. Example: U100.",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "example": "U100"
-            }
-          },
           {
             "name": "status",
             "required": false,
@@ -1085,10 +1441,7 @@
         },
         "security": [
           {
-            "role-header": []
-          },
-          {
-            "user-id-header": []
+            "JWT-auth": []
           }
         ],
         "summary": "List requests visible to the acting role",
@@ -1098,28 +1451,7 @@
       },
       "post": {
         "operationId": "RequestsController_create",
-        "parameters": [
-          {
-            "name": "x-user-role",
-            "in": "header",
-            "description": "Acting role for RBAC. Allowed values: Requestor, Dept Head, Registrar, Staff, System Admin.",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "example": "Staff"
-            }
-          },
-          {
-            "name": "x-user-id",
-            "in": "header",
-            "description": "Acting user id used for department scoping and own-record views. Example: U100.",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "example": "U100"
-            }
-          }
-        ],
+        "parameters": [],
         "requestBody": {
           "required": true,
           "content": {
@@ -1174,10 +1506,7 @@
         },
         "security": [
           {
-            "role-header": []
-          },
-          {
-            "user-id-header": []
+            "JWT-auth": []
           }
         ],
         "summary": "Create a resource request",
@@ -1190,26 +1519,6 @@
       "patch": {
         "operationId": "RequestsController_update",
         "parameters": [
-          {
-            "name": "x-user-role",
-            "in": "header",
-            "description": "Acting role for RBAC. Allowed values: Requestor, Dept Head, Registrar, Staff, System Admin.",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "example": "Staff"
-            }
-          },
-          {
-            "name": "x-user-id",
-            "in": "header",
-            "description": "Acting user id used for department scoping and own-record views. Example: U100.",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "example": "U100"
-            }
-          },
           {
             "name": "id",
             "required": true,
@@ -1274,10 +1583,7 @@
         },
         "security": [
           {
-            "role-header": []
-          },
-          {
-            "user-id-header": []
+            "JWT-auth": []
           }
         ],
         "summary": "Update a request",
@@ -1290,26 +1596,6 @@
       "post": {
         "operationId": "RequestsController_approve",
         "parameters": [
-          {
-            "name": "x-user-role",
-            "in": "header",
-            "description": "Acting role for RBAC. Allowed values: Requestor, Dept Head, Registrar, Staff, System Admin.",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "example": "Staff"
-            }
-          },
-          {
-            "name": "x-user-id",
-            "in": "header",
-            "description": "Acting user id used for department scoping and own-record views. Example: U100.",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "example": "U100"
-            }
-          },
           {
             "name": "id",
             "required": true,
@@ -1364,10 +1650,7 @@
         },
         "security": [
           {
-            "role-header": []
-          },
-          {
-            "user-id-header": []
+            "JWT-auth": []
           }
         ],
         "summary": "Approve a request",
@@ -1380,26 +1663,6 @@
       "post": {
         "operationId": "RequestsController_reject",
         "parameters": [
-          {
-            "name": "x-user-role",
-            "in": "header",
-            "description": "Acting role for RBAC. Allowed values: Requestor, Dept Head, Registrar, Staff, System Admin.",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "example": "Staff"
-            }
-          },
-          {
-            "name": "x-user-id",
-            "in": "header",
-            "description": "Acting user id used for department scoping and own-record views. Example: U100.",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "example": "U100"
-            }
-          },
           {
             "name": "id",
             "required": true,
@@ -1454,10 +1717,7 @@
         },
         "security": [
           {
-            "role-header": []
-          },
-          {
-            "user-id-header": []
+            "JWT-auth": []
           }
         ],
         "summary": "Reject a request",
@@ -1470,26 +1730,6 @@
       "post": {
         "operationId": "RequestsController_allocate",
         "parameters": [
-          {
-            "name": "x-user-role",
-            "in": "header",
-            "description": "Acting role for RBAC. Allowed values: Requestor, Dept Head, Registrar, Staff, System Admin.",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "example": "Staff"
-            }
-          },
-          {
-            "name": "x-user-id",
-            "in": "header",
-            "description": "Acting user id used for department scoping and own-record views. Example: U100.",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "example": "U100"
-            }
-          },
           {
             "name": "id",
             "required": true,
@@ -1554,10 +1794,7 @@
         },
         "security": [
           {
-            "role-header": []
-          },
-          {
-            "user-id-header": []
+            "JWT-auth": []
           }
         ],
         "summary": "Allocate inventory resources to an approved request",
@@ -1570,26 +1807,6 @@
       "post": {
         "operationId": "RequestsController_confirmReceipt",
         "parameters": [
-          {
-            "name": "x-user-role",
-            "in": "header",
-            "description": "Acting role for RBAC. Allowed values: Requestor, Dept Head, Registrar, Staff, System Admin.",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "example": "Staff"
-            }
-          },
-          {
-            "name": "x-user-id",
-            "in": "header",
-            "description": "Acting user id used for department scoping and own-record views. Example: U100.",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "example": "U100"
-            }
-          },
           {
             "name": "id",
             "required": true,
@@ -1644,10 +1861,7 @@
         },
         "security": [
           {
-            "role-header": []
-          },
-          {
-            "user-id-header": []
+            "JWT-auth": []
           }
         ],
         "summary": "Confirm request receipt from the requestor side",
@@ -1660,26 +1874,6 @@
       "get": {
         "operationId": "ResourcesController_getCatalog",
         "parameters": [
-          {
-            "name": "x-user-role",
-            "in": "header",
-            "description": "Acting role for RBAC. Allowed values: Requestor, Dept Head, Registrar, Staff, System Admin.",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "example": "Staff"
-            }
-          },
-          {
-            "name": "x-user-id",
-            "in": "header",
-            "description": "Acting user id used for department scoping and own-record views. Example: U100.",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "example": "U100"
-            }
-          },
           {
             "name": "department",
             "required": false,
@@ -1737,10 +1931,7 @@
         },
         "security": [
           {
-            "role-header": []
-          },
-          {
-            "user-id-header": []
+            "JWT-auth": []
           }
         ],
         "summary": "List static resource types configured per department",
@@ -1753,26 +1944,6 @@
       "get": {
         "operationId": "ResourcesController_getAvailability",
         "parameters": [
-          {
-            "name": "x-user-role",
-            "in": "header",
-            "description": "Acting role for RBAC. Allowed values: Requestor, Dept Head, Registrar, Staff, System Admin.",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "example": "Staff"
-            }
-          },
-          {
-            "name": "x-user-id",
-            "in": "header",
-            "description": "Acting user id used for department scoping and own-record views. Example: U100.",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "example": "U100"
-            }
-          },
           {
             "name": "department",
             "required": true,
@@ -1836,10 +2007,7 @@
         },
         "security": [
           {
-            "role-header": []
-          },
-          {
-            "user-id-header": []
+            "JWT-auth": []
           }
         ],
         "summary": "Get available inventory count for a department resource type",
@@ -1852,26 +2020,6 @@
       "get": {
         "operationId": "ResourcesController_getAll",
         "parameters": [
-          {
-            "name": "x-user-role",
-            "in": "header",
-            "description": "Acting role for RBAC. Allowed values: Requestor, Dept Head, Registrar, Staff, System Admin.",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "example": "Staff"
-            }
-          },
-          {
-            "name": "x-user-id",
-            "in": "header",
-            "description": "Acting user id used for department scoping and own-record views. Example: U100.",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "example": "U100"
-            }
-          },
           {
             "name": "status",
             "required": false,
@@ -1956,10 +2104,7 @@
         },
         "security": [
           {
-            "role-header": []
-          },
-          {
-            "user-id-header": []
+            "JWT-auth": []
           }
         ],
         "summary": "List resources visible to the acting role",
@@ -1969,28 +2114,7 @@
       },
       "post": {
         "operationId": "ResourcesController_create",
-        "parameters": [
-          {
-            "name": "x-user-role",
-            "in": "header",
-            "description": "Acting role for RBAC. Allowed values: Requestor, Dept Head, Registrar, Staff, System Admin.",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "example": "Staff"
-            }
-          },
-          {
-            "name": "x-user-id",
-            "in": "header",
-            "description": "Acting user id used for department scoping and own-record views. Example: U100.",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "example": "U100"
-            }
-          }
-        ],
+        "parameters": [],
         "requestBody": {
           "required": true,
           "content": {
@@ -2045,10 +2169,7 @@
         },
         "security": [
           {
-            "role-header": []
-          },
-          {
-            "user-id-header": []
+            "JWT-auth": []
           }
         ],
         "summary": "Create an inventory resource",
@@ -2061,26 +2182,6 @@
       "patch": {
         "operationId": "ResourcesController_update",
         "parameters": [
-          {
-            "name": "x-user-role",
-            "in": "header",
-            "description": "Acting role for RBAC. Allowed values: Requestor, Dept Head, Registrar, Staff, System Admin.",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "example": "Staff"
-            }
-          },
-          {
-            "name": "x-user-id",
-            "in": "header",
-            "description": "Acting user id used for department scoping and own-record views. Example: U100.",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "example": "U100"
-            }
-          },
           {
             "name": "id",
             "required": true,
@@ -2145,10 +2246,7 @@
         },
         "security": [
           {
-            "role-header": []
-          },
-          {
-            "user-id-header": []
+            "JWT-auth": []
           }
         ],
         "summary": "Update a resource",
@@ -2161,26 +2259,6 @@
       "post": {
         "operationId": "ResourcesController_requestMaintenance",
         "parameters": [
-          {
-            "name": "x-user-role",
-            "in": "header",
-            "description": "Acting role for RBAC. Allowed values: Requestor, Dept Head, Registrar, Staff, System Admin.",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "example": "Staff"
-            }
-          },
-          {
-            "name": "x-user-id",
-            "in": "header",
-            "description": "Acting user id used for department scoping and own-record views. Example: U100.",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "example": "U100"
-            }
-          },
           {
             "name": "id",
             "required": true,
@@ -2235,10 +2313,7 @@
         },
         "security": [
           {
-            "role-header": []
-          },
-          {
-            "user-id-header": []
+            "JWT-auth": []
           }
         ],
         "summary": "Request maintenance for an allocated resource",
@@ -2251,26 +2326,6 @@
       "post": {
         "operationId": "ResourcesController_initiateReturn",
         "parameters": [
-          {
-            "name": "x-user-role",
-            "in": "header",
-            "description": "Acting role for RBAC. Allowed values: Requestor, Dept Head, Registrar, Staff, System Admin.",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "example": "Staff"
-            }
-          },
-          {
-            "name": "x-user-id",
-            "in": "header",
-            "description": "Acting user id used for department scoping and own-record views. Example: U100.",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "example": "U100"
-            }
-          },
           {
             "name": "id",
             "required": true,
@@ -2325,10 +2380,7 @@
         },
         "security": [
           {
-            "role-header": []
-          },
-          {
-            "user-id-header": []
+            "JWT-auth": []
           }
         ],
         "summary": "Initiate a return request for an allocated resource",
@@ -2341,26 +2393,6 @@
       "post": {
         "operationId": "ResourcesController_confirmRepaired",
         "parameters": [
-          {
-            "name": "x-user-role",
-            "in": "header",
-            "description": "Acting role for RBAC. Allowed values: Requestor, Dept Head, Registrar, Staff, System Admin.",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "example": "Staff"
-            }
-          },
-          {
-            "name": "x-user-id",
-            "in": "header",
-            "description": "Acting user id used for department scoping and own-record views. Example: U100.",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "example": "U100"
-            }
-          },
           {
             "name": "id",
             "required": true,
@@ -2415,10 +2447,7 @@
         },
         "security": [
           {
-            "role-header": []
-          },
-          {
-            "user-id-header": []
+            "JWT-auth": []
           }
         ],
         "summary": "Confirm repaired resource allocation",
@@ -2431,26 +2460,6 @@
       "post": {
         "operationId": "ResourcesController_scrap",
         "parameters": [
-          {
-            "name": "x-user-role",
-            "in": "header",
-            "description": "Acting role for RBAC. Allowed values: Requestor, Dept Head, Registrar, Staff, System Admin.",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "example": "Staff"
-            }
-          },
-          {
-            "name": "x-user-id",
-            "in": "header",
-            "description": "Acting user id used for department scoping and own-record views. Example: U100.",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "example": "U100"
-            }
-          },
           {
             "name": "id",
             "required": true,
@@ -2505,10 +2514,7 @@
         },
         "security": [
           {
-            "role-header": []
-          },
-          {
-            "user-id-header": []
+            "JWT-auth": []
           }
         ],
         "summary": "Scrap a resource",
@@ -2521,26 +2527,6 @@
       "get": {
         "operationId": "ProcurementsController_getAll",
         "parameters": [
-          {
-            "name": "x-user-role",
-            "in": "header",
-            "description": "Acting role for RBAC. Allowed values: Requestor, Dept Head, Registrar, Staff, System Admin.",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "example": "Staff"
-            }
-          },
-          {
-            "name": "x-user-id",
-            "in": "header",
-            "description": "Acting user id used for department scoping and own-record views. Example: U100.",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "example": "U100"
-            }
-          },
           {
             "name": "status",
             "required": false,
@@ -2607,10 +2593,7 @@
         },
         "security": [
           {
-            "role-header": []
-          },
-          {
-            "user-id-header": []
+            "JWT-auth": []
           }
         ],
         "summary": "List procurements visible to the acting role",
@@ -2620,28 +2603,7 @@
       },
       "post": {
         "operationId": "ProcurementsController_create",
-        "parameters": [
-          {
-            "name": "x-user-role",
-            "in": "header",
-            "description": "Acting role for RBAC. Allowed values: Requestor, Dept Head, Registrar, Staff, System Admin.",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "example": "Staff"
-            }
-          },
-          {
-            "name": "x-user-id",
-            "in": "header",
-            "description": "Acting user id used for department scoping and own-record views. Example: U100.",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "example": "U100"
-            }
-          }
-        ],
+        "parameters": [],
         "requestBody": {
           "required": true,
           "content": {
@@ -2696,10 +2658,7 @@
         },
         "security": [
           {
-            "role-header": []
-          },
-          {
-            "user-id-header": []
+            "JWT-auth": []
           }
         ],
         "summary": "Create a procurement request",
@@ -2712,26 +2671,6 @@
       "patch": {
         "operationId": "ProcurementsController_update",
         "parameters": [
-          {
-            "name": "x-user-role",
-            "in": "header",
-            "description": "Acting role for RBAC. Allowed values: Requestor, Dept Head, Registrar, Staff, System Admin.",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "example": "Staff"
-            }
-          },
-          {
-            "name": "x-user-id",
-            "in": "header",
-            "description": "Acting user id used for department scoping and own-record views. Example: U100.",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "example": "U100"
-            }
-          },
           {
             "name": "id",
             "required": true,
@@ -2796,10 +2735,7 @@
         },
         "security": [
           {
-            "role-header": []
-          },
-          {
-            "user-id-header": []
+            "JWT-auth": []
           }
         ],
         "summary": "Update a procurement",
@@ -2812,26 +2748,6 @@
       "post": {
         "operationId": "ProcurementsController_departmentApprove",
         "parameters": [
-          {
-            "name": "x-user-role",
-            "in": "header",
-            "description": "Acting role for RBAC. Allowed values: Requestor, Dept Head, Registrar, Staff, System Admin.",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "example": "Staff"
-            }
-          },
-          {
-            "name": "x-user-id",
-            "in": "header",
-            "description": "Acting user id used for department scoping and own-record views. Example: U100.",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "example": "U100"
-            }
-          },
           {
             "name": "id",
             "required": true,
@@ -2886,10 +2802,7 @@
         },
         "security": [
           {
-            "role-header": []
-          },
-          {
-            "user-id-header": []
+            "JWT-auth": []
           }
         ],
         "summary": "Approve a procurement as department head",
@@ -2902,26 +2815,6 @@
       "post": {
         "operationId": "ProcurementsController_departmentReject",
         "parameters": [
-          {
-            "name": "x-user-role",
-            "in": "header",
-            "description": "Acting role for RBAC. Allowed values: Requestor, Dept Head, Registrar, Staff, System Admin.",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "example": "Staff"
-            }
-          },
-          {
-            "name": "x-user-id",
-            "in": "header",
-            "description": "Acting user id used for department scoping and own-record views. Example: U100.",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "example": "U100"
-            }
-          },
           {
             "name": "id",
             "required": true,
@@ -2976,10 +2869,7 @@
         },
         "security": [
           {
-            "role-header": []
-          },
-          {
-            "user-id-header": []
+            "JWT-auth": []
           }
         ],
         "summary": "Reject a procurement as department head",
@@ -2992,26 +2882,6 @@
       "post": {
         "operationId": "ProcurementsController_registrarApprove",
         "parameters": [
-          {
-            "name": "x-user-role",
-            "in": "header",
-            "description": "Acting role for RBAC. Allowed values: Requestor, Dept Head, Registrar, Staff, System Admin.",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "example": "Staff"
-            }
-          },
-          {
-            "name": "x-user-id",
-            "in": "header",
-            "description": "Acting user id used for department scoping and own-record views. Example: U100.",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "example": "U100"
-            }
-          },
           {
             "name": "id",
             "required": true,
@@ -3066,10 +2936,7 @@
         },
         "security": [
           {
-            "role-header": []
-          },
-          {
-            "user-id-header": []
+            "JWT-auth": []
           }
         ],
         "summary": "Approve a procurement as registrar",
@@ -3082,26 +2949,6 @@
       "post": {
         "operationId": "ProcurementsController_registrarReject",
         "parameters": [
-          {
-            "name": "x-user-role",
-            "in": "header",
-            "description": "Acting role for RBAC. Allowed values: Requestor, Dept Head, Registrar, Staff, System Admin.",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "example": "Staff"
-            }
-          },
-          {
-            "name": "x-user-id",
-            "in": "header",
-            "description": "Acting user id used for department scoping and own-record views. Example: U100.",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "example": "U100"
-            }
-          },
           {
             "name": "id",
             "required": true,
@@ -3156,10 +3003,7 @@
         },
         "security": [
           {
-            "role-header": []
-          },
-          {
-            "user-id-header": []
+            "JWT-auth": []
           }
         ],
         "summary": "Reject a procurement as registrar",
@@ -3172,26 +3016,6 @@
       "post": {
         "operationId": "ProcurementsController_logPurchase",
         "parameters": [
-          {
-            "name": "x-user-role",
-            "in": "header",
-            "description": "Acting role for RBAC. Allowed values: Requestor, Dept Head, Registrar, Staff, System Admin.",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "example": "Staff"
-            }
-          },
-          {
-            "name": "x-user-id",
-            "in": "header",
-            "description": "Acting user id used for department scoping and own-record views. Example: U100.",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "example": "U100"
-            }
-          },
           {
             "name": "id",
             "required": true,
@@ -3256,10 +3080,7 @@
         },
         "security": [
           {
-            "role-header": []
-          },
-          {
-            "user-id-header": []
+            "JWT-auth": []
           }
         ],
         "summary": "Log vendor and invoice details for an approved procurement",
@@ -3272,26 +3093,6 @@
       "post": {
         "operationId": "ProcurementsController_register",
         "parameters": [
-          {
-            "name": "x-user-role",
-            "in": "header",
-            "description": "Acting role for RBAC. Allowed values: Requestor, Dept Head, Registrar, Staff, System Admin.",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "example": "Staff"
-            }
-          },
-          {
-            "name": "x-user-id",
-            "in": "header",
-            "description": "Acting user id used for department scoping and own-record views. Example: U100.",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "example": "U100"
-            }
-          },
           {
             "name": "id",
             "required": true,
@@ -3356,10 +3157,7 @@
         },
         "security": [
           {
-            "role-header": []
-          },
-          {
-            "user-id-header": []
+            "JWT-auth": []
           }
         ],
         "summary": "Register delivered assets for a fulfilled procurement",
@@ -3371,28 +3169,7 @@
     "/api/maintenance/history": {
       "get": {
         "operationId": "MaintenanceController_getHistory",
-        "parameters": [
-          {
-            "name": "x-user-role",
-            "in": "header",
-            "description": "Acting role for RBAC. Allowed values: Requestor, Dept Head, Registrar, Staff, System Admin.",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "example": "Staff"
-            }
-          },
-          {
-            "name": "x-user-id",
-            "in": "header",
-            "description": "Acting user id used for department scoping and own-record views. Example: U100.",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "example": "U100"
-            }
-          }
-        ],
+        "parameters": [],
         "responses": {
           "200": {
             "description": "Maintenance history returned successfully.",
@@ -3440,10 +3217,7 @@
         },
         "security": [
           {
-            "role-header": []
-          },
-          {
-            "user-id-header": []
+            "JWT-auth": []
           }
         ],
         "summary": "Get maintenance history visible to the acting role",
@@ -3456,26 +3230,6 @@
       "post": {
         "operationId": "MaintenanceController_accept",
         "parameters": [
-          {
-            "name": "x-user-role",
-            "in": "header",
-            "description": "Acting role for RBAC. Allowed values: Requestor, Dept Head, Registrar, Staff, System Admin.",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "example": "Staff"
-            }
-          },
-          {
-            "name": "x-user-id",
-            "in": "header",
-            "description": "Acting user id used for department scoping and own-record views. Example: U100.",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "example": "U100"
-            }
-          },
           {
             "name": "resourceId",
             "required": true,
@@ -3530,10 +3284,7 @@
         },
         "security": [
           {
-            "role-header": []
-          },
-          {
-            "user-id-header": []
+            "JWT-auth": []
           }
         ],
         "summary": "Accept a maintenance request",
@@ -3546,26 +3297,6 @@
       "post": {
         "operationId": "MaintenanceController_repair",
         "parameters": [
-          {
-            "name": "x-user-role",
-            "in": "header",
-            "description": "Acting role for RBAC. Allowed values: Requestor, Dept Head, Registrar, Staff, System Admin.",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "example": "Staff"
-            }
-          },
-          {
-            "name": "x-user-id",
-            "in": "header",
-            "description": "Acting user id used for department scoping and own-record views. Example: U100.",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "example": "U100"
-            }
-          },
           {
             "name": "resourceId",
             "required": true,
@@ -3620,10 +3351,7 @@
         },
         "security": [
           {
-            "role-header": []
-          },
-          {
-            "user-id-header": []
+            "JWT-auth": []
           }
         ],
         "summary": "Mark a resource as repaired",
@@ -3636,26 +3364,6 @@
       "post": {
         "operationId": "MaintenanceController_scrap",
         "parameters": [
-          {
-            "name": "x-user-role",
-            "in": "header",
-            "description": "Acting role for RBAC. Allowed values: Requestor, Dept Head, Registrar, Staff, System Admin.",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "example": "Staff"
-            }
-          },
-          {
-            "name": "x-user-id",
-            "in": "header",
-            "description": "Acting user id used for department scoping and own-record views. Example: U100.",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "example": "U100"
-            }
-          },
           {
             "name": "resourceId",
             "required": true,
@@ -3710,10 +3418,7 @@
         },
         "security": [
           {
-            "role-header": []
-          },
-          {
-            "user-id-header": []
+            "JWT-auth": []
           }
         ],
         "summary": "Scrap a resource from the maintenance flow",
@@ -3725,28 +3430,7 @@
     "/api/returns/history": {
       "get": {
         "operationId": "ReturnsController_getHistory",
-        "parameters": [
-          {
-            "name": "x-user-role",
-            "in": "header",
-            "description": "Acting role for RBAC. Allowed values: Requestor, Dept Head, Registrar, Staff, System Admin.",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "example": "Staff"
-            }
-          },
-          {
-            "name": "x-user-id",
-            "in": "header",
-            "description": "Acting user id used for department scoping and own-record views. Example: U100.",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "example": "U100"
-            }
-          }
-        ],
+        "parameters": [],
         "responses": {
           "200": {
             "description": "Return history returned successfully.",
@@ -3794,10 +3478,7 @@
         },
         "security": [
           {
-            "role-header": []
-          },
-          {
-            "user-id-header": []
+            "JWT-auth": []
           }
         ],
         "summary": "Get return history visible to the acting role",
@@ -3810,26 +3491,6 @@
       "post": {
         "operationId": "ReturnsController_process",
         "parameters": [
-          {
-            "name": "x-user-role",
-            "in": "header",
-            "description": "Acting role for RBAC. Allowed values: Requestor, Dept Head, Registrar, Staff, System Admin.",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "example": "Staff"
-            }
-          },
-          {
-            "name": "x-user-id",
-            "in": "header",
-            "description": "Acting user id used for department scoping and own-record views. Example: U100.",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "example": "U100"
-            }
-          },
           {
             "name": "resourceId",
             "required": true,
@@ -3894,10 +3555,7 @@
         },
         "security": [
           {
-            "role-header": []
-          },
-          {
-            "user-id-header": []
+            "JWT-auth": []
           }
         ],
         "summary": "Process a returned resource",
@@ -3909,28 +3567,7 @@
     "/api/notifications": {
       "get": {
         "operationId": "NotificationsController_getAll",
-        "parameters": [
-          {
-            "name": "x-user-role",
-            "in": "header",
-            "description": "Acting role for RBAC. Allowed values: Requestor, Dept Head, Registrar, Staff, System Admin.",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "example": "Staff"
-            }
-          },
-          {
-            "name": "x-user-id",
-            "in": "header",
-            "description": "Acting user id used for department scoping and own-record views. Example: U100.",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "example": "U100"
-            }
-          }
-        ],
+        "parameters": [],
         "responses": {
           "200": {
             "description": "Notifications returned successfully.",
@@ -3978,10 +3615,7 @@
         },
         "security": [
           {
-            "role-header": []
-          },
-          {
-            "user-id-header": []
+            "JWT-auth": []
           }
         ],
         "summary": "List notifications visible to the acting role",
@@ -3994,26 +3628,6 @@
       "patch": {
         "operationId": "NotificationsController_update",
         "parameters": [
-          {
-            "name": "x-user-role",
-            "in": "header",
-            "description": "Acting role for RBAC. Allowed values: Requestor, Dept Head, Registrar, Staff, System Admin.",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "example": "Staff"
-            }
-          },
-          {
-            "name": "x-user-id",
-            "in": "header",
-            "description": "Acting user id used for department scoping and own-record views. Example: U100.",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "example": "U100"
-            }
-          },
           {
             "name": "id",
             "required": true,
@@ -4078,10 +3692,7 @@
         },
         "security": [
           {
-            "role-header": []
-          },
-          {
-            "user-id-header": []
+            "JWT-auth": []
           }
         ],
         "summary": "Update a notification state",
@@ -4093,28 +3704,7 @@
     "/api/analytics/requestor-summary": {
       "get": {
         "operationId": "AnalyticsController_requestorSummary",
-        "parameters": [
-          {
-            "name": "x-user-role",
-            "in": "header",
-            "description": "Acting role for RBAC. Allowed values: Requestor, Dept Head, Registrar, Staff, System Admin.",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "example": "Staff"
-            }
-          },
-          {
-            "name": "x-user-id",
-            "in": "header",
-            "description": "Acting user id used for department scoping and own-record views. Example: U100.",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "example": "U100"
-            }
-          }
-        ],
+        "parameters": [],
         "responses": {
           "200": {
             "description": "Requestor summary returned successfully.",
@@ -4159,10 +3749,7 @@
         },
         "security": [
           {
-            "role-header": []
-          },
-          {
-            "user-id-header": []
+            "JWT-auth": []
           }
         ],
         "summary": "Get requestor dashboard summary",
@@ -4174,28 +3761,7 @@
     "/api/analytics/department-summary": {
       "get": {
         "operationId": "AnalyticsController_departmentSummary",
-        "parameters": [
-          {
-            "name": "x-user-role",
-            "in": "header",
-            "description": "Acting role for RBAC. Allowed values: Requestor, Dept Head, Registrar, Staff, System Admin.",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "example": "Staff"
-            }
-          },
-          {
-            "name": "x-user-id",
-            "in": "header",
-            "description": "Acting user id used for department scoping and own-record views. Example: U100.",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "example": "U100"
-            }
-          }
-        ],
+        "parameters": [],
         "responses": {
           "200": {
             "description": "Department summary returned successfully.",
@@ -4240,10 +3806,7 @@
         },
         "security": [
           {
-            "role-header": []
-          },
-          {
-            "user-id-header": []
+            "JWT-auth": []
           }
         ],
         "summary": "Get department-head dashboard summary",
@@ -4255,28 +3818,7 @@
     "/api/analytics/registrar-summary": {
       "get": {
         "operationId": "AnalyticsController_registrarSummary",
-        "parameters": [
-          {
-            "name": "x-user-role",
-            "in": "header",
-            "description": "Acting role for RBAC. Allowed values: Requestor, Dept Head, Registrar, Staff, System Admin.",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "example": "Staff"
-            }
-          },
-          {
-            "name": "x-user-id",
-            "in": "header",
-            "description": "Acting user id used for department scoping and own-record views. Example: U100.",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "example": "U100"
-            }
-          }
-        ],
+        "parameters": [],
         "responses": {
           "200": {
             "description": "Registrar summary returned successfully.",
@@ -4321,10 +3863,7 @@
         },
         "security": [
           {
-            "role-header": []
-          },
-          {
-            "user-id-header": []
+            "JWT-auth": []
           }
         ],
         "summary": "Get registrar dashboard summary",
@@ -4336,28 +3875,7 @@
     "/api/analytics/stock": {
       "get": {
         "operationId": "AnalyticsController_stock",
-        "parameters": [
-          {
-            "name": "x-user-role",
-            "in": "header",
-            "description": "Acting role for RBAC. Allowed values: Requestor, Dept Head, Registrar, Staff, System Admin.",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "example": "Staff"
-            }
-          },
-          {
-            "name": "x-user-id",
-            "in": "header",
-            "description": "Acting user id used for department scoping and own-record views. Example: U100.",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "example": "U100"
-            }
-          }
-        ],
+        "parameters": [],
         "responses": {
           "200": {
             "description": "Stock monitoring rows returned successfully.",
@@ -4405,10 +3923,7 @@
         },
         "security": [
           {
-            "role-header": []
-          },
-          {
-            "user-id-header": []
+            "JWT-auth": []
           }
         ],
         "summary": "Get stock threshold rows visible to the acting role",
@@ -4421,26 +3936,6 @@
       "patch": {
         "operationId": "AnalyticsController_updateStockThreshold",
         "parameters": [
-          {
-            "name": "x-user-role",
-            "in": "header",
-            "description": "Acting role for RBAC. Allowed values: Requestor, Dept Head, Registrar, Staff, System Admin.",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "example": "Staff"
-            }
-          },
-          {
-            "name": "x-user-id",
-            "in": "header",
-            "description": "Acting user id used for department scoping and own-record views. Example: U100.",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "example": "U100"
-            }
-          },
           {
             "name": "id",
             "required": true,
@@ -4504,10 +3999,7 @@
         },
         "security": [
           {
-            "role-header": []
-          },
-          {
-            "user-id-header": []
+            "JWT-auth": []
           }
         ],
         "summary": "Update a stock threshold level",
@@ -4519,28 +4011,7 @@
     "/api/profile/me": {
       "get": {
         "operationId": "ProfileController_getMe",
-        "parameters": [
-          {
-            "name": "x-user-role",
-            "in": "header",
-            "description": "Acting role for RBAC. Allowed values: Requestor, Dept Head, Registrar, Staff, System Admin.",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "example": "Staff"
-            }
-          },
-          {
-            "name": "x-user-id",
-            "in": "header",
-            "description": "Acting user id used for department scoping and own-record views. Example: U100.",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "example": "U100"
-            }
-          }
-        ],
+        "parameters": [],
         "responses": {
           "200": {
             "description": "Profile returned successfully.",
@@ -4585,10 +4056,7 @@
         },
         "security": [
           {
-            "role-header": []
-          },
-          {
-            "user-id-header": []
+            "JWT-auth": []
           }
         ],
         "summary": "Get current actor profile",
@@ -4598,28 +4066,7 @@
       },
       "patch": {
         "operationId": "ProfileController_update",
-        "parameters": [
-          {
-            "name": "x-user-role",
-            "in": "header",
-            "description": "Acting role for RBAC. Allowed values: Requestor, Dept Head, Registrar, Staff, System Admin.",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "example": "Staff"
-            }
-          },
-          {
-            "name": "x-user-id",
-            "in": "header",
-            "description": "Acting user id used for department scoping and own-record views. Example: U100.",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "example": "U100"
-            }
-          }
-        ],
+        "parameters": [],
         "requestBody": {
           "required": true,
           "content": {
@@ -4674,10 +4121,7 @@
         },
         "security": [
           {
-            "role-header": []
-          },
-          {
-            "user-id-header": []
+            "JWT-auth": []
           }
         ],
         "summary": "Update current actor profile",
@@ -4689,28 +4133,7 @@
     "/api/profile/me/password": {
       "post": {
         "operationId": "ProfileController_updatePassword",
-        "parameters": [
-          {
-            "name": "x-user-role",
-            "in": "header",
-            "description": "Acting role for RBAC. Allowed values: Requestor, Dept Head, Registrar, Staff, System Admin.",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "example": "Staff"
-            }
-          },
-          {
-            "name": "x-user-id",
-            "in": "header",
-            "description": "Acting user id used for department scoping and own-record views. Example: U100.",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "example": "U100"
-            }
-          }
-        ],
+        "parameters": [],
         "requestBody": {
           "required": true,
           "content": {
@@ -4765,10 +4188,7 @@
         },
         "security": [
           {
-            "role-header": []
-          },
-          {
-            "user-id-header": []
+            "JWT-auth": []
           }
         ],
         "summary": "Update current actor password",
@@ -4793,20 +4213,33 @@
   ],
   "components": {
     "securitySchemes": {
-      "role-header": {
-        "type": "apiKey",
-        "in": "header",
-        "name": "x-user-role",
-        "description": "Required RBAC header. Example values: Requestor, Dept Head, Registrar, Staff, System Admin."
-      },
-      "user-id-header": {
-        "type": "apiKey",
-        "in": "header",
-        "name": "x-user-id",
-        "description": "Optional acting user id header for own-profile and department-scoped behavior. Example: U100."
+      "JWT-auth": {
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "type": "http",
+        "name": "JWT",
+        "description": "Enter JWT token",
+        "in": "header"
       }
     },
     "schemas": {
+      "LoginDto": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "example": "admin@client1.com"
+          },
+          "password": {
+            "type": "string",
+            "example": "password"
+          }
+        },
+        "required": [
+          "email",
+          "password"
+        ]
+      },
       "ErrorResponseDto": {
         "type": "object",
         "properties": {
@@ -4906,7 +4339,9 @@
               "Dept Head",
               "Registrar",
               "Staff",
-              "System Admin"
+              "System Admin",
+              "Owner",
+              "Employee"
             ],
             "example": "Staff"
           },
@@ -4959,7 +4394,9 @@
               "Dept Head",
               "Registrar",
               "Staff",
-              "System Admin"
+              "System Admin",
+              "Owner",
+              "Employee"
             ],
             "example": "Staff"
           },
@@ -4981,6 +4418,22 @@
             "example": "newsecret123"
           }
         }
+      },
+      "RegisterOrgDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "CreateTicketDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "ResolveTicketDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "CreateAnnouncementDto": {
+        "type": "object",
+        "properties": {}
       },
       "DepartmentResponseDto": {
         "type": "object",
@@ -5083,7 +4536,9 @@
                   "Dept Head",
                   "Registrar",
                   "Staff",
-                  "System Admin"
+                  "System Admin",
+                  "Owner",
+                  "Employee"
                 ]
               }
             },
@@ -5220,6 +4675,10 @@
               "High"
             ],
             "example": "Normal"
+          },
+          "procurementId": {
+            "type": "string",
+            "example": "PRC-8668"
           }
         },
         "required": [
@@ -5283,6 +4742,10 @@
               "High"
             ],
             "example": "Normal"
+          },
+          "procurementId": {
+            "type": "string",
+            "example": "PRC-8668"
           },
           "assignedResources": {
             "type": "string",
@@ -5699,6 +5162,10 @@
             "type": "string",
             "example": "U2"
           },
+          "requesterRole": {
+            "type": "string",
+            "example": "Requestor"
+          },
           "status": {
             "type": "string",
             "enum": [
@@ -5769,6 +5236,10 @@
           "requestedById": {
             "type": "string",
             "example": "U2"
+          },
+          "requesterRole": {
+            "type": "string",
+            "example": "Requestor"
           },
           "status": {
             "type": "string",

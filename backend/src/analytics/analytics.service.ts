@@ -10,7 +10,11 @@ export class AnalyticsService {
 
   private getScopedRequests(context: RequestContext): RequestRecord[] {
     const user = getActingUser(this.dataService, context);
-    const items = this.dataService.getRequests();
+    let items = this.dataService.getRequests();
+    // Organization isolation first
+    if (context.organizationId) {
+      items = items.filter((r) => r.organizationId === context.organizationId);
+    }
     if (context.role === 'System Admin' || context.role === 'Registrar') {
       return items;
     }
@@ -28,7 +32,11 @@ export class AnalyticsService {
 
   private getScopedResources(context: RequestContext): ResourceRecord[] {
     const user = getActingUser(this.dataService, context);
-    const items = this.dataService.getResources();
+    let items = this.dataService.getResources();
+    // Organization isolation first
+    if (context.organizationId) {
+      items = items.filter((r) => r.organizationId === context.organizationId);
+    }
     if (context.role === 'System Admin' || context.role === 'Registrar') {
       return items;
     }
@@ -46,7 +54,11 @@ export class AnalyticsService {
 
   private getScopedProcurements(context: RequestContext): ProcurementRecord[] {
     const user = getActingUser(this.dataService, context);
-    const items = this.dataService.getProcurements();
+    let items = this.dataService.getProcurements();
+    // Organization isolation first
+    if (context.organizationId) {
+      items = items.filter((p) => p.organizationId === context.organizationId);
+    }
     if (context.role === 'System Admin' || context.role === 'Registrar') {
       return items;
     }
@@ -105,8 +117,13 @@ export class AnalyticsService {
   }
 
   getStock(context: RequestContext) {
-    const thresholds = this.dataService.getStockThresholds();
-    const resources = this.dataService.getResources();
+    let thresholds = this.dataService.getStockThresholds();
+    let resources = this.dataService.getResources();
+    // Organization isolation — only show stock data for the current org
+    if (context.organizationId) {
+      thresholds = thresholds.filter((t) => !t.organizationId || t.organizationId === context.organizationId);
+      resources = resources.filter((r) => r.organizationId === context.organizationId);
+    }
     return thresholds.map((threshold) => {
       const currentQuantity = resources.filter(
         (resource) =>

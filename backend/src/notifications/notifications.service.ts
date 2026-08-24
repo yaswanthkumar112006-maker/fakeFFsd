@@ -9,7 +9,13 @@ export class NotificationsService {
   constructor(private readonly dataService: DataService) {}
 
   getAll(context: RequestContext): NotificationRecord[] {
-    const notifications = this.dataService.getNotifications();
+    let notifications = this.dataService.getNotifications();
+    // Organization isolation — scope to user's org (allow 'PLATFORM' broadcast notifications)
+    if (context.organizationId) {
+      notifications = notifications.filter(
+        (n) => !n.organizationId || n.organizationId === context.organizationId || n.organizationId === 'PLATFORM'
+      );
+    }
     return notifications.filter(
       (notification) =>
         notification.recipientRole === 'All' ||

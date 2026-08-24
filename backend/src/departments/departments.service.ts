@@ -9,14 +9,18 @@ export class DepartmentsService {
   constructor(private readonly dataService: DataService) {}
 
   getAll(context: RequestContext): DepartmentRecord[] {
-    return this.dataService.getDepartments();
+    const all = this.dataService.getDepartments();
+    // Organization isolation — only return departments belonging to the user's org
+    if (context.organizationId) {
+      return all.filter((d) => d.organizationId === context.organizationId);
+    }
+    return all;
   }
 
-  create(payload: CreateDepartmentDto): DepartmentRecord {
-    const depts = this.dataService.getDepartments();
-    const newId = `D${depts.length + 1}_${Date.now()}`;
+  create(context: RequestContext, payload: CreateDepartmentDto): DepartmentRecord {
     const dept: DepartmentRecord = {
-      id: newId,
+      id: `D${Date.now()}`,
+      organizationId: context.organizationId || 'ORG-001',
       ...payload,
       memberCount: payload.memberCount || 0
     };

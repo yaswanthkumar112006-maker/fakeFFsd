@@ -10,7 +10,12 @@ export class ReturnsService {
 
   getHistory(context: RequestContext): ReturnHistoryRecord[] {
     const user = getActingUser(this.dataService, context);
-    const history = this.dataService.getReturnHistory();
+    let history = this.dataService.getReturnHistory();
+
+    // Organization isolation — always scope to the user's org first
+    if (context.organizationId) {
+      history = history.filter((h) => h.organizationId === context.organizationId);
+    }
 
     if (context.role === 'System Admin' || context.role === 'Registrar') {
       return history;
@@ -37,6 +42,7 @@ export class ReturnsService {
     // Insert log into return history
     this.dataService.insertReturnHistory({
       code: resource.id,
+      organizationId: context.organizationId || 'ORG-001',
       type: resource.type,
       returnedBy: resource.assignedTo || 'Unknown',
       returnDate: new Date().toLocaleDateString('en-US'),

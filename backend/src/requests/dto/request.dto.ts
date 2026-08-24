@@ -50,6 +50,11 @@ export class CreateRequestDto {
   @IsOptional()
   @IsEnum(REQUEST_PRIORITIES)
   priority?: (typeof REQUEST_PRIORITIES)[number];
+
+  @ApiPropertyOptional({ example: 'PRC-8668' })
+  @IsOptional()
+  @IsString()
+  procurementId?: string;
 }
 
 export class UpdateRequestDto extends PartialType(CreateRequestDto) {

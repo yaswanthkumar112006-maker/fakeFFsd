@@ -46,8 +46,9 @@ class DataStore {
     getHeaders(extra = {}) {
         const user = this.getCurrentUser();
         const headers = {};
-        if (user && user.role) headers['x-user-role'] = user.role;
-        if (user && user.id) headers['x-user-id'] = user.id;
+        if (user && user.token) {
+            headers['Authorization'] = `Bearer ${user.token}`;
+        }
         return { ...headers, ...extra };
     }
 
@@ -119,22 +120,52 @@ class DataStore {
     }
 
     async login(email, password) {
-        const users = await this.api('/users', {
-            headers: {
-                'x-user-role': 'System Admin'
+        try {
+            // First, make raw fetch without auth headers since it's a public endpoint
+            const res = await fetch(`${apiBase}/auth/login`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password })
+            });
+
+            if (!res.ok) {
+                return null;
             }
-        });
-        const user = (users || []).find(u => String(u.email).toLowerCase() === email.toLowerCase().trim());
-        if (user && user.password === password) {
-            this.setCurrentUser(user);
-            await this.sync();
-            return user;
+
+            const data = await res.json();
+            if (data && data.access_token) {
+                const userObj = {
+                    ...data.user,
+                    token: data.access_token
+                };
+                this.setCurrentUser(userObj);
+                await this.sync();
+                return userObj;
+            }
+            return null;
+        } catch (err) {
+            console.error('Login Error:', err);
+            return null;
         }
-        return null;
     }
 
     logout() {
         this.setCurrentUser(null);
+    }
+
+    async fetchMyOrganization() {
+        return this.api('/organizations/my-org/details');
+    }
+
+    async fetchSubscriptionPlans() {
+        return this.api('/subscriptions/plans');
+    }
+
+    async updateSubscription(planId) {
+        return this.api('/organizations/my-org/subscription', {
+            method: 'PATCH',
+            body: { planId }
+        });
     }
 
     async fetchUsers() {

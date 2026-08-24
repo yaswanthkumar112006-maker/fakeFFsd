@@ -12,12 +12,28 @@ import { MaintenanceModule } from './maintenance/maintenance.module';
 import { ReturnsModule } from './returns/returns.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { AnalyticsModule } from './analytics/analytics.module';
+import { AuthModule } from './auth/auth.module';
+import { AuthGuard } from './auth/auth.guard';
 import { ProfileModule } from './profile/profile.module';
+import { OrganizationsModule } from './organizations/organizations.module';
+import { SupportModule } from './support/support.module';
+import { InvoicesModule } from './invoices/invoices.module';
+import { PlatformAnalyticsModule } from './platform-analytics/platform-analytics.module';
+import { AnnouncementsModule } from './announcements/announcements.module';
+import { SubscriptionsModule } from './subscriptions/subscriptions.module';
+
 
 @Module({
   imports: [
+    AuthModule,
     DataModule,
     UsersModule,
+    OrganizationsModule,
+    SupportModule,
+    AnnouncementsModule,
+    PlatformAnalyticsModule,
+    InvoicesModule,
+    SubscriptionsModule,
     DepartmentsModule,
     PermissionsModule,
     RequestsModule,
@@ -30,6 +46,10 @@ import { ProfileModule } from './profile/profile.module';
     ProfileModule,
   ],
   providers: [
+    {
+      provide: APP_GUARD,
+      useClass: AuthGuard,
+    },
     {
       provide: APP_GUARD,
       useClass: RolesGuard,

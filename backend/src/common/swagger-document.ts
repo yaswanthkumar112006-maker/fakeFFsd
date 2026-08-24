@@ -9,25 +9,16 @@ export function buildSwaggerConfig() {
     )
     .setVersion('1.0.0')
     .addServer('/api', 'API base path')
-    .addApiKey(
+    .addBearerAuth(
       {
-        type: 'apiKey',
-        name: 'x-user-role',
+        type: 'http',
+        scheme: 'bearer',
+        bearerFormat: 'JWT',
+        name: 'JWT',
+        description: 'Enter JWT token',
         in: 'header',
-        description:
-          'Required RBAC header. Example values: Requestor, Dept Head, Registrar, Staff, System Admin.',
       },
-      'role-header',
-    )
-    .addApiKey(
-      {
-        type: 'apiKey',
-        name: 'x-user-id',
-        in: 'header',
-        description:
-          'Optional acting user id header for own-profile and department-scoped behavior. Example: U100.',
-      },
-      'user-id-header',
+      'JWT-auth',
     )
     .build();
 }

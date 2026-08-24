@@ -25,27 +25,18 @@ export class RolesGuard implements CanActivate {
     ]);
 
     const request = context.switchToHttp().getRequest();
-    const roleHeader = request.headers['x-user-role'];
-    const normalizedRole = Array.isArray(roleHeader) ? roleHeader[0] : roleHeader;
-    const role = ROLES.includes(normalizedRole as Role)
-      ? (normalizedRole as Role)
-      : 'Guest';
-
-    const rawUserId = Array.isArray(request.headers['x-user-id'])
-      ? request.headers['x-user-id'][0]
-      : request.headers['x-user-id'];
-
-    request.context = {
-      role,
-      userId: normalizeUserId(rawUserId),
-    } satisfies RequestContext;
+    const role = request.context?.role || 'Guest';
+    
+    // We don't need to rebuild request.context here since AuthGuard already does it.
 
     if (!requiredRoles || requiredRoles.length === 0) {
       return true;
     }
 
+    console.log(`RolesGuard: userRole="${role}", requiredRoles=${JSON.stringify(requiredRoles)}`);
+
     if (!requiredRoles.includes(role as Role)) {
-      throw new ForbiddenException('Role is not allowed for this action.');
+      throw new ForbiddenException(`Role '${role}' is not allowed for this action. Allowed: ${requiredRoles}`);
     }
 
     return true;

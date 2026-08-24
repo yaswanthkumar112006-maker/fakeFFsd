@@ -26,6 +26,7 @@ const app = {
         this.renderRequests();
         this.renderResources();
         this.renderProcurements();
+        this.renderProcurementStatus();
     },
 
     refreshData: async function() {
@@ -178,6 +179,18 @@ const app = {
             return;
         }
 
+        // Fix 1: Validate quantity <= available inventory
+        const availability = await Store.fetchResourceAvailability(dept, type);
+        const availableCount = Number(availability?.availableCount || 0);
+
+        if (qty > availableCount) {
+            Store.showToast(
+                `❌ Quantity must be less than or equal to available inventory (${availableCount} available). Please reduce your quantity.`,
+                "error"
+            );
+            return;
+        }
+
         const newId = `REQ-${Math.floor(1000 + Math.random() * 9000)}`;
         const dateStr = new Date().toLocaleDateString('en-US', {month: 'short', day: 'numeric', year:'numeric'});
 
@@ -219,6 +232,18 @@ const app = {
             return;
         }
 
+        // Fix 2: Validate quantity > available inventory (procurement only needed when stock is insufficient)
+        const availability = await Store.fetchResourceAvailability(dept, type);
+        const availableCount = Number(availability?.availableCount || 0);
+
+        if (qty <= availableCount) {
+            Store.showToast(
+                `❌ Procurement not needed — ${availableCount} unit(s) of "${type}" already available in inventory. Use "Request Resource" instead.`,
+                "error"
+            );
+            return;
+        }
+
         const newId = `PRC-${Math.floor(1000 + Math.random() * 9000)}`;
         const dateStr = new Date().toLocaleDateString('en-US', {month: 'short', day: 'numeric', year:'numeric'});
 
@@ -229,6 +254,7 @@ const app = {
             department: dept,
             requester: user.name,
             requestedById: user.id,
+            requesterRole: user.role,
             quantity: qty,
             status: "Pending Approval",
             priority: "Normal",
@@ -372,6 +398,62 @@ const app = {
                 <td>${proc.item}</td>
                 <td>${String(proc.quantity).padStart(2, '0')}</td>
                 <td>${proc.date}</td>
+                <td>${statusBadge}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+    },
+
+    renderProcurementStatus: function() {
+        const tbody = document.getElementById('procurement-status-tbody');
+        if (!tbody) return;
+        tbody.innerHTML = '';
+
+        const user = Store.getCurrentUser();
+        const myProcs = this.state.procurements.filter(p =>
+            p.requester === user.name || p.requestedById === user.id
+        );
+
+        if (myProcs.length === 0) {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `<td colspan="6" style="text-align:center; color:#94a3b8; padding:2rem; font-size:0.875rem;">No procurement requests submitted yet.</td>`;
+            tbody.appendChild(tr);
+            return;
+        }
+
+        myProcs.forEach(proc => {
+            // Determine stage label and badge color based on status
+            const stageMap = {
+                'Pending Approval': { stage: '1 of 5 — Awaiting Dept Head',  bg: '#fef9c3', color: '#854d0e' },
+                'Pending':          { stage: '2 of 5 — Awaiting Registrar',   bg: '#fef9c3', color: '#854d0e' },
+                'Approved':         { stage: '3 of 5 — Staff Purchase',        bg: '#dbeafe', color: '#1d4ed8' },
+                'Fulfilled':        { stage: '4 of 5 — Asset Registration',    bg: '#ede9fe', color: '#6d28d9' },
+                'Registered':       { stage: '5 of 5 — Pending Allocation',    bg: '#dcfce7', color: '#166534' },
+                'Rejected':         { stage: 'Rejected',                        bg: '#fee2e2', color: '#b91c1c' },
+            };
+
+            // Check if there's an allocation request auto-generated from this procurement
+            const allocationReqId = `REQ-PRC-${proc.id.replace(/[^a-zA-Z0-9]/g, '')}`;
+            const allocationReq = this.state.requests.find(r => r.id === allocationReqId);
+            let stageInfo = stageMap[proc.status] || { stage: proc.status, bg: '#f1f5f9', color: '#64748b' };
+
+            // If allocation request exists and is Allocated/Completed, show final stage
+            if (allocationReq && (allocationReq.status === 'Allocated' || allocationReq.status === 'Completed')) {
+                stageInfo = { stage: '✅ Allocated — Check My Resources', bg: '#dcfce7', color: '#166534' };
+            } else if (allocationReq && allocationReq.status === 'Approved') {
+                stageInfo = { stage: '5 of 5 — Staff Allocating Now', bg: '#dcfce7', color: '#166534' };
+            }
+
+            const statusBadge = `<span style="background:${stageInfo.bg}; color:${stageInfo.color}; padding:3px 10px; border-radius:999px; font-size:0.75rem; font-weight:600;">${proc.status}</span>`;
+            const stageText = `<span style="font-size:0.78rem; color:${stageInfo.color}; font-weight:500;">${stageInfo.stage}</span>`;
+
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td class="td-id">${proc.id}</td>
+                <td>${proc.item || proc.resourceType}</td>
+                <td>${String(proc.quantity).padStart(2, '0')}</td>
+                <td>${proc.date}</td>
+                <td>${stageText}</td>
                 <td>${statusBadge}</td>
             `;
             tbody.appendChild(tr);

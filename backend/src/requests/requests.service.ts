@@ -19,7 +19,12 @@ export class RequestsService {
     const user = getActingUser(this.dataService, context);
     let items = this.dataService.getRequests();
 
-    // 1. Role-based scoping
+    // 0. Organization isolation — always scope to the user's org first
+    if (context.organizationId) {
+      items = items.filter((r) => r.organizationId === context.organizationId);
+    }
+
+    // 1. Role-based scoping within the org
     if (context.role !== 'System Admin' && context.role !== 'Registrar') {
       if (context.role === 'Dept Head' || context.role === 'Staff') {
         items = items.filter((request) => request.department === user?.department);
@@ -48,11 +53,16 @@ export class RequestsService {
     const user = getActingUser(this.dataService, context);
     const department = payload.department || user?.department || 'Unassigned';
 
-    ensureValidDepartmentResourceType(this.dataService, department, payload.resourceType);
+    // Skip type catalog check for auto-generated procurement allocation requests —
+    // the resource type was already validated during procurement approval
+    if (!payload.procurementId) {
+      ensureValidDepartmentResourceType(this.dataService, department, payload.resourceType);
+    }
 
     const request: RequestRecord = {
       ...payload,
       id: payload.id || `REQ-${Date.now()}`,
+      organizationId: context.organizationId || 'ORG-001',
       department,
       requestor: payload.requestor || user?.name || 'Unknown User',
       requestorId: payload.requestorId || user?.id,
