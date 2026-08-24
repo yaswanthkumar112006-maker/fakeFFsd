@@ -13,7 +13,7 @@ import {
 
 @Injectable()
 export class ResourcesService {
-  constructor(private readonly dataService: DataService) {}
+  constructor(private readonly dataService: DataService) { }
 
   getAll(
     context: RequestContext,

@@ -15,7 +15,7 @@ import { CreateResourceDto, UpdateResourceDto, UpdateCatalogDto } from './dto/re
 @ApiStandardErrorResponses()
 @Controller('resources')
 export class ResourcesController {
-  constructor(private readonly resourcesService: ResourcesService) {}
+  constructor(private readonly resourcesService: ResourcesService) { }
 
   @Get('catalog')
   @ApiOperation({ summary: 'List static resource types configured per department' })

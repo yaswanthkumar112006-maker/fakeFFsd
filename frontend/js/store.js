@@ -80,7 +80,7 @@ class DataStore {
             try {
                 const error = await res.json();
                 message = error.message || error.error || message;
-            } catch (e) {}
+            } catch (e) { }
             throw new Error(message);
         }
 

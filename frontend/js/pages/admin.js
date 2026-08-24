@@ -1,13 +1,13 @@
 const adminApp = {
     viewAllUsers: false,
-    init: async function() {
+    init: async function () {
         const user = Store.getCurrentUser();
-        if(!user || user.role !== 'System Admin') {
+        if (!user || user.role !== 'System Admin') {
             window.location.href = 'login.html';
             return;
         }
         await Store.sync();
-        
+
         try {
             this.myOrg = await Store.fetchMyOrganization();
             this.plans = await Store.fetchSubscriptionPlans();
@@ -17,12 +17,12 @@ const adminApp = {
 
         // Init Bootstrap modals
         this.newTicketModal = new bootstrap.Modal(document.getElementById('newTicketModal'));
-        this.replyAnnModal  = new bootstrap.Modal(document.getElementById('replyAnnModal'));
+        this.replyAnnModal = new bootstrap.Modal(document.getElementById('replyAnnModal'));
 
         // Update UI
         document.querySelector('.user-name').textContent = user.name;
         document.querySelector('.user-role').textContent = 'Administrator';
-        
+
         this.bindNav();
         this.renderUsers();
         this.renderDepartments();
@@ -32,7 +32,7 @@ const adminApp = {
         await this.renderAdminAnnouncements();
     },
 
-    bindNav: function() {
+    bindNav: function () {
         const items = document.querySelectorAll('.nav-item');
         items.forEach(item => {
             item.addEventListener('click', (e) => {
@@ -46,18 +46,18 @@ const adminApp = {
         });
     },
 
-    switchView: function(viewId) {
+    switchView: function (viewId) {
         document.querySelectorAll('.view-section').forEach(sec => sec.classList.remove('active'));
         const targetSection = document.getElementById(viewId);
-        if(targetSection) {
+        if (targetSection) {
             targetSection.classList.add('active');
         }
     },
 
     // 1. User Management
-    renderUsers: function() {
+    renderUsers: function () {
         const tbody = document.querySelector('#dash-users-tbody');
-        if(!tbody) return;
+        if (!tbody) return;
         tbody.innerHTML = '';
 
         const db = Store.getData();
@@ -66,17 +66,17 @@ const adminApp = {
 
         // Calculate Stats
         const roles = new Set(users.map(u => u.role));
-        
+
         const elUsers = document.getElementById('dash-admin-users');
         const elDepts = document.getElementById('dash-admin-depts');
         const elRoles = document.getElementById('dash-admin-roles');
 
-        if(elUsers) elUsers.textContent = users.length;
-        if(elDepts) elDepts.textContent = depts.length;
-        if(elRoles) elRoles.textContent = roles.size;
+        if (elUsers) elUsers.textContent = users.length;
+        if (elDepts) elDepts.textContent = depts.length;
+        if (elRoles) elRoles.textContent = roles.size;
 
         let displayUsers = [...users].reverse(); // newest first
-        
+
         // Exclude System Admin users — they should not be shown in user management
         const managableUsers = displayUsers.filter(u => u.role !== 'System Admin');
 
@@ -86,7 +86,7 @@ const adminApp = {
                 tbody.appendChild(this.buildUserRow(u));
             });
         }
-        
+
         // Render User Management Table (All, no System Admins)
         const allBody = document.querySelector('#all-users-tbody');
         if (allBody) {
@@ -96,8 +96,8 @@ const adminApp = {
             });
         }
     },
-    
-    buildUserRow: function(u) {
+
+    buildUserRow: function (u) {
         let roleBadge = `<span class="badge" style="background:#cbd5e1; color:#0f172a">${u.role}</span>`;
         if (u.role === 'Dept Head') roleBadge = `<span class="badge pending" style="background:#dbeafe; color:#1d4ed8">${u.role}</span>`;
         else if (u.role === 'Staff') roleBadge = `<span class="badge pending">${u.role}</span>`;
@@ -118,34 +118,34 @@ const adminApp = {
         return tr;
     },
 
-    triggerViewAll: function() {
+    triggerViewAll: function () {
         this.switchView('user-manage-view');
         // Update Sidebar active state manually since this isn't a direct sidebar click
         document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
         const targetNav = document.querySelector('.nav-item[data-target="user-manage-view"]');
-        if(targetNav) targetNav.classList.add('active');
+        if (targetNav) targetNav.classList.add('active');
     },
 
-    openModal: function(title, html, onConfirm) {
+    openModal: function (title, html, onConfirm) {
         document.getElementById('modal-header').textContent = title;
         document.getElementById('modal-body').innerHTML = html;
         document.getElementById('admin-modal').style.display = 'flex';
-        
+
         const btn = document.getElementById('modal-confirm-btn');
         btn.onclick = () => {
             if (onConfirm) onConfirm();
         };
     },
 
-    closeModal: function() {
+    closeModal: function () {
         document.getElementById('admin-modal').style.display = 'none';
     },
 
-    addUser: function() {
+    addUser: function () {
         const db = Store.getData();
         const depts = db.departments;
         let deptOptions = depts.map(d => `<option value="${d.name}">${d.name}</option>`).join('');
-        
+
         const html = `
             <div style="margin-bottom:1rem">
                 <label style="display:block; margin-bottom:0.5rem; font-weight:500">Full Name</label>
@@ -222,9 +222,9 @@ const adminApp = {
         });
     },
 
-    editUser: function(id) {
+    editUser: function (id) {
         const user = Store.getData().users.find(u => u.id === id);
-        if(!user) return;
+        if (!user) return;
         const depts = Store.getData().departments || [];
         const deptOptions = depts.map(d => `<option value="${d.name}" ${user.department === d.name ? 'selected' : ''}>${d.name}</option>`).join('');
 
@@ -268,7 +268,7 @@ const adminApp = {
             const newDept = document.getElementById('modal-dept-select').value;
             const newStatus = document.getElementById('modal-status-select').value;
             const newPassword = document.getElementById('modal-edit-password').value.trim();
-            
+
             const nameRegex = /^[a-zA-Z0-9\s.-]+$/;
 
             if (!newName) {
@@ -280,13 +280,13 @@ const adminApp = {
                 Store.showToast("Name can only contain characters and numbers.", "error");
                 return;
             }
-            
+
             if (newPassword.length > 0 && newPassword.length < 6) {
                 Store.showToast("Password must be at least 6 characters long.", "error");
                 return;
             }
 
-            const updates = { 
+            const updates = {
                 name: newName,
                 role: newRole,
                 department: newDept,
@@ -298,7 +298,7 @@ const adminApp = {
             }
 
             await Store.updateUser(id, updates);
-            
+
             const currentUser = Store.getCurrentUser();
             if (currentUser && currentUser.id === id) {
                 Store.setCurrentUser({
@@ -309,14 +309,14 @@ const adminApp = {
                 const uiName = document.querySelector('.user-name');
                 if (uiName) uiName.textContent = newName;
             }
-            
+
             this.renderUsers();
             Store.showToast("User details updated permanently.", "success");
             this.closeModal();
         });
     },
 
-    deleteUser: function(id) {
+    deleteUser: function (id) {
         const html = `<p style="color:#64748b; margin:0">Are you absolutely sure you want to deactivate this user? They will lose access immediately.</p>`;
         this.openModal("Deactivate User", html, async () => {
             await Store.updateUser(id, { status: "Inactive" });
@@ -327,15 +327,15 @@ const adminApp = {
     },
 
     // 2. Department Config
-    renderDepartments: function() {
+    renderDepartments: function () {
         const container = document.querySelector('#dept-manage-view > div');
-        if(!container) return;
+        if (!container) return;
 
         // Keep the "+ Add New Department" button
         container.innerHTML = '';
-        
+
         const depts = Store.getData().departments;
-        
+
         depts.forEach(d => {
             const div = document.createElement('div');
             div.style.cssText = "display:flex; justify-content:space-between; padding-bottom:1rem; border-bottom:1px solid #e2e8f0; margin-bottom:1rem;";
@@ -356,7 +356,7 @@ const adminApp = {
         container.appendChild(btnDiv);
     },
 
-    addDept: function() {
+    addDept: function () {
         const html = `
             <div style="margin-bottom:1rem">
                 <label style="display:block; margin-bottom:0.5rem; font-weight:500">Department Name</label>
@@ -408,7 +408,7 @@ const adminApp = {
         });
     },
 
-    editDept: function(id) {
+    editDept: function (id) {
         const dept = Store.getData().departments.find(d => d.id === id);
         if (!dept) return;
 
@@ -433,8 +433,8 @@ const adminApp = {
         const headRegex = /^[a-zA-Z\s\.]+$/;
 
         this.openModal("Edit Department", html, async () => {
-            const newName    = document.getElementById('modal-edit-dept-name').value.trim();
-            const newHead    = document.getElementById('modal-edit-dept-head').value.trim();
+            const newName = document.getElementById('modal-edit-dept-name').value.trim();
+            const newHead = document.getElementById('modal-edit-dept-head').value.trim();
             const newMembers = parseInt(document.getElementById('modal-edit-dept-members').value);
 
             if (!newName || !newHead) {
@@ -469,7 +469,7 @@ const adminApp = {
         });
     },
 
-    deleteDept: function(id) {
+    deleteDept: function (id) {
         const html = `<p style="color:#b91c1c; margin:0">Warning: Deleting this department affects all linked associated users and active resources. Proceed at your own risk.</p>`;
         this.openModal("Delete Department", html, async () => {
             await Store.deleteDepartment(id);
@@ -479,130 +479,187 @@ const adminApp = {
         });
     },
 
-    currentCatalogTags: [],
+    activeCatalogDept: null,
 
-    manageCatalog: function(deptName) {
-        this.currentCatalogTags = Store.getDepartmentResourceTypes(deptName);
+    manageCatalog: function (deptName) {
+        this.activeCatalogDept = deptName;
 
-        const html = `
+        const container = document.querySelector('#dept-manage-view > div');
+        if (!container) return;
+
+        container.innerHTML = `
             <div style="margin-bottom:1rem; text-align:left;">
-                <p style="font-size:0.875rem; color:#475569; margin-bottom:1rem;">
-                    Configure the allowed resource categories/types for the <strong>${deptName}</strong> department. 
-                    Users will only be allowed to request, procure, or register resources matching these types.
-                </p>
+                <button class="btn-secondary" onclick="adminApp.showDeptTopologyView(event)" style="display:inline-flex; align-items:center; gap:0.5rem; margin-bottom:1.5rem;">
+                    <span class="material-symbols-outlined" style="font-size:1.1rem; vertical-align:middle;">arrow_back</span> Back to Departments
+                </button>
                 
-                <label style="display:block; margin-bottom:0.5rem; font-weight:600; font-size:0.875rem; color:#334155;">Active Resource Types</label>
-                <div id="catalog-tags-container" style="display:flex; flex-wrap:wrap; gap:0.5rem; border:1px solid #cbd5e1; padding:0.75rem; border-radius:6px; min-height:50px; margin-bottom:1rem; background:#f8fafc;">
-                    <!-- Tags rendered here -->
+                <h3 style="margin:0 0 0.5rem 0; font-size:1.25rem; color:#0f172a;">${deptName} - Resource Catalog</h3>
+                <p style="color:#64748b; font-size:0.875rem; margin-bottom:1.5rem;">Configure and manage allowed resource types for this department with full CRUD operations.</p>
+                
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem; gap:1rem; flex-wrap:wrap;">
+                    <div class="search-bar" style="width:250px; margin:0; display:flex; align-items:center; border:1px solid #cbd5e1; padding:0.25rem 0.5rem; border-radius:6px; background:#fff;">
+                        <span class="material-symbols-outlined" style="color:#94a3b8; font-size:1.25rem;">search</span>
+                        <input type="text" id="catalog-types-search" placeholder="Search types..." style="border:none; outline:none; font-size:0.875rem; width:100%; margin-left:0.25rem;" onkeyup="adminApp.filterCatalogTable(this)">
+                    </div>
+                    <button class="btn-primary" onclick="adminApp.addCatalogType()">+ Add Resource Type</button>
                 </div>
-
-                <label style="display:block; margin-bottom:0.5rem; font-weight:600; font-size:0.875rem; color:#334155;">Add New Resource Type</label>
-                <div style="display:flex; gap:0.5rem; margin-bottom:1.25rem;">
-                    <input type="text" id="catalog-new-type-input" class="form-control" placeholder="e.g., Developer Laptops" style="flex:1; padding:0.5rem; border:1px solid #cbd5e1; border-radius:6px;" onkeydown="if(event.key === 'Enter') { event.preventDefault(); adminApp.addCatalogTagFromInput(); }">
-                    <button type="button" class="btn-primary" onclick="adminApp.addCatalogTagFromInput()" style="padding:0.5rem 1.25rem; font-size:0.875rem; border-radius:6px; background:#2563eb; border-color:#2563eb;">Add</button>
-                </div>
-
-                <label style="display:block; margin-bottom:0.5rem; font-weight:600; font-size:0.875rem; color:#334155;">Suggestions (Click to Add)</label>
-                <div id="catalog-suggestions" style="display:flex; flex-wrap:wrap; gap:0.4rem; margin-bottom:0.5rem;">
-                    <!-- Suggestions rendered here -->
+                
+                <div class="table-responsive" style="background:#fff; border:1px solid #e2e8f0; border-radius:8px; padding:0.5rem;">
+                    <table class="table" style="margin:0;">
+                        <thead>
+                            <tr>
+                                <th style="border-bottom:2px solid #e2e8f0;">Resource Type Name</th>
+                                <th style="text-align:right; width:180px; border-bottom:2px solid #e2e8f0;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="catalog-types-tbody">
+                        </tbody>
+                    </table>
                 </div>
             </div>
         `;
 
-        this.openModal("Manage Resource Catalog", html, async () => {
-            try {
-                await Store.updateResourceCatalog(deptName, this.currentCatalogTags);
-                Store.showToast("Resource catalog updated successfully.", "success");
-                this.closeModal();
-            } catch (err) {
-                Store.showToast(err.message || "Failed to update resource catalog.", "error");
-            }
-        });
-
-        // Trigger first render
-        this.renderCatalogTags();
+        this.renderCatalogRows();
     },
 
-    renderCatalogTags: function() {
-        const container = document.getElementById('catalog-tags-container');
-        if (!container) return;
-
-        // 1. Render active tags
-        if (this.currentCatalogTags.length === 0) {
-            container.innerHTML = `<span style="color:#94a3b8; font-size:0.875rem; font-style:italic;">No resource types configured yet.</span>`;
-        } else {
-            container.innerHTML = '';
-            this.currentCatalogTags.forEach(tag => {
-                const tagEl = document.createElement('span');
-                tagEl.style.cssText = "display:inline-flex; align-items:center; background:#dbeafe; color:#1e40af; font-size:0.75rem; font-weight:600; padding:0.25rem 0.5rem; border-radius:9999px; gap:0.25rem;";
-                tagEl.innerHTML = `
-                    <span>${tag}</span>
-                    <span style="cursor:pointer; font-weight:bold; color:#1d4ed8; font-size:0.875rem; line-height:1;" onclick="adminApp.removeCatalogTag('${tag.replace(/'/g, "\\'")}')">×</span>
-                `;
-                container.appendChild(tagEl);
-            });
-        }
-
-        // 2. Render suggestions
-        const suggestionContainer = document.getElementById('catalog-suggestions');
-        if (!suggestionContainer) return;
-        suggestionContainer.innerHTML = '';
-
-        const masterList = [
-            'Laptop', 'Developer Laptops', 'Laptop Bundles',
-            'Monitor', 'Projector', 'Tablet', 'Router', 'Cisco Routers', 'Printer',
-            'Accessories', 'Hardware', 'Software', 'Furniture', 'Office Desks', 'Standing Desks',
-            'Conference Tables', 'Appliance', 'Coffee Machine'
-        ];
-
-        // Filter out types that are already configured
-        const currentLower = this.currentCatalogTags.map(t => t.toLowerCase());
-        const suggested = masterList.filter(item => !currentLower.includes(item.toLowerCase()));
-
-        suggested.forEach(item => {
-            const btn = document.createElement('span');
-            btn.style.cssText = "display:inline-block; background:#f1f5f9; color:#475569; font-size:0.75rem; font-weight:500; padding:0.25rem 0.6rem; border-radius:9999px; cursor:pointer; border:1px solid #e2e8f0; transition:all 0.2s;";
-            btn.textContent = `+ ${item}`;
-            btn.onmouseover = () => { btn.style.background = '#e2e8f0'; btn.style.color = '#1e293b'; };
-            btn.onmouseout = () => { btn.style.background = '#f1f5f9'; btn.style.color = '#475569'; };
-            btn.onclick = () => adminApp.addCatalogTag(item);
-            suggestionContainer.appendChild(btn);
-        });
+    showDeptTopologyView: function (event) {
+        if (event) event.preventDefault();
+        this.renderDepartments();
     },
 
-    addCatalogTag: function(tag) {
-        const trimmed = tag.trim();
-        if (!trimmed) return;
+    renderCatalogRows: function () {
+        const tbody = document.getElementById('catalog-types-tbody');
+        if (!tbody) return;
+        tbody.innerHTML = '';
 
-        // Check for duplicate (case-insensitive)
-        const exists = this.currentCatalogTags.some(t => t.toLowerCase() === trimmed.toLowerCase());
-        if (exists) {
-            Store.showToast(`"${trimmed}" is already added.`, "error");
+        const allowedTypes = Store.getDepartmentResourceTypes(this.activeCatalogDept);
+
+        if (allowedTypes.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="2" style="text-align:center; color:#64748b; font-style:italic; padding:2rem;">No resource types configured. Click "+ Add Resource Type" to begin.</td></tr>`;
             return;
         }
 
-        this.currentCatalogTags.push(trimmed);
-        this.renderCatalogTags();
+        allowedTypes.forEach(type => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td><strong style="color:#1e293b; font-size:0.95rem;">${type}</strong></td>
+                <td style="text-align:right">
+                    <button class="btn-secondary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem; margin-right: 0.25rem;" onclick="adminApp.editCatalogType('${type.replace(/'/g, "\\'")}')">Rename</button>
+                    <button class="btn-danger" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;" onclick="adminApp.deleteCatalogType('${type.replace(/'/g, "\\'")}')">Delete</button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
     },
 
-    removeCatalogTag: function(tag) {
-        this.currentCatalogTags = this.currentCatalogTags.filter(t => t !== tag);
-        this.renderCatalogTags();
+    filterCatalogTable: function (input) {
+        const query = input.value.toLowerCase().trim();
+        const rows = document.querySelectorAll('#catalog-types-tbody tr');
+
+        rows.forEach(row => {
+            const nameCell = row.querySelector('td:first-child');
+            if (!nameCell) return;
+            const name = nameCell.textContent.toLowerCase();
+            if (name.includes(query)) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
     },
 
-    addCatalogTagFromInput: function() {
-        const input = document.getElementById('catalog-new-type-input');
-        if (!input) return;
-        const val = input.value.trim();
-        if (val) {
-            this.addCatalogTag(val);
-            input.value = '';
-            input.focus();
-        }
+    addCatalogType: function () {
+        const html = `
+            <div style="margin-bottom:1rem">
+                <label style="display:block; margin-bottom:0.5rem; font-weight:600">Resource Type Name</label>
+                <input type="text" id="modal-catalog-new-type" class="form-control" style="width:100%; padding:0.5rem; border:1px solid #ccc; border-radius:4px" placeholder="e.g. Developer Laptops">
+                <div style="font-size:0.75rem; color:#94a3b8; margin-top:0.25rem;">Enter the category/type of resources for this department.</div>
+            </div>
+        `;
+
+        this.openModal("Add Resource Type to Catalog", html, async () => {
+            const val = document.getElementById('modal-catalog-new-type').value.trim();
+            if (!val) {
+                Store.showToast("Resource type name cannot be empty.", "error");
+                return;
+            }
+
+            const current = Store.getDepartmentResourceTypes(this.activeCatalogDept);
+            if (current.some(t => t.toLowerCase() === val.toLowerCase())) {
+                Store.showToast("This resource type is already in the catalog.", "error");
+                return;
+            }
+
+            try {
+                const updated = [...current, val];
+                await Store.updateResourceCatalog(this.activeCatalogDept, updated);
+                Store.showToast("Resource type added successfully.", "success");
+                this.renderCatalogRows();
+                this.closeModal();
+            } catch (err) {
+                Store.showToast(err.message || "Failed to add resource type.", "error");
+            }
+        });
+    },
+
+    editCatalogType: function (oldType) {
+        const html = `
+            <div style="margin-bottom:1rem">
+                <label style="display:block; margin-bottom:0.5rem; font-weight:600">Rename Resource Type</label>
+                <input type="text" id="modal-catalog-edit-type" class="form-control" style="width:100%; padding:0.5rem; border:1px solid #ccc; border-radius:4px" value="${oldType}">
+                <div style="font-size:0.75rem; color:#94a3b8; margin-top:0.25rem;">Existing requests, procurements, and resources of this type will be updated automatically.</div>
+            </div>
+        `;
+
+        this.openModal("Rename Resource Type", html, async () => {
+            const val = document.getElementById('modal-catalog-edit-type').value.trim();
+            if (!val) {
+                Store.showToast("Resource type name cannot be empty.", "error");
+                return;
+            }
+            if (val.toLowerCase() === oldType.toLowerCase()) {
+                this.closeModal();
+                return;
+            }
+
+            const current = Store.getDepartmentResourceTypes(this.activeCatalogDept);
+            if (current.some(t => t.toLowerCase() === val.toLowerCase() && t.toLowerCase() !== oldType.toLowerCase())) {
+                Store.showToast("Another resource type with this name already exists.", "error");
+                return;
+            }
+
+            try {
+                await Store.renameResourceCatalogType(this.activeCatalogDept, oldType, val);
+                Store.showToast("Resource type renamed and records propagated successfully.", "success");
+                this.renderCatalogRows();
+                this.closeModal();
+            } catch (err) {
+                Store.showToast(err.message || "Failed to rename resource type.", "error");
+            }
+        });
+    },
+
+    deleteCatalogType: function (type) {
+        const html = `
+            <p style="color:#b91c1c; margin:0">
+                Warning: Are you sure you want to delete <strong>"${type}"</strong> from the catalog?
+                This will prevent users from submitting any new requests or procurements for this resource type.
+            </p>
+        `;
+        this.openModal("Delete Resource Type", html, async () => {
+            try {
+                await Store.removeResourceCatalogType(this.activeCatalogDept, type);
+                Store.showToast("Resource type removed from catalog.", "warning");
+                this.renderCatalogRows();
+                this.closeModal();
+            } catch (err) {
+                Store.showToast(err.message || "Failed to remove resource type.", "error");
+            }
+        });
     },
 
     // 3. Roles and Perms Matrix
-    renderRolesMatrix: function() {
+    renderRolesMatrix: function () {
         const tbody = document.getElementById('matrix-tbody');
         if (!tbody) return;
         tbody.innerHTML = '';
@@ -610,14 +667,14 @@ const adminApp = {
         const db = Store.getData();
         const matrix = db.permissionsMatrix;
         if (!matrix) return; // safety
-        
+
         const roles = ['Requestor', 'Dept Head', 'Registrar', 'Staff', 'System Admin'];
 
         // Populate table
         Object.keys(matrix).forEach(perm => {
             const tr = document.createElement('tr');
             let colsHtml = `<td style="font-weight:600">${perm}</td>`;
-            
+
             roles.forEach(role => {
                 const isChecked = matrix[perm].includes(role) ? 'checked' : '';
                 const isDisabled = role === 'System Admin' ? 'disabled' : '';
@@ -629,13 +686,13 @@ const adminApp = {
                     </td>
                 `;
             });
-            
+
             tr.innerHTML = colsHtml;
             tbody.appendChild(tr);
         });
     },
 
-    savePermissions: function() {
+    savePermissions: function () {
         const checkboxes = document.querySelectorAll('.perm-checkbox');
         const db = Store.getData();
         const newMatrix = {};
@@ -658,7 +715,7 @@ const adminApp = {
             });
     },
 
-    resetPermissions: function() {
+    resetPermissions: function () {
         Store.resetPermissionsMatrix()
             .then(() => {
                 this.renderRolesMatrix();
@@ -666,7 +723,7 @@ const adminApp = {
             });
     },
 
-    renderSubscription: function() {
+    renderSubscription: function () {
         if (!this.myOrg || !this.plans) return;
 
         const activePlanId = this.myOrg.subscriptionPlanId;
@@ -696,7 +753,7 @@ const adminApp = {
 
         this.plans.forEach(plan => {
             const isActive = plan.id === activePlanId;
-            const btnHtml = isActive 
+            const btnHtml = isActive
                 ? `<button class="btn-secondary" style="width:100%;" disabled>Current Plan</button>`
                 : `<button class="btn-primary" style="width:100%;" onclick="adminApp.changeSubscription('${plan.id}')">Select Plan</button>`;
 
@@ -730,7 +787,7 @@ const adminApp = {
         });
     },
 
-    changeSubscription: async function(planId) {
+    changeSubscription: async function (planId) {
         try {
             await Store.updateSubscription(planId);
             Store.showToast("Subscription plan updated successfully", "success");
@@ -742,13 +799,13 @@ const adminApp = {
         }
     },
 
-    logout: function() {
+    logout: function () {
         Store.logout();
         window.location.href = 'login.html';
     },
 
     // ─── SUPPORT QUERIES ────────────────────────────────────────────────────────
-    renderSupportTickets: async function() {
+    renderSupportTickets: async function () {
         const tbody = document.getElementById('supportTicketsBody');
         if (!tbody) return;
         try {
@@ -783,17 +840,17 @@ const adminApp = {
                         <td>${reply}</td>
                     </tr>`;
             });
-        } catch(e) {
+        } catch (e) {
             console.error('Failed to load support tickets:', e);
         }
     },
 
-    openNewTicketModal: function() {
+    openNewTicketModal: function () {
         document.getElementById('newTicketForm').reset();
         this.newTicketModal.show();
     },
 
-    handleSubmitTicket: async function(e) {
+    handleSubmitTicket: async function (e) {
         e.preventDefault();
         const title = document.getElementById('ticketTitle').value.trim();
         const description = document.getElementById('ticketDesc').value.trim();
@@ -806,13 +863,13 @@ const adminApp = {
             this.newTicketModal.hide();
             Store.showToast('Support query raised! Your assigned employee will respond shortly.', 'success');
             await this.renderSupportTickets();
-        } catch(err) {
+        } catch (err) {
             Store.showToast('Failed to raise query: ' + err.message, 'error');
         }
     },
 
     // ─── ANNOUNCEMENTS ──────────────────────────────────────────────────────────
-    renderAdminAnnouncements: async function() {
+    renderAdminAnnouncements: async function () {
         const tbody = document.getElementById('adminAnnouncementsBody');
         if (!tbody) return;
         try {
@@ -850,12 +907,12 @@ const adminApp = {
                         <td>${a.date || '—'}<br>${replyBtn}</td>
                     </tr>`;
             });
-        } catch(e) {
+        } catch (e) {
             console.error('Failed to load announcements:', e);
         }
     },
 
-    openReplyAnnModal: function(ann) {
+    openReplyAnnModal: function (ann) {
         document.getElementById('replyAnnId').value = ann.id;
         document.getElementById('replyAnnDetails').innerHTML = `
             <strong>${ann.type}:</strong> ${ann.title}<br>
@@ -864,7 +921,7 @@ const adminApp = {
         this.replyAnnModal.show();
     },
 
-    handleReplyAnn: async function(e) {
+    handleReplyAnn: async function (e) {
         e.preventDefault();
         const annId = document.getElementById('replyAnnId').value;
         const reply = document.getElementById('replyAnnText').value.trim();
@@ -876,7 +933,7 @@ const adminApp = {
             this.replyAnnModal.hide();
             Store.showToast('Reply sent successfully.', 'success');
             await this.renderAdminAnnouncements();
-        } catch(err) {
+        } catch (err) {
             Store.showToast('Failed to send reply: ' + err.message, 'error');
         }
     }

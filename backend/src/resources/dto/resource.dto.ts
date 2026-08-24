@@ -78,7 +78,7 @@ export class CreateResourceDto {
   date?: string;
 }
 
-export class UpdateResourceDto extends PartialType(CreateResourceDto) {}
+export class UpdateResourceDto extends PartialType(CreateResourceDto) { }
 
 export class UpdateCatalogDto {
   @ApiProperty({ example: 'IT Services' })
