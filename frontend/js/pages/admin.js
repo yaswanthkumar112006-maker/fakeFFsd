@@ -479,36 +479,126 @@ const adminApp = {
         });
     },
 
+    currentCatalogTags: [],
+
     manageCatalog: function(deptName) {
-        const allowedTypes = Store.getDepartmentResourceTypes(deptName);
-        const typesStr = allowedTypes.join(', ');
+        this.currentCatalogTags = Store.getDepartmentResourceTypes(deptName);
 
         const html = `
-            <div style="margin-bottom:1rem">
+            <div style="margin-bottom:1rem; text-align:left;">
                 <p style="font-size:0.875rem; color:#475569; margin-bottom:1rem;">
                     Configure the allowed resource categories/types for the <strong>${deptName}</strong> department. 
                     Users will only be allowed to request, procure, or register resources matching these types.
                 </p>
-                <label style="display:block; margin-bottom:0.5rem; font-weight:600">Allowed Resource Types</label>
-                <textarea id="modal-catalog-types" class="form-control" style="width:100%; min-height:100px; padding:0.5rem; border:1px solid #ccc; border-radius:4px" placeholder="e.g. Laptop, Monitor, Projector, Accessories">${typesStr}</textarea>
-                <div style="font-size:0.75rem; color:#94a3b8; margin-top:0.5rem;">Enter comma-separated resource types. Changes will apply immediately across requests and inventory.</div>
+                
+                <label style="display:block; margin-bottom:0.5rem; font-weight:600; font-size:0.875rem; color:#334155;">Active Resource Types</label>
+                <div id="catalog-tags-container" style="display:flex; flex-wrap:wrap; gap:0.5rem; border:1px solid #cbd5e1; padding:0.75rem; border-radius:6px; min-height:50px; margin-bottom:1rem; background:#f8fafc;">
+                    <!-- Tags rendered here -->
+                </div>
+
+                <label style="display:block; margin-bottom:0.5rem; font-weight:600; font-size:0.875rem; color:#334155;">Add New Resource Type</label>
+                <div style="display:flex; gap:0.5rem; margin-bottom:1.25rem;">
+                    <input type="text" id="catalog-new-type-input" class="form-control" placeholder="e.g., Developer Laptops" style="flex:1; padding:0.5rem; border:1px solid #cbd5e1; border-radius:6px;" onkeydown="if(event.key === 'Enter') { event.preventDefault(); adminApp.addCatalogTagFromInput(); }">
+                    <button type="button" class="btn-primary" onclick="adminApp.addCatalogTagFromInput()" style="padding:0.5rem 1.25rem; font-size:0.875rem; border-radius:6px; background:#2563eb; border-color:#2563eb;">Add</button>
+                </div>
+
+                <label style="display:block; margin-bottom:0.5rem; font-weight:600; font-size:0.875rem; color:#334155;">Suggestions (Click to Add)</label>
+                <div id="catalog-suggestions" style="display:flex; flex-wrap:wrap; gap:0.4rem; margin-bottom:0.5rem;">
+                    <!-- Suggestions rendered here -->
+                </div>
             </div>
         `;
 
         this.openModal("Manage Resource Catalog", html, async () => {
-            const val = document.getElementById('modal-catalog-types').value;
-            const resourceTypes = val.split(',')
-                .map(t => t.trim())
-                .filter(t => t.length > 0);
-
             try {
-                await Store.updateResourceCatalog(deptName, resourceTypes);
+                await Store.updateResourceCatalog(deptName, this.currentCatalogTags);
                 Store.showToast("Resource catalog updated successfully.", "success");
                 this.closeModal();
             } catch (err) {
                 Store.showToast(err.message || "Failed to update resource catalog.", "error");
             }
         });
+
+        // Trigger first render
+        this.renderCatalogTags();
+    },
+
+    renderCatalogTags: function() {
+        const container = document.getElementById('catalog-tags-container');
+        if (!container) return;
+
+        // 1. Render active tags
+        if (this.currentCatalogTags.length === 0) {
+            container.innerHTML = `<span style="color:#94a3b8; font-size:0.875rem; font-style:italic;">No resource types configured yet.</span>`;
+        } else {
+            container.innerHTML = '';
+            this.currentCatalogTags.forEach(tag => {
+                const tagEl = document.createElement('span');
+                tagEl.style.cssText = "display:inline-flex; align-items:center; background:#dbeafe; color:#1e40af; font-size:0.75rem; font-weight:600; padding:0.25rem 0.5rem; border-radius:9999px; gap:0.25rem;";
+                tagEl.innerHTML = `
+                    <span>${tag}</span>
+                    <span style="cursor:pointer; font-weight:bold; color:#1d4ed8; font-size:0.875rem; line-height:1;" onclick="adminApp.removeCatalogTag('${tag.replace(/'/g, "\\'")}')">×</span>
+                `;
+                container.appendChild(tagEl);
+            });
+        }
+
+        // 2. Render suggestions
+        const suggestionContainer = document.getElementById('catalog-suggestions');
+        if (!suggestionContainer) return;
+        suggestionContainer.innerHTML = '';
+
+        const masterList = [
+            'Laptop', 'Developer Laptops', 'Laptop Bundles',
+            'Monitor', 'Projector', 'Tablet', 'Router', 'Cisco Routers', 'Printer',
+            'Accessories', 'Hardware', 'Software', 'Furniture', 'Office Desks', 'Standing Desks',
+            'Conference Tables', 'Appliance', 'Coffee Machine'
+        ];
+
+        // Filter out types that are already configured
+        const currentLower = this.currentCatalogTags.map(t => t.toLowerCase());
+        const suggested = masterList.filter(item => !currentLower.includes(item.toLowerCase()));
+
+        suggested.forEach(item => {
+            const btn = document.createElement('span');
+            btn.style.cssText = "display:inline-block; background:#f1f5f9; color:#475569; font-size:0.75rem; font-weight:500; padding:0.25rem 0.6rem; border-radius:9999px; cursor:pointer; border:1px solid #e2e8f0; transition:all 0.2s;";
+            btn.textContent = `+ ${item}`;
+            btn.onmouseover = () => { btn.style.background = '#e2e8f0'; btn.style.color = '#1e293b'; };
+            btn.onmouseout = () => { btn.style.background = '#f1f5f9'; btn.style.color = '#475569'; };
+            btn.onclick = () => adminApp.addCatalogTag(item);
+            suggestionContainer.appendChild(btn);
+        });
+    },
+
+    addCatalogTag: function(tag) {
+        const trimmed = tag.trim();
+        if (!trimmed) return;
+
+        // Check for duplicate (case-insensitive)
+        const exists = this.currentCatalogTags.some(t => t.toLowerCase() === trimmed.toLowerCase());
+        if (exists) {
+            Store.showToast(`"${trimmed}" is already added.`, "error");
+            return;
+        }
+
+        this.currentCatalogTags.push(trimmed);
+        this.renderCatalogTags();
+    },
+
+    removeCatalogTag: function(tag) {
+        this.currentCatalogTags = this.currentCatalogTags.filter(t => t !== tag);
+        this.renderCatalogTags();
+    },
+
+    addCatalogTagFromInput: function() {
+        const input = document.getElementById('catalog-new-type-input');
+        if (!input) return;
+        const val = input.value.trim();
+        if (val) {
+            this.addCatalogTag(val);
+            input.value = '';
+            input.focus();
+        }
     },
 
     // 3. Roles and Perms Matrix
