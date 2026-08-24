@@ -57,7 +57,7 @@ export class ProcurementsService {
     const department = payload.department || user?.department || 'Unassigned';
     const resourceType = payload.resourceType || payload.item;
 
-    ensureValidDepartmentResourceType(this.dataService, department, resourceType);
+    ensureValidDepartmentResourceType(this.dataService, department, resourceType, context.organizationId);
 
     const procurement: ProcurementRecord = {
       ...payload,

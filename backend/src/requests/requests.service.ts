@@ -56,7 +56,7 @@ export class RequestsService {
     // Skip type catalog check for auto-generated procurement allocation requests —
     // the resource type was already validated during procurement approval
     if (!payload.procurementId) {
-      ensureValidDepartmentResourceType(this.dataService, department, payload.resourceType);
+      ensureValidDepartmentResourceType(this.dataService, department, payload.resourceType, context.organizationId);
     }
 
     const request: RequestRecord = {

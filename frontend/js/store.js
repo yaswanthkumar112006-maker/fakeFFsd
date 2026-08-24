@@ -239,6 +239,15 @@ class DataStore {
         }
     }
 
+    async updateResourceCatalog(department, resourceTypes) {
+        const result = await this.api('/resources/catalog', {
+            method: 'POST',
+            body: { department, resourceTypes }
+        });
+        await this.sync();
+        return result;
+    }
+
     getDepartmentResourceTypes(department) {
         const catalog = this.getData().resourceCatalog || [];
         const entry = catalog.find(item => item.department === department);

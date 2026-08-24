@@ -17,6 +17,7 @@ import {
   MaintenanceHistoryRecord,
   ReturnHistoryRecord,
   PermissionsMatrixRecord,
+  DepartmentResourceCatalogRecord,
 } from '../common/domain';
 
 @Injectable()
@@ -305,8 +306,21 @@ export class DataService {
     return this.clone(item);
   }
 
-  getResourceCatalog(): any[] {
+  getResourceCatalog(): DepartmentResourceCatalogRecord[] {
     return this.clone(this.state.resourceCatalog);
+  }
+
+  updateResourceCatalog(organizationId: string, department: string, resourceTypes: string[]): DepartmentResourceCatalogRecord {
+    let entry = this.state.resourceCatalog.find(
+      (item) => item.organizationId === organizationId && item.department === department
+    );
+    if (entry) {
+      entry.resourceTypes = this.clone(resourceTypes);
+    } else {
+      entry = { organizationId, department, resourceTypes: this.clone(resourceTypes) };
+      this.state.resourceCatalog.push(entry);
+    }
+    return this.clone(entry);
   }
 
   // --- PERMISSIONS MATRIX CRUD ---

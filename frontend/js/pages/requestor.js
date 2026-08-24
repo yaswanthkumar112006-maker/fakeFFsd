@@ -113,14 +113,19 @@ const app = {
     updateResourceDropdown: function() {
         const dept = document.getElementById('req-dept').value;
         const typeSelect = document.getElementById('req-type');
-        typeSelect.innerHTML = '<option value="" disabled selected>Select Resource Type</option>';
+        const types = this.getDeptResources(dept);
         
-        this.getDeptResources(dept).forEach(res => {
-            const opt = document.createElement('option');
-            opt.value = res;
-            opt.textContent = res;
-            typeSelect.appendChild(opt);
-        });
+        if (types.length === 0) {
+            typeSelect.innerHTML = '<option value="" disabled selected>No Catalog Configured for Department</option>';
+        } else {
+            typeSelect.innerHTML = '<option value="" disabled selected>Select Resource Type</option>';
+            types.forEach(res => {
+                const opt = document.createElement('option');
+                opt.value = res;
+                opt.textContent = res;
+                typeSelect.appendChild(opt);
+            });
+        }
         
         this.updateResourceCount();
     },
@@ -130,13 +135,18 @@ const app = {
         const typeSelect = document.getElementById('proc-type');
         if (!typeSelect) return;
 
-        typeSelect.innerHTML = '<option value="" disabled selected>Select Resource Type</option>';
-        this.getDeptResources(dept).forEach(type => {
-            const option = document.createElement('option');
-            option.value = type;
-            option.textContent = type;
-            typeSelect.appendChild(option);
-        });
+        const types = this.getDeptResources(dept);
+        if (types.length === 0) {
+            typeSelect.innerHTML = '<option value="" disabled selected>No Catalog Configured for Department</option>';
+        } else {
+            typeSelect.innerHTML = '<option value="" disabled selected>Select Resource Type</option>';
+            types.forEach(type => {
+                const option = document.createElement('option');
+                option.value = type;
+                option.textContent = type;
+                typeSelect.appendChild(option);
+            });
+        }
     },
 
     updateResourceCount: async function() {

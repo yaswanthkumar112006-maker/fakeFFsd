@@ -683,15 +683,19 @@ const staffApp = {
 
     openAddResourceModal: function () {
         const typeSelect = document.getElementById('ar-type');
-        typeSelect.innerHTML = '<option value="">Select Resource Type...</option>';
         const allTypes = this.getDepartmentCatalogTypes();
 
-        allTypes.forEach(type => {
-            const opt = document.createElement('option');
-            opt.value = type;
-            opt.textContent = type;
-            typeSelect.appendChild(opt);
-        });
+        if (allTypes.length === 0) {
+            typeSelect.innerHTML = '<option value="" disabled>No Catalog Configured. Contact Admin.</option>';
+        } else {
+            typeSelect.innerHTML = '<option value="">Select Resource Type...</option>';
+            allTypes.forEach(type => {
+                const opt = document.createElement('option');
+                opt.value = type;
+                opt.textContent = type;
+                typeSelect.appendChild(opt);
+            });
+        }
 
         document.getElementById('add-resource-modal').classList.add('active');
     },

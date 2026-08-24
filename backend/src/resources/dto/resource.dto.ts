@@ -1,6 +1,6 @@
 import { PartialType } from '@nestjs/swagger';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsEnum, IsOptional, IsString } from 'class-validator';
+import { IsEnum, IsOptional, IsString, IsArray } from 'class-validator';
 import { RESOURCE_CONDITIONS, RESOURCE_STATUSES } from '../../common/domain';
 
 export class CreateResourceDto {
@@ -79,3 +79,14 @@ export class CreateResourceDto {
 }
 
 export class UpdateResourceDto extends PartialType(CreateResourceDto) {}
+
+export class UpdateCatalogDto {
+  @ApiProperty({ example: 'IT Services' })
+  @IsString()
+  department!: string;
+
+  @ApiProperty({ example: ['Laptop', 'Projector'], type: [String] })
+  @IsArray()
+  @IsString({ each: true })
+  resourceTypes!: string[];
+}

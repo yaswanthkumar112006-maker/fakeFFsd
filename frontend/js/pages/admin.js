@@ -342,6 +342,7 @@ const adminApp = {
             div.innerHTML = `
                 <div><strong style="font-size:1.1rem; color:var(--primary-color)">${d.name}</strong><div style="color:#64748b; font-size:0.875rem">Head: ${d.head} | Members: ${d.memberCount}</div></div>
                 <div style="display:flex; gap:0.5rem; align-items:center;">
+                    <button class="btn-primary" style="font-size:0.75rem; background:#3b82f6; border-color:#3b82f6;" onclick="adminApp.manageCatalog('${d.name}')">Catalog</button>
                     <button class="btn-secondary" style="font-size:0.75rem" onclick="adminApp.editDept('${d.id}')">Edit</button>
                     <button class="btn-danger" style="font-size:0.75rem" onclick="adminApp.deleteDept('${d.id}')">Delete</button>
                 </div>
@@ -475,6 +476,38 @@ const adminApp = {
             this.renderDepartments();
             Store.showToast("Department securely removed.", "warning");
             this.closeModal();
+        });
+    },
+
+    manageCatalog: function(deptName) {
+        const allowedTypes = Store.getDepartmentResourceTypes(deptName);
+        const typesStr = allowedTypes.join(', ');
+
+        const html = `
+            <div style="margin-bottom:1rem">
+                <p style="font-size:0.875rem; color:#475569; margin-bottom:1rem;">
+                    Configure the allowed resource categories/types for the <strong>${deptName}</strong> department. 
+                    Users will only be allowed to request, procure, or register resources matching these types.
+                </p>
+                <label style="display:block; margin-bottom:0.5rem; font-weight:600">Allowed Resource Types</label>
+                <textarea id="modal-catalog-types" class="form-control" style="width:100%; min-height:100px; padding:0.5rem; border:1px solid #ccc; border-radius:4px" placeholder="e.g. Laptop, Monitor, Projector, Accessories">${typesStr}</textarea>
+                <div style="font-size:0.75rem; color:#94a3b8; margin-top:0.5rem;">Enter comma-separated resource types. Changes will apply immediately across requests and inventory.</div>
+            </div>
+        `;
+
+        this.openModal("Manage Resource Catalog", html, async () => {
+            const val = document.getElementById('modal-catalog-types').value;
+            const resourceTypes = val.split(',')
+                .map(t => t.trim())
+                .filter(t => t.length > 0);
+
+            try {
+                await Store.updateResourceCatalog(deptName, resourceTypes);
+                Store.showToast("Resource catalog updated successfully.", "success");
+                this.closeModal();
+            } catch (err) {
+                Store.showToast(err.message || "Failed to update resource catalog.", "error");
+            }
         });
     },
 

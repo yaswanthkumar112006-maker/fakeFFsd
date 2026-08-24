@@ -1,8 +1,8 @@
-import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
+import { Injectable, BadRequestException, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { DepartmentResourceCatalogRecord, ResourceRecord } from '../common/domain';
 import { RequestContext } from '../common/roles';
 import { DataService } from '../data/data.service';
-import { CreateResourceDto, UpdateResourceDto } from './dto/resource.dto';
+import { CreateResourceDto, UpdateResourceDto, UpdateCatalogDto } from './dto/resource.dto';
 import {
   getActingUser,
   ensureActor,
@@ -84,7 +84,7 @@ export class ResourcesService {
 
     ensureActor(this.dataService, context);
     ensureDepartmentScoped(this.dataService, context, department);
-    ensureValidDepartmentResourceType(this.dataService, department, payload.type);
+    ensureValidDepartmentResourceType(this.dataService, department, payload.type, context.organizationId);
 
     const resource: ResourceRecord = {
       id: `RES-${Date.now()}`,
@@ -152,5 +152,14 @@ export class ResourcesService {
       throw new NotFoundException(`Resource with ID ${id} not found.`);
     }
     return this.dataService.updateResource(id, { status: 'Scrapped' });
+  }
+
+  updateCatalog(dto: UpdateCatalogDto, context: RequestContext): DepartmentResourceCatalogRecord {
+    ensureActor(this.dataService, context);
+    if (context.role !== 'System Admin') {
+      throw new ForbiddenException('Only System Admins can update the resource catalog.');
+    }
+    const orgId = context.organizationId || 'ORG-001';
+    return this.dataService.updateResourceCatalog(orgId, dto.department, dto.resourceTypes);
   }
 }

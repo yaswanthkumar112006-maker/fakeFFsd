@@ -69,13 +69,18 @@ const deptApp = {
         const user = Store.getCurrentUser();
         if (!select || !user) return;
 
-        select.innerHTML = '<option value="" disabled selected>Select Resource Type</option>';
-        Store.getDepartmentResourceTypes(user.department).forEach(type => {
-            const option = document.createElement('option');
-            option.value = type;
-            option.textContent = type;
-            select.appendChild(option);
-        });
+        const types = Store.getDepartmentResourceTypes(user.department);
+        if (types.length === 0) {
+            select.innerHTML = '<option value="" disabled selected>No Catalog Configured for Department</option>';
+        } else {
+            select.innerHTML = '<option value="" disabled selected>Select Resource Type</option>';
+            types.forEach(type => {
+                const option = document.createElement('option');
+                option.value = type;
+                option.textContent = type;
+                select.appendChild(option);
+            });
+        }
     },
 
     // 1. Incoming Requests

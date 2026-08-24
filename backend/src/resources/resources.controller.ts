@@ -8,7 +8,7 @@ import {
 } from '../common/swagger-models';
 import { ApiRoleHeaders, ApiStandardErrorResponses } from '../common/swagger';
 import { ResourcesService } from './resources.service';
-import { CreateResourceDto, UpdateResourceDto } from './dto/resource.dto';
+import { CreateResourceDto, UpdateResourceDto, UpdateCatalogDto } from './dto/resource.dto';
 
 @ApiTags('resources')
 @ApiRoleHeaders()
@@ -119,5 +119,14 @@ export class ResourcesController {
   @ApiOkResponse({ description: 'Resource marked as scrapped successfully.', type: ResourceResponseDto })
   scrap(@Param('id') id: string) {
     return this.resourcesService.scrap(id);
+  }
+
+  @Post('catalog')
+  @Roles('System Admin')
+  @ApiBody({ type: UpdateCatalogDto })
+  @ApiOperation({ summary: 'Update resource catalog for a department' })
+  @ApiCreatedResponse({ description: 'Catalog updated successfully.', type: DepartmentResourceCatalogResponseDto })
+  updateCatalog(@Body() dto: UpdateCatalogDto, @Req() req: any) {
+    return this.resourcesService.updateCatalog(dto, req.context);
   }
 }

@@ -86,17 +86,28 @@ export function resourceMatchesType(resource: { type?: string; name?: string }, 
   });
 }
 
-export function getDepartmentResourceTypes(dataService: DataService, department: string): string[] {
-  const entry = dataService.getResourceCatalog().find((item) => item.department === department);
+export function getDepartmentResourceTypes(dataService: DataService, department: string, organizationId?: string): string[] {
+  const entry = dataService.getResourceCatalog().find(
+    (item) => item.department === department && (!organizationId || item.organizationId === organizationId)
+  );
   return entry ? [...entry.resourceTypes] : [];
 }
 
-export function ensureValidDepartmentResourceType(dataService: DataService, department: string, resourceType: string) {
-  const allowedTypes = getDepartmentResourceTypes(dataService, department);
+export function ensureValidDepartmentResourceType(dataService: DataService, department: string, resourceType: string, organizationId?: string) {
+  const allowedTypes = getDepartmentResourceTypes(dataService, department, organizationId);
   if (allowedTypes.length === 0) {
-    return;
+    throw new BadRequestException(
+      `Resource catalog configuration is missing for department "${department}". Please configure it before performing this action.`,
+    );
   }
-  if (!allowedTypes.includes(resourceType)) {
+
+  const requestedAliases = getResourceTypeAliases(resourceType);
+  const isValid = allowedTypes.some((allowed) => {
+    const allowedAliases = getResourceTypeAliases(allowed);
+    return allowedAliases.some((alias) => requestedAliases.includes(alias));
+  });
+
+  if (!isValid) {
     throw new BadRequestException(
       `Resource type "${resourceType}" is not configured for department "${department}".`,
     );

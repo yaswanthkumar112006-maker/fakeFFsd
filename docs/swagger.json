@@ -1938,6 +1938,71 @@
         "tags": [
           "resources"
         ]
+      },
+      "post": {
+        "operationId": "ResourcesController_updateCatalog",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateCatalogDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Catalog updated successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DepartmentResourceCatalogResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error or invalid workflow transition.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Role or department scope does not allow this action.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Requested entity was not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ],
+        "summary": "Update resource catalog for a department",
+        "tags": [
+          "resources"
+        ]
       }
     },
     "/api/resources/availability": {
@@ -5060,6 +5125,29 @@
             "example": "May 4, 2026"
           }
         }
+      },
+      "UpdateCatalogDto": {
+        "type": "object",
+        "properties": {
+          "department": {
+            "type": "string",
+            "example": "IT Services"
+          },
+          "resourceTypes": {
+            "example": [
+              "Laptop",
+              "Projector"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "department",
+          "resourceTypes"
+        ]
       },
       "ProcurementResponseDto": {
         "type": "object",
