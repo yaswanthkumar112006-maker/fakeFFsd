@@ -33,21 +33,19 @@ The live interactive Swagger UI is available when the server is running:
 - `profile`
   - Current actor profile and password update
 
-## Header Requirements
+## JWT Authentication
 
-Every protected endpoint is documented with:
+Every protected endpoint is authorized via a JWT token. Send a `POST` request to `/api/auth/login` to obtain a token, then set the standard Bearer header:
 
-- `x-user-role`
-- `x-user-id`
+- `Authorization: Bearer <JWT-token>`
 
-Example values for presentation:
+Test credentials for each role:
 
-- `x-user-role: Requestor`
-- `x-user-role: Dept Head`
-- `x-user-role: Registrar`
-- `x-user-role: Staff`
-- `x-user-role: System Admin`
-- `x-user-id: U1`
+- **Requestor**: `ravi@resourcex.com` / `12345678` (ID: `U1`)
+- **Dept Head**: `pradhyum@resourcex.com` / `12345678` (ID: `U2`)
+- **Registrar**: `harsha@resourcex.com` / `12345678` (ID: `U3`)
+- **Staff**: `prem@resourcex.com` / `12345678` (ID: `U4`)
+- **System Admin**: `yashwath@resourcex.com` / `12345678` (ID: `U5`)
 
 ## Response Modeling
 

@@ -41,17 +41,20 @@ That updates:
 
 - `docs/swagger.json`
 
-## Header-based RBAC
+## JWT Authentication
 
-Use these headers in Swagger UI when testing APIs:
+Use the standard authorization header in your client or Swagger UI when testing APIs:
 
-- `x-user-role`
-  - `Requestor`
-  - `Dept Head`
-  - `Registrar`
-  - `Staff`
-  - `System Admin`
-- `x-user-id`
-  - Example: `U1`, `U2`, `U4`
+- **Header**: `Authorization: Bearer <JWT-token>`
 
-The backend uses these headers to enforce role and department scope.
+To get a token, send a `POST` request to `/api/auth/login` with user credentials.
+
+### Roles and Users for Testing
+
+The system has mock data with the following test credentials:
+
+- **Requestor**: `ravi@resourcex.com` / `12345678` (ID: `U1`)
+- **Dept Head**: `pradhyum@resourcex.com` / `12345678` (ID: `U2`)
+- **Registrar**: `harsha@resourcex.com` / `12345678` (ID: `U3`)
+- **Staff**: `prem@resourcex.com` / `12345678` (ID: `U4`)
+- **System Admin**: `yashwath@resourcex.com` / `12345678` (ID: `U5`)

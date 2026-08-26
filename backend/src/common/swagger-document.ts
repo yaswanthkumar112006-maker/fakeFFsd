@@ -5,7 +5,7 @@ export function buildSwaggerConfig() {
   return new DocumentBuilder()
     .setTitle('ResourceX Demo Backend')
     .setDescription(
-      'Demo-exact NestJS backend for the ResourceX frontend. All authorization is role-based through request headers. Use x-user-role on every protected route and x-user-id when actor-specific scoping is required.',
+      'Demo-exact NestJS backend for the ResourceX frontend. All authorization is role-based through JWT Bearer tokens. Log in via /api/auth/login to get your token and include it as a Bearer authorization header.',
     )
     .setVersion('1.0.0')
     .addServer('/api', 'API base path')

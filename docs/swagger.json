@@ -4265,7 +4265,7 @@
   },
   "info": {
     "title": "ResourceX Demo Backend",
-    "description": "Demo-exact NestJS backend for the ResourceX frontend. All authorization is role-based through request headers. Use x-user-role on every protected route and x-user-id when actor-specific scoping is required.",
+    "description": "Demo-exact NestJS backend for the ResourceX frontend. All authorization is role-based through JWT Bearer tokens. Log in via /api/auth/login to get your token and include it as a Bearer authorization header.",
     "version": "1.0.0",
     "contact": {}
   },
@@ -5282,6 +5282,18 @@
           "justification": {
             "type": "string",
             "example": "Capacity increase required."
+          },
+          "specFileName": {
+            "type": "string",
+            "example": "resource-spec.pdf"
+          },
+          "specFileType": {
+            "type": "string",
+            "example": "application/pdf"
+          },
+          "specFileDataUrl": {
+            "type": "string",
+            "example": "data:application/pdf;base64,..."
           }
         },
         "required": [
@@ -5358,6 +5370,18 @@
             "type": "string",
             "example": "Capacity increase required."
           },
+          "specFileName": {
+            "type": "string",
+            "example": "resource-spec.pdf"
+          },
+          "specFileType": {
+            "type": "string",
+            "example": "application/pdf"
+          },
+          "specFileDataUrl": {
+            "type": "string",
+            "example": "data:application/pdf;base64,..."
+          },
           "vendor": {
             "type": "string",
             "example": "Dell"
@@ -5378,6 +5402,18 @@
           "invoice": {
             "type": "string",
             "example": "INV-2026-1001"
+          },
+          "invoiceFileName": {
+            "type": "string",
+            "example": "invoice-1024.pdf"
+          },
+          "invoiceFileType": {
+            "type": "string",
+            "example": "application/pdf"
+          },
+          "invoiceFileDataUrl": {
+            "type": "string",
+            "example": "data:application/pdf;base64,..."
           }
         },
         "required": [

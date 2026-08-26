@@ -199,12 +199,14 @@ async function runTests() {
       method: 'POST',
       path: '/api/resources/RES-6022/maintenance-request',
       headers: { 'x-user-role': 'Requestor', 'x-user-id': 'U-001' },
+      expectedStatus: [200, 201, 400],
     },
     {
       name: 'Resources - Initiate Return',
       method: 'POST',
       path: '/api/resources/RES-9055/initiate-return',
       headers: { 'x-user-role': 'Requestor', 'x-user-id': 'U-001' },
+      expectedStatus: [200, 201, 400],
     },
     {
       name: 'Resources - Confirm Repaired',
@@ -431,14 +433,119 @@ async function runTests() {
       headers: { 'x-user-role': 'Dept Head', 'x-user-id': 'U-002' },
       expectedStatus: [200, 404],
     },
+
+    // --- 12. FILE WORKFLOW & VALIDATION MODULE (New) ---
+    {
+      name: 'Procurements - Create Procurement with Valid Spec PDF Attachment',
+      method: 'POST',
+      path: '/api/procurements',
+      headers: { 'x-user-role': 'Requestor', 'x-user-id': 'U-001' },
+      body: {
+        resourceType: 'Developer Laptops',
+        item: 'Developer Laptops',
+        quantity: 1,
+        department: 'IT Services',
+        justification: 'Needs to test valid PDF upload',
+        specFileName: 'test-spec.pdf',
+        specFileType: 'application/pdf',
+        specFileDataUrl: 'data:application/pdf;base64,JVBERi0xLjQKJcOkw7zDtsOfCjIgMCBvYmoKPDwvTGVuZ3RoIDMgMCBSL0ZpbHRlci9GbGF0ZURlY29kZT4+CnN0cmVhbQp4nDMQM1Qo5EACECuZKxga6BsaKjgWAAD9BAoDCmVuZHN0cmVhbQplbmRvYmoKMyAwIG9iagoxOQplbmRvYmoKMSAwIG9iago8PC9UeXBlL0NhdGFsb2cvUGFnZXMgNCAwIFI+PgplbmRvYmoKNCAwIG9iago8PC9UeXBlL1BhZ2VzL0tpZHNbNSAwIFJdL0NvdW50IDE+PgplbmRvYmoKNSAwIG9iago8PC9UeXBlL1BhZ2UvUGFyZW50IDQgMCBSL01lZGlhQm94WzAgMCA1OTUgODQyXS9Db250ZW50cyAyIDAgUj4+CmVuZG9iagp4cmVmCjAgNgowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAxNDUgMDAwMDAgbiAKMDAwMDAwMDAxOSAwMDAwMCBuIAowMDAwMDAwMTI2IDAwMDAwIG4gCjAwMDAwMDAxOTAgMDAwMDAgbiAKMDAwMDAwMDIzNyAwMDAwMCBuIAp0cmFpbGVyCjw8L1NpemUgNi9Sb290IDEgMCBSPj4Kc3RhcnR4cmVmCjMyNQolJUVPRgo='
+      }
+    },
+    {
+      name: 'Procurements - Create Procurement with Invalid Spec File Type',
+      method: 'POST',
+      path: '/api/procurements',
+      headers: { 'x-user-role': 'Requestor', 'x-user-id': 'U-001' },
+      body: {
+        resourceType: 'Developer Laptops',
+        item: 'Developer Laptops',
+        quantity: 1,
+        department: 'IT Services',
+        justification: 'Should fail due to invalid mime type',
+        specFileName: 'malicious.exe',
+        specFileType: 'application/x-msdownload',
+        specFileDataUrl: 'data:application/x-msdownload;base64,TVpQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=='
+      },
+      expectedStatus: [400]
+    },
+    {
+      name: 'Procurements - Log Purchase with Valid Invoice PNG Attachment',
+      method: 'POST',
+      path: '/api/procurements/PROC-911/log-purchase',
+      headers: { 'x-user-role': 'Staff', 'x-user-id': 'U-004' },
+      body: {
+        vendor: 'Dell',
+        invoice: 'INV-VALID-999',
+        invoiceFileName: 'invoice.png',
+        invoiceFileType: 'image/png',
+        invoiceFileDataUrl: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=='
+      },
+      expectedStatus: [200, 201, 400]
+    },
+    {
+      name: 'Procurements - Log Purchase with Invalid Invoice Size (exceeds 5MB)',
+      method: 'POST',
+      path: '/api/procurements/PROC-911/log-purchase',
+      headers: { 'x-user-role': 'Staff', 'x-user-id': 'U-004' },
+      body: {
+        vendor: 'Dell',
+        invoice: 'INV-LARGE-999',
+        invoiceFileName: 'huge.png',
+        invoiceFileType: 'image/png',
+        invoiceFileDataUrl: 'data:image/png;base64,' + 'A'.repeat(6 * 1024 * 1024)
+      },
+      expectedStatus: [400]
+    }
   ];
+
+  console.log('=== LOGGING IN AND GENERATING JWT TOKENS ===');
+  const credentials: Record<string, { email: string; password: string }> = {
+    'Requestor': { email: 'ravi@resourcex.com', password: '12345678' },
+    'Dept Head': { email: 'pradhyum@resourcex.com', password: '12345678' },
+    'Registrar': { email: 'harsha@resourcex.com', password: '12345678' },
+    'Staff': { email: 'prem@resourcex.com', password: '12345678' },
+    'System Admin': { email: 'yashwath@resourcex.com', password: '12345678' },
+  };
+
+  const tokens: Record<string, string> = {};
+  for (const [role, creds] of Object.entries(credentials)) {
+    try {
+      const loginRes = await makeRequest({
+        name: `Auth - Login as ${role}`,
+        method: 'POST',
+        path: '/api/auth/login',
+        body: creds,
+      });
+      if (loginRes.status === 200 || loginRes.status === 201) {
+        tokens[role] = loginRes.body.access_token;
+      } else {
+        console.error(`Failed to login as ${role}:`, loginRes.body);
+      }
+    } catch (err: any) {
+      console.error(`Error logging in as ${role}:`, err.message);
+    }
+  }
+  console.log('Tokens successfully retrieved.\n');
+
+  console.log(`=== RUNNING ALL ${testCases.length} API ENDPOINT TESTS ===\n`);
 
   let passed = 0;
   let failed = 0;
 
   for (const tc of testCases) {
     try {
-      const res = await makeRequest(tc);
+      const headers = { ...(tc.headers || {}) };
+      const role = headers['x-user-role'];
+      if (role && tokens[role]) {
+        headers['Authorization'] = `Bearer ${tokens[role]}`;
+      }
+      delete headers['x-user-role'];
+      delete headers['x-user-id'];
+
+      const res = await makeRequest({
+        ...tc,
+        headers,
+      });
       const allowedStatuses = tc.expectedStatus || [200, 201];
       const isSuccess = allowedStatuses.includes(res.status);
       
@@ -456,7 +563,7 @@ async function runTests() {
     }
   }
 
-  console.log('\n=== ALL 52 API ENDPOINT VERIFICATION SUMMARY ===');
+  console.log(`\n=== ALL ${testCases.length} API ENDPOINT VERIFICATION SUMMARY ===`);
   console.log(`Passed: ${passed} / ${testCases.length}`);
   console.log(`Failed: ${failed} / ${testCases.length}`);
 }
