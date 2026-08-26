@@ -1,15 +1,17 @@
-import { Body, Controller, Get, Param, Post, Req } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Req, UseFilters } from '@nestjs/common';
 import { ApiBody, ApiOkResponse, ApiOperation, ApiParam, ApiTags } from '@nestjs/swagger';
 import { Roles } from '../common/roles.decorator';
 import { ResourceResponseDto, ReturnHistoryResponseDto } from '../common/swagger-models';
 import { ApiRoleHeaders, ApiStandardErrorResponses } from '../common/swagger';
 import { ReturnsService } from './returns.service';
 import { ReturnProcessDto } from './dto/return.dto';
+import { ReturnsExceptionFilter } from './filters/returns-exception.filter';
 
 @ApiTags('returns')
 @ApiRoleHeaders()
 @ApiStandardErrorResponses()
 @Controller('returns')
+@UseFilters(ReturnsExceptionFilter)
 export class ReturnsController {
   constructor(private readonly returnsService: ReturnsService) {}
 
