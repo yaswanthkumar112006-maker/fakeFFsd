@@ -1,14 +1,16 @@
-import { Body, Controller, Get, Param, Patch, Req } from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Req, UseFilters } from '@nestjs/common';
 import { ApiBody, ApiOkResponse, ApiOperation, ApiParam, ApiTags } from '@nestjs/swagger';
 import { NotificationsService } from './notifications.service';
 import { NotificationResponseDto } from '../common/swagger-models';
 import { ApiRoleHeaders, ApiStandardErrorResponses } from '../common/swagger';
 import { UpdateNotificationDto } from './dto/notification.dto';
+import { NotificationsExceptionFilter } from './filters/notifications-exception.filter';
 
 @ApiTags('notifications')
 @ApiRoleHeaders()
 @ApiStandardErrorResponses()
 @Controller('notifications')
+@UseFilters(NotificationsExceptionFilter)
 export class NotificationsController {
   constructor(private readonly notificationsService: NotificationsService) {}
 

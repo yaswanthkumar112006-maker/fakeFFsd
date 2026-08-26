@@ -1,12 +1,14 @@
-import { Body, Controller, Get, Param, Post, Patch, Req } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Patch, Req, UseFilters } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBody } from '@nestjs/swagger';
 import { OrganizationsService } from './organizations.service';
 import { Public } from '../auth/public.decorator';
 import { Roles } from '../common/roles.decorator';
 import { RegisterOrgDto } from './dto/organization.dto';
+import { OrganizationsExceptionFilter } from './filters/organizations-exception.filter';
 
 @ApiTags('Organizations')
 @Controller('organizations')
+@UseFilters(OrganizationsExceptionFilter)
 export class OrganizationsController {
   constructor(private readonly organizationsService: OrganizationsService) {}
 
