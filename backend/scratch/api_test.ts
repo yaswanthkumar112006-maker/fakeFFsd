@@ -429,7 +429,7 @@ async function runTests() {
     {
       name: 'Analytics - Update Stock Threshold Warn Level',
       method: 'PATCH',
-      path: '/api/analytics/stock-thresholds/ST-101/15',
+      path: '/api/analytics/stock-thresholds/TH-1/15',
       headers: { 'x-user-role': 'Dept Head', 'x-user-id': 'U-002' },
       expectedStatus: [200, 404],
     },

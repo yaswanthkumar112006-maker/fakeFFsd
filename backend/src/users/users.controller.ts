@@ -67,7 +67,7 @@ export class UsersController {
   @Roles('System Admin')
   @ApiBody({ type: UpdateUserDto })
   @ApiOperation({ summary: 'Update a user' })
-  @ApiParam({ name: 'id', example: 'U201' })
+  @ApiParam({ name: 'id', example: 'U4' })
   @ApiOkResponse({ description: 'User updated successfully.', type: UserResponseDto })
   update(@Param('id') id: string, @Body() dto: UpdateUserDto) {
     return this.usersService.update(id, dto);
@@ -76,7 +76,7 @@ export class UsersController {
   @Delete(':id')
   @Roles('System Admin')
   @ApiOperation({ summary: 'Deactivate a user' })
-  @ApiParam({ name: 'id', example: 'U201' })
+  @ApiParam({ name: 'id', example: 'U4' })
   @ApiOkResponse({ description: 'User deactivated successfully.', type: UserResponseDto })
   remove(@Param('id') id: string) {
     return this.usersService.deactivate(id);

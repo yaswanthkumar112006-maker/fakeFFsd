@@ -35,7 +35,7 @@ export class RequestsController {
   @Roles('Dept Head', 'Staff', 'System Admin')
   @ApiBody({ type: UpdateRequestDto })
   @ApiOperation({ summary: 'Update a request' })
-  @ApiParam({ name: 'id', example: 'REQ-1001' })
+  @ApiParam({ name: 'id', example: 'REQ-102' })
   @ApiOkResponse({ description: 'Request updated successfully.', type: RequestResponseDto })
   update(@Param('id') id: string, @Body() dto: UpdateRequestDto) {
     return this.requestsService.update(id, dto);
@@ -44,7 +44,7 @@ export class RequestsController {
   @Post(':id/approve')
   @Roles('Dept Head', 'System Admin')
   @ApiOperation({ summary: 'Approve a request' })
-  @ApiParam({ name: 'id', example: 'REQ-1001' })
+  @ApiParam({ name: 'id', example: 'REQ-102' })
   @ApiOkResponse({ description: 'Request approved successfully.', type: RequestResponseDto })
   approve(@Param('id') id: string) {
     return this.requestsService.approve(id);
@@ -53,7 +53,7 @@ export class RequestsController {
   @Post(':id/reject')
   @Roles('Dept Head', 'System Admin')
   @ApiOperation({ summary: 'Reject a request' })
-  @ApiParam({ name: 'id', example: 'REQ-1001' })
+  @ApiParam({ name: 'id', example: 'REQ-103' })
   @ApiOkResponse({ description: 'Request rejected successfully.', type: RequestResponseDto })
   reject(@Param('id') id: string) {
     return this.requestsService.reject(id);
@@ -63,7 +63,7 @@ export class RequestsController {
   @Roles('Staff', 'System Admin')
   @ApiBody({ type: AllocateRequestDto })
   @ApiOperation({ summary: 'Allocate inventory resources to an approved request' })
-  @ApiParam({ name: 'id', example: 'REQ-1001' })
+  @ApiParam({ name: 'id', example: 'REQ-104' })
   @ApiOkResponse({ description: 'Request allocated successfully.', type: RequestResponseDto })
   allocate(@Param('id') id: string, @Body() dto: AllocateRequestDto, @Req() req: any) {
     return this.requestsService.allocate(id, dto.resourceIds || [], req.context);
@@ -72,7 +72,7 @@ export class RequestsController {
   @Post(':id/receipt')
   @Roles('Requestor', 'System Admin')
   @ApiOperation({ summary: 'Confirm request receipt from the requestor side' })
-  @ApiParam({ name: 'id', example: 'REQ-1001' })
+  @ApiParam({ name: 'id', example: 'REQ-101' })
   @ApiOkResponse({ description: 'Receipt confirmed successfully.', type: RequestResponseDto })
   confirmReceipt(@Param('id') id: string, @Req() req: any) {
     return this.requestsService.confirmReceipt(id, req.context);

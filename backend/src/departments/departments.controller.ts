@@ -33,7 +33,7 @@ export class DepartmentsController {
   @Roles('System Admin')
   @ApiBody({ type: UpdateDepartmentDto })
   @ApiOperation({ summary: 'Update a department' })
-  @ApiParam({ name: 'id', example: 'D101' })
+  @ApiParam({ name: 'id', example: 'D1' })
   @ApiOkResponse({ description: 'Department updated successfully.', type: DepartmentResponseDto })
   update(@Param('id') id: string, @Body() dto: UpdateDepartmentDto) {
     return this.departmentsService.update(id, dto);
@@ -42,7 +42,7 @@ export class DepartmentsController {
   @Delete(':id')
   @Roles('System Admin')
   @ApiOperation({ summary: 'Delete a department' })
-  @ApiParam({ name: 'id', example: 'D101' })
+  @ApiParam({ name: 'id', example: 'D5' })
   @ApiOkResponse({ description: 'Department deleted successfully.', type: SuccessResponseDto })
   remove(@Param('id') id: string) {
     return this.departmentsService.remove(id);

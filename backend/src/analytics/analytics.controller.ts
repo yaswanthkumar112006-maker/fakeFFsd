@@ -47,7 +47,7 @@ export class AnalyticsController {
 
   @Patch('stock-thresholds/:id/:level')
   @ApiOperation({ summary: 'Update a stock threshold level' })
-  @ApiParam({ name: 'id', example: 'STK-1001' })
+  @ApiParam({ name: 'id', example: 'TH-1' })
   @ApiParam({ name: 'level', example: 10 })
   @ApiOkResponse({ description: 'Stock threshold updated successfully.', type: StockRowResponseDto })
   updateStockThreshold(@Param('id') id: string, @Param('level') level: string, @Req() req: any) {

@@ -270,7 +270,7 @@
             "required": true,
             "in": "path",
             "schema": {
-              "example": "U201",
+              "example": "U4",
               "type": "string"
             }
           }
@@ -345,7 +345,7 @@
             "required": true,
             "in": "path",
             "schema": {
-              "example": "U201",
+              "example": "U4",
               "type": "string"
             }
           }
@@ -1031,7 +1031,7 @@
             "required": true,
             "in": "path",
             "schema": {
-              "example": "D101",
+              "example": "D1",
               "type": "string"
             }
           }
@@ -1106,7 +1106,7 @@
             "required": true,
             "in": "path",
             "schema": {
-              "example": "D101",
+              "example": "D5",
               "type": "string"
             }
           }
@@ -1524,7 +1524,7 @@
             "required": true,
             "in": "path",
             "schema": {
-              "example": "REQ-1001",
+              "example": "REQ-102",
               "type": "string"
             }
           }
@@ -1601,7 +1601,7 @@
             "required": true,
             "in": "path",
             "schema": {
-              "example": "REQ-1001",
+              "example": "REQ-102",
               "type": "string"
             }
           }
@@ -1668,7 +1668,7 @@
             "required": true,
             "in": "path",
             "schema": {
-              "example": "REQ-1001",
+              "example": "REQ-103",
               "type": "string"
             }
           }
@@ -1735,7 +1735,7 @@
             "required": true,
             "in": "path",
             "schema": {
-              "example": "REQ-1001",
+              "example": "REQ-104",
               "type": "string"
             }
           }
@@ -1812,7 +1812,7 @@
             "required": true,
             "in": "path",
             "schema": {
-              "example": "REQ-1001",
+              "example": "REQ-101",
               "type": "string"
             }
           }
@@ -2252,7 +2252,7 @@
             "required": true,
             "in": "path",
             "schema": {
-              "example": "RES-ITL-001",
+              "example": "RES-1049",
               "type": "string"
             }
           }
@@ -2329,7 +2329,7 @@
             "required": true,
             "in": "path",
             "schema": {
-              "example": "RES-ITL-001",
+              "example": "RES-1049",
               "type": "string"
             }
           }
@@ -2396,7 +2396,7 @@
             "required": true,
             "in": "path",
             "schema": {
-              "example": "RES-ITL-001",
+              "example": "RES-9055",
               "type": "string"
             }
           }
@@ -2463,7 +2463,7 @@
             "required": true,
             "in": "path",
             "schema": {
-              "example": "RES-ITL-001",
+              "example": "RES-1049",
               "type": "string"
             }
           }
@@ -2530,7 +2530,7 @@
             "required": true,
             "in": "path",
             "schema": {
-              "example": "RES-ITL-001",
+              "example": "RES-5011",
               "type": "string"
             }
           }
@@ -2741,7 +2741,7 @@
             "required": true,
             "in": "path",
             "schema": {
-              "example": "PROC-1001",
+              "example": "PROC-819",
               "type": "string"
             }
           }
@@ -2818,7 +2818,7 @@
             "required": true,
             "in": "path",
             "schema": {
-              "example": "PROC-1001",
+              "example": "PROC-819",
               "type": "string"
             }
           }
@@ -2885,7 +2885,7 @@
             "required": true,
             "in": "path",
             "schema": {
-              "example": "PROC-1001",
+              "example": "PROC-821",
               "type": "string"
             }
           }
@@ -2952,7 +2952,7 @@
             "required": true,
             "in": "path",
             "schema": {
-              "example": "PROC-1001",
+              "example": "PROC-819",
               "type": "string"
             }
           }
@@ -3019,7 +3019,7 @@
             "required": true,
             "in": "path",
             "schema": {
-              "example": "PROC-1001",
+              "example": "PROC-819",
               "type": "string"
             }
           }
@@ -3086,7 +3086,7 @@
             "required": true,
             "in": "path",
             "schema": {
-              "example": "PROC-1001",
+              "example": "PROC-911",
               "type": "string"
             }
           }
@@ -3163,7 +3163,7 @@
             "required": true,
             "in": "path",
             "schema": {
-              "example": "PROC-1001",
+              "example": "PROC-850",
               "type": "string"
             }
           }
@@ -3300,7 +3300,7 @@
             "required": true,
             "in": "path",
             "schema": {
-              "example": "RES-ITL-001",
+              "example": "RES-5011",
               "type": "string"
             }
           }
@@ -3367,7 +3367,7 @@
             "required": true,
             "in": "path",
             "schema": {
-              "example": "RES-ITL-001",
+              "example": "RES-5013",
               "type": "string"
             }
           }
@@ -3434,7 +3434,7 @@
             "required": true,
             "in": "path",
             "schema": {
-              "example": "RES-ITL-001",
+              "example": "RES-5013",
               "type": "string"
             }
           }
@@ -3561,7 +3561,7 @@
             "required": true,
             "in": "path",
             "schema": {
-              "example": "RES-ITL-001",
+              "example": "RES-6001",
               "type": "string"
             }
           }
@@ -4006,7 +4006,7 @@
             "required": true,
             "in": "path",
             "schema": {
-              "example": "STK-1001",
+              "example": "TH-1",
               "type": "string"
             }
           },

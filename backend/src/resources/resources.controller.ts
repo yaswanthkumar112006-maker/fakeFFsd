@@ -79,7 +79,7 @@ export class ResourcesController {
   @Roles('Requestor', 'Staff', 'System Admin')
   @ApiBody({ type: UpdateResourceDto })
   @ApiOperation({ summary: 'Update a resource' })
-  @ApiParam({ name: 'id', example: 'RES-ITL-001' })
+  @ApiParam({ name: 'id', example: 'RES-1049' })
   @ApiOkResponse({ description: 'Resource updated successfully.', type: ResourceResponseDto })
   update(@Param('id') id: string, @Body() dto: UpdateResourceDto) {
     return this.resourcesService.update(id, dto);
@@ -88,7 +88,7 @@ export class ResourcesController {
   @Post(':id/maintenance-request')
   @Roles('Requestor', 'System Admin')
   @ApiOperation({ summary: 'Request maintenance for an allocated resource' })
-  @ApiParam({ name: 'id', example: 'RES-ITL-001' })
+  @ApiParam({ name: 'id', example: 'RES-1049' })
   @ApiOkResponse({ description: 'Maintenance requested successfully.', type: ResourceResponseDto })
   requestMaintenance(@Param('id') id: string, @Req() req: any) {
     return this.resourcesService.requestMaintenance(id, req.context);
@@ -97,7 +97,7 @@ export class ResourcesController {
   @Post(':id/initiate-return')
   @Roles('Requestor', 'System Admin')
   @ApiOperation({ summary: 'Initiate a return request for an allocated resource' })
-  @ApiParam({ name: 'id', example: 'RES-ITL-001' })
+  @ApiParam({ name: 'id', example: 'RES-9055' })
   @ApiOkResponse({ description: 'Return initiated successfully.', type: ResourceResponseDto })
   initiateReturn(@Param('id') id: string, @Req() req: any) {
     return this.resourcesService.initiateReturn(id, req.context);
@@ -106,7 +106,7 @@ export class ResourcesController {
   @Post(':id/confirm-repaired')
   @Roles('Requestor', 'System Admin')
   @ApiOperation({ summary: 'Confirm repaired resource allocation' })
-  @ApiParam({ name: 'id', example: 'RES-ITL-001' })
+  @ApiParam({ name: 'id', example: 'RES-1049' })
   @ApiOkResponse({ description: 'Repaired allocation confirmed successfully.', type: ResourceResponseDto })
   confirmRepaired(@Param('id') id: string, @Req() req: any) {
     return this.resourcesService.confirmRepaired(id, req.context);
@@ -115,7 +115,7 @@ export class ResourcesController {
   @Post(':id/scrap')
   @Roles('Staff', 'System Admin')
   @ApiOperation({ summary: 'Scrap a resource' })
-  @ApiParam({ name: 'id', example: 'RES-ITL-001' })
+  @ApiParam({ name: 'id', example: 'RES-5011' })
   @ApiOkResponse({ description: 'Resource marked as scrapped successfully.', type: ResourceResponseDto })
   scrap(@Param('id') id: string) {
     return this.resourcesService.scrap(id);
