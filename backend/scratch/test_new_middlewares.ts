@@ -13,7 +13,7 @@ interface RequestOptions {
   expectedStatus?: number[];
 }
 
-function makeRequest(options: RequestOptions): Promise<{ status: number; body: any }> {
+function makeRequest(options: RequestOptions): Promise<{ status: number; body: any; headers: http.IncomingHttpHeaders }> {
   return new Promise((resolve, reject) => {
     const url = `${BASE_URL}${options.path}`;
     const payload = options.body ? JSON.stringify(options.body) : '';
@@ -45,6 +45,7 @@ function makeRequest(options: RequestOptions): Promise<{ status: number; body: a
         resolve({
           status: res.statusCode || 500,
           body: parsed,
+          headers: res.headers,
         });
       });
     });
@@ -356,6 +357,150 @@ async function runMiddlewareTests() {
     failed++;
   }
 
+  // Procurements Validation - invalid file data url format
+  try {
+    const res = await makeRequest({
+      name: 'Create Procurement with Invalid File Format',
+      method: 'POST',
+      path: '/api/procurements',
+      headers: employeeHeaders,
+      body: { specFileDataUrl: 'invalid-base64-url' }
+    });
+    if (res.status === 400 && res.body.message && res.body.message.includes('not a valid base64 data URL')) {
+      console.log('[PASS] Procurements - Validation Middleware correctly blocked invalid file format: Status 400');
+      passed++;
+    } else {
+      console.error('[FAIL] Procurements - Validation Middleware did not block invalid file format:', res.status, res.body);
+      failed++;
+    }
+  } catch (e: any) {
+    console.error('[ERROR] Procurements validation test failed:', e.message);
+    failed++;
+  }
+
+  // Maintenance Validation - invalid resource ID format
+  try {
+    const res = await makeRequest({
+      name: 'Maintenance Request Invalid ID Format',
+      method: 'POST',
+      path: '/api/maintenance/RES-INVALID-ID$/accept',
+      headers: employeeHeaders
+    });
+    if (res.status === 400 && res.body.message && res.body.message.includes('Expected letters, digits, dashes')) {
+      console.log('[PASS] Maintenance - Validation Middleware correctly blocked invalid ID format: Status 400');
+      passed++;
+    } else {
+      console.error('[FAIL] Maintenance - Validation Middleware did not block invalid ID format:', res.status, res.body);
+      failed++;
+    }
+  } catch (e: any) {
+    console.error('[ERROR] Maintenance validation test failed:', e.message);
+    failed++;
+  }
+
+  // Departments Validation - invalid ID format
+  try {
+    const res = await makeRequest({
+      name: 'Departments PATCH Invalid ID Format',
+      method: 'PATCH',
+      path: '/api/departments/D-INVALID-ID$',
+      headers: adminHeaders,
+      body: { name: 'IT Division' }
+    });
+    if (res.status === 400 && res.body.message && res.body.message.includes('Invalid Department ID')) {
+      console.log('[PASS] Departments - Validation Middleware correctly blocked invalid ID format: Status 400');
+      passed++;
+    } else {
+      console.error('[FAIL] Departments - Validation Middleware did not block invalid ID format:', res.status, res.body);
+      failed++;
+    }
+  } catch (e: any) {
+    console.error('[ERROR] Departments validation test failed:', e.message);
+    failed++;
+  }
+
+  // Departments Validation - empty body update
+  try {
+    const res = await makeRequest({
+      name: 'Departments PATCH Empty Body',
+      method: 'PATCH',
+      path: '/api/departments/D-TEST-TEMP',
+      headers: adminHeaders,
+      body: {}
+    });
+    if (res.status === 400 && res.body.message && res.body.message.includes('must be provided for update')) {
+      console.log('[PASS] Departments - Validation Middleware correctly blocked empty body update: Status 400');
+      passed++;
+    } else {
+      console.error('[FAIL] Departments - Validation Middleware did not block empty body update:', res.status, res.body);
+      failed++;
+    }
+  } catch (e: any) {
+    console.error('[ERROR] Departments empty body test failed:', e.message);
+    failed++;
+  }
+
+  // Resources Validation - invalid ID format
+  try {
+    const res = await makeRequest({
+      name: 'Resources PATCH Invalid ID Format',
+      method: 'PATCH',
+      path: '/api/resources/RES-INVALID-ID$',
+      headers: adminHeaders,
+      body: {}
+    });
+    if (res.status === 400 && res.body.message && res.body.message.includes('Invalid Resource ID')) {
+      console.log('[PASS] Resources - Validation Middleware correctly blocked invalid ID format: Status 400');
+      passed++;
+    } else {
+      console.error('[FAIL] Resources - Validation Middleware did not block invalid ID format:', res.status, res.body);
+      failed++;
+    }
+  } catch (e: any) {
+    console.error('[ERROR] Resources validation test failed:', e.message);
+    failed++;
+  }
+
+  // Requests Validation - invalid ID format
+  try {
+    const res = await makeRequest({
+      name: 'Requests POST Invalid ID Format',
+      method: 'POST',
+      path: '/api/requests/REQ-INVALID-ID$/approve',
+      headers: employeeHeaders
+    });
+    if (res.status === 400 && res.body.message && res.body.message.includes('Expected letters, digits, dashes')) {
+      console.log('[PASS] Requests - Validation Middleware correctly blocked invalid ID format: Status 400');
+      passed++;
+    } else {
+      console.error('[FAIL] Requests - Validation Middleware did not block invalid ID format:', res.status, res.body);
+      failed++;
+    }
+  } catch (e: any) {
+    console.error('[ERROR] Requests validation test failed:', e.message);
+    failed++;
+  }
+
+  // Returns Validation - invalid ID format
+  try {
+    const res = await makeRequest({
+      name: 'Returns POST Invalid ID Format',
+      method: 'POST',
+      path: '/api/returns/RES-INVALID-ID$/process',
+      headers: employeeHeaders
+    });
+    if (res.status === 400 && res.body.message && res.body.message.includes('Expected letters, digits, dashes')) {
+      console.log('[PASS] Returns - Validation Middleware correctly blocked invalid ID format: Status 400');
+      passed++;
+    } else {
+      console.error('[FAIL] Returns - Validation Middleware did not block invalid ID format:', res.status, res.body);
+      failed++;
+    }
+  } catch (e: any) {
+    console.error('[ERROR] Returns validation test failed:', e.message);
+    failed++;
+  }
+
   // ==========================================
   // --- 6. RATE LIMITER VERIFICATION ---
   // ==========================================
@@ -440,6 +585,206 @@ async function runMiddlewareTests() {
     failed++;
   }
 
+  // --- Departments Security Headers & Rate Limiting Check ---
+  console.log('[LOG] Testing Departments Security Headers middleware...');
+  try {
+    const res = await makeRequest({
+      name: 'Get Departments Security Headers',
+      method: 'GET',
+      path: '/api/departments',
+      headers: adminHeaders
+    });
+    const xFrame = res.headers['x-frame-options'];
+    const xContent = res.headers['x-content-type-options'];
+    if (xFrame === 'DENY' && xContent === 'nosniff') {
+      console.log('[PASS] Departments - Security Headers injected correctly (DENY & nosniff)');
+      passed++;
+    } else {
+      console.error('[FAIL] Departments - Security Headers missing/invalid:', res.headers);
+      failed++;
+    }
+  } catch (e: any) {
+    console.error('[ERROR] Departments Security Headers test failed:', e.message);
+    failed++;
+  }
+
+  console.log('[LOG] Testing Departments Rate Limiter middleware (firing 65 requests fast)...');
+  let rateLimitedDepartments = false;
+  try {
+    for (let i = 0; i < 65; i++) {
+      const res = await makeRequest({
+        name: `Rate Limit Departments Request ${i}`,
+        method: 'GET',
+        path: '/api/departments',
+        headers: adminHeaders
+      });
+      if (res.status === 429) {
+        rateLimitedDepartments = true;
+        break;
+      }
+    }
+    if (rateLimitedDepartments) {
+      console.log('[PASS] Departments - Security Rate Limiter triggered: Status 429');
+      passed++;
+    } else {
+      console.error('[FAIL] Departments - Security Rate Limiter did not trigger after 60+ requests.');
+      failed++;
+    }
+  } catch (e: any) {
+    console.error('[ERROR] Departments Rate Limiter test failed:', e.message);
+    failed++;
+  }
+
+  // --- Resources Security Headers & Rate Limiting Check ---
+  console.log('[LOG] Testing Resources Security Headers middleware...');
+  try {
+    const res = await makeRequest({
+      name: 'Get Resources Security Headers',
+      method: 'GET',
+      path: '/api/resources',
+      headers: adminHeaders
+    });
+    const xFrame = res.headers['x-frame-options'];
+    const xContent = res.headers['x-content-type-options'];
+    if (xFrame === 'DENY' && xContent === 'nosniff') {
+      console.log('[PASS] Resources - Security Headers injected correctly (DENY & nosniff)');
+      passed++;
+    } else {
+      console.error('[FAIL] Resources - Security Headers missing/invalid:', res.headers);
+      failed++;
+    }
+  } catch (e: any) {
+    console.error('[ERROR] Resources Security Headers test failed:', e.message);
+    failed++;
+  }
+
+  console.log('[LOG] Testing Resources Rate Limiter middleware (firing 65 requests fast)...');
+  let rateLimitedResources = false;
+  try {
+    for (let i = 0; i < 65; i++) {
+      const res = await makeRequest({
+        name: `Rate Limit Resources Request ${i}`,
+        method: 'GET',
+        path: '/api/resources',
+        headers: adminHeaders
+      });
+      if (res.status === 429) {
+        rateLimitedResources = true;
+        break;
+      }
+    }
+    if (rateLimitedResources) {
+      console.log('[PASS] Resources - Security Rate Limiter triggered: Status 429');
+      passed++;
+    } else {
+      console.error('[FAIL] Resources - Security Rate Limiter did not trigger after 60+ requests.');
+      failed++;
+    }
+  } catch (e: any) {
+    console.error('[ERROR] Resources Rate Limiter test failed:', e.message);
+    failed++;
+  }
+
+  // --- Requests Security Headers & Rate Limiting Check ---
+  console.log('[LOG] Testing Requests Security Headers middleware...');
+  try {
+    const res = await makeRequest({
+      name: 'Get Requests Security Headers',
+      method: 'GET',
+      path: '/api/requests',
+      headers: employeeHeaders
+    });
+    const xFrame = res.headers['x-frame-options'];
+    const xContent = res.headers['x-content-type-options'];
+    if (xFrame === 'DENY' && xContent === 'nosniff') {
+      console.log('[PASS] Requests - Security Headers injected correctly (DENY & nosniff)');
+      passed++;
+    } else {
+      console.error('[FAIL] Requests - Security Headers missing/invalid:', res.headers);
+      failed++;
+    }
+  } catch (e: any) {
+    console.error('[ERROR] Requests Security Headers test failed:', e.message);
+    failed++;
+  }
+
+  console.log('[LOG] Testing Requests Rate Limiter middleware (firing 65 requests fast)...');
+  let rateLimitedRequests = false;
+  try {
+    for (let i = 0; i < 65; i++) {
+      const res = await makeRequest({
+        name: `Rate Limit Requests Request ${i}`,
+        method: 'GET',
+        path: '/api/requests',
+        headers: employeeHeaders
+      });
+      if (res.status === 429) {
+        rateLimitedRequests = true;
+        break;
+      }
+    }
+    if (rateLimitedRequests) {
+      console.log('[PASS] Requests - Security Rate Limiter triggered: Status 429');
+      passed++;
+    } else {
+      console.error('[FAIL] Requests - Security Rate Limiter did not trigger after 60+ requests.');
+      failed++;
+    }
+  } catch (e: any) {
+    console.error('[ERROR] Requests Rate Limiter test failed:', e.message);
+    failed++;
+  }
+
+  // --- Returns Security Headers & Rate Limiting Check ---
+  console.log('[LOG] Testing Returns Security Headers middleware...');
+  try {
+    const res = await makeRequest({
+      name: 'Get Returns Security Headers',
+      method: 'GET',
+      path: '/api/returns/history',
+      headers: employeeHeaders
+    });
+    const xFrame = res.headers['x-frame-options'];
+    const xContent = res.headers['x-content-type-options'];
+    if (xFrame === 'DENY' && xContent === 'nosniff') {
+      console.log('[PASS] Returns - Security Headers injected correctly (DENY & nosniff)');
+      passed++;
+    } else {
+      console.error('[FAIL] Returns - Security Headers missing/invalid:', res.headers);
+      failed++;
+    }
+  } catch (e: any) {
+    console.error('[ERROR] Returns Security Headers test failed:', e.message);
+    failed++;
+  }
+
+  console.log('[LOG] Testing Returns Rate Limiter middleware (firing 65 requests fast)...');
+  let rateLimitedReturns = false;
+  try {
+    for (let i = 0; i < 65; i++) {
+      const res = await makeRequest({
+        name: `Rate Limit Returns Request ${i}`,
+        method: 'GET',
+        path: '/api/returns/history',
+        headers: employeeHeaders
+      });
+      if (res.status === 429) {
+        rateLimitedReturns = true;
+        break;
+      }
+    }
+    if (rateLimitedReturns) {
+      console.log('[PASS] Returns - Security Rate Limiter triggered: Status 429');
+      passed++;
+    } else {
+      console.error('[FAIL] Returns - Security Rate Limiter did not trigger after 60+ requests.');
+      failed++;
+    }
+  } catch (e: any) {
+    console.error('[ERROR] Returns Rate Limiter test failed:', e.message);
+    failed++;
+  }
+
   // ==========================================
   // --- 7. LOG FILE CREATION AND ERROR TRIGGERS ---
   // ==========================================
@@ -508,6 +853,60 @@ async function runMiddlewareTests() {
       path: '/api/platform-analytics',
       headers: adminHeaders
     });
+    // Trigger Departments validation error & access log entries
+    await makeRequest({
+      name: 'Trigger Departments Access Log Entry',
+      method: 'GET',
+      path: '/api/departments',
+      headers: adminHeaders
+    });
+    await makeRequest({
+      name: 'Trigger Departments Validation Error',
+      method: 'PATCH',
+      path: '/api/departments/D-INVALID-ID-FORMAT',
+      headers: adminHeaders,
+      body: { name: '' } // triggers requireText check
+    });
+    // Trigger Resources validation error & access log entries
+    await makeRequest({
+      name: 'Trigger Resources Access Log Entry',
+      method: 'GET',
+      path: '/api/resources',
+      headers: adminHeaders
+    });
+    await makeRequest({
+      name: 'Trigger Resources Validation Error',
+      method: 'PATCH',
+      path: '/api/resources/RES-INVALID-ID-FORMAT',
+      headers: adminHeaders,
+      body: { type: '' } // triggers invalid id format
+    });
+    // Trigger Requests validation error & access log entries
+    await makeRequest({
+      name: 'Trigger Requests Access Log Entry',
+      method: 'GET',
+      path: '/api/requests',
+      headers: employeeHeaders
+    });
+    await makeRequest({
+      name: 'Trigger Requests Validation Error',
+      method: 'POST',
+      path: '/api/requests/REQ-INVALID-ID%/approve',
+      headers: employeeHeaders
+    });
+    // Trigger Returns validation error & access log entries
+    await makeRequest({
+      name: 'Trigger Returns Access Log Entry',
+      method: 'GET',
+      path: '/api/returns/history',
+      headers: employeeHeaders
+    });
+    await makeRequest({
+      name: 'Trigger Returns Validation Error',
+      method: 'POST',
+      path: '/api/returns/RES-INVALID-ID%/process',
+      headers: employeeHeaders
+    });
   } catch (e) {
     // ignore
   }
@@ -533,7 +932,15 @@ async function runMiddlewareTests() {
     'organizations-access.log',
     'organizations-error.log',
     'notifications-access.log',
-    'notifications-error.log'
+    'notifications-error.log',
+    'departments-access.log',
+    'departments-error.log',
+    'resources-access.log',
+    'resources-error.log',
+    'requests-access.log',
+    'requests-error.log',
+    'returns-access.log',
+    'returns-error.log'
   ];
 
   let logsPassed = true;
@@ -558,8 +965,8 @@ async function runMiddlewareTests() {
   }
 
   console.log('\n=== MIDDLEWARE VERIFICATION SUMMARY ===');
-  console.log(`Passed: ${passed} / 15`);
-  console.log(`Failed: ${failed} / 15`);
+  console.log(`Passed: ${passed} / 30`);
+  console.log(`Failed: ${failed} / 30`);
 
   if (failed === 0) {
     console.log('\n[SUCCESS] All module middlewares (including new ones) are correctly modularized and functional!');

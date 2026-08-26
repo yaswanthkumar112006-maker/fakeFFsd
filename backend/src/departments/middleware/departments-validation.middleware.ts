@@ -6,7 +6,7 @@ const DEPT_ID_PATTERN = /^[A-Za-z0-9_-]{1,64}$/;
 
 @Injectable()
 export class DepartmentsValidationMiddleware implements NestMiddleware {
-  constructor(private readonly fileLogger: DepartmentsFileLoggerService) {}
+  constructor(private readonly fileLogger: DepartmentsFileLoggerService) { }
 
   use(req: Request, res: Response, next: NextFunction): void {
     const body = req.body || {};
@@ -26,11 +26,14 @@ export class DepartmentsValidationMiddleware implements NestMiddleware {
 
       if (req.method === 'PATCH') {
         // At least one field must be present in the body
-        if (!body.name && !body.headId && !body.description) {
-          this.reject(req, 'At least one field (name, headId, description) must be provided for update.');
+        if (body.name === undefined && body.head === undefined && body.memberCount === undefined) {
+          this.reject(req, 'At least one field (name, head, memberCount) must be provided for update.');
         }
         if (body.name !== undefined) {
           this.requireText(req, body.name, 'Name', 100);
+        }
+        if (body.head !== undefined) {
+          this.requireText(req, body.head, 'Head', 100);
         }
       }
     }
