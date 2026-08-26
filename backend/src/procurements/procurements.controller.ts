@@ -1,9 +1,10 @@
-import { Body, Controller, Get, Param, Patch, Post, Query, Req } from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Post, Query, Req, UseFilters } from '@nestjs/common';
 import { ApiBody, ApiCreatedResponse, ApiOkResponse, ApiOperation, ApiParam, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { Roles } from '../common/roles.decorator';
 import { ProcurementResponseDto } from '../common/swagger-models';
 import { ApiRoleHeaders, ApiStandardErrorResponses } from '../common/swagger';
 import { ProcurementsService } from './procurements.service';
+import { ProcurementsExceptionFilter } from './filters/procurements-exception.filter';
 import {
   CreateProcurementDto,
   LogPurchaseDto,
@@ -15,8 +16,9 @@ import {
 @ApiRoleHeaders()
 @ApiStandardErrorResponses()
 @Controller('procurements')
+@UseFilters(ProcurementsExceptionFilter)
 export class ProcurementsController {
-  constructor(private readonly procurementsService: ProcurementsService) {}
+  constructor(private readonly procurementsService: ProcurementsService) { }
 
   @Get()
   @ApiOperation({ summary: 'List procurements visible to the acting role' })
@@ -89,7 +91,7 @@ export class ProcurementsController {
   @ApiParam({ name: 'id', example: 'PROC-1001' })
   @ApiOkResponse({ description: 'Purchase log saved successfully.', type: ProcurementResponseDto })
   logPurchase(@Param('id') id: string, @Body() dto: LogPurchaseDto, @Req() req: any) {
-    return this.procurementsService.logPurchase(id, dto.vendor, dto.invoice, req.context);
+    return this.procurementsService.logPurchase(id, dto, req.context);
   }
 
   @Post(':id/register')

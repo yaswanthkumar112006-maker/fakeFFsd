@@ -67,6 +67,21 @@ export class CreateProcurementDto {
   @ApiProperty({ example: 'Capacity increase required.' })
   @IsString()
   justification!: string;
+
+  @ApiPropertyOptional({ example: 'resource-spec.pdf' })
+  @IsOptional()
+  @IsString()
+  specFileName?: string;
+
+  @ApiPropertyOptional({ example: 'application/pdf' })
+  @IsOptional()
+  @IsString()
+  specFileType?: string;
+
+  @ApiPropertyOptional({ example: 'data:application/pdf;base64,...' })
+  @IsOptional()
+  @IsString()
+  specFileDataUrl?: string;
 }
 
 export class UpdateProcurementDto extends PartialType(CreateProcurementDto) {
@@ -89,6 +104,21 @@ export class LogPurchaseDto {
   @ApiProperty({ example: 'INV-2026-1001' })
   @IsString()
   invoice!: string;
+
+  @ApiPropertyOptional({ example: 'invoice-1024.pdf' })
+  @IsOptional()
+  @IsString()
+  invoiceFileName?: string;
+
+  @ApiPropertyOptional({ example: 'application/pdf' })
+  @IsOptional()
+  @IsString()
+  invoiceFileType?: string;
+
+  @ApiPropertyOptional({ example: 'data:application/pdf;base64,...' })
+  @IsOptional()
+  @IsString()
+  invoiceFileDataUrl?: string;
 }
 
 export class ProcurementRegistrationResourceDto {

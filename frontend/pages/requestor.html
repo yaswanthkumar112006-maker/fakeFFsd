@@ -12,20 +12,43 @@
     <link rel="stylesheet" href="../css/components/form.css">
     <link rel="stylesheet" href="../css/components/badge.css">
     <link rel="stylesheet" href="../css/components/toast.css">
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ResourceX - Requestor Dashboard</title>
-    <link rel="stylesheet" href="../css/main.css">
-    <link rel="stylesheet" href="../css/components/layout.css">
-    <link rel="stylesheet" href="../css/components/button.css">
-    <link rel="stylesheet" href="../css/components/card.css">
-    <link rel="stylesheet" href="../css/components/table.css">
-    <link rel="stylesheet" href="../css/components/form.css">
-    <link rel="stylesheet" href="../css/components/badge.css">
-    <link rel="stylesheet" href="../css/components/toast.css">
+    <style>
+        /* --- File Upload Zone --- */
+        .file-upload-zone {
+            border: 2px dashed #cbd5e1;
+            border-radius: 10px;
+            padding: 1.5rem 1rem;
+            text-align: center;
+            cursor: pointer;
+            transition: border-color 0.2s, background 0.2s;
+            background: #f8fafc;
+            position: relative;
+        }
+        .file-upload-zone:hover, .file-upload-zone.dragover {
+            border-color: var(--primary-color, #3b82f6);
+            background: #eff6ff;
+        }
+        .file-upload-zone .material-symbols-outlined { font-size: 2rem; color: #94a3b8; display: block; margin-bottom: 0.4rem; }
+        .file-upload-zone p { margin: 0; font-size: 0.82rem; color: #64748b; }
+        .file-preview-box {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            background: #f0fdf4;
+            border: 1px solid #bbf7d0;
+            border-radius: 8px;
+            padding: 0.6rem 1rem;
+            margin-top: 0.5rem;
+        }
+        .file-preview-box .file-icon { font-size: 1.5rem; color: #16a34a; }
+        .file-preview-box .file-info { flex: 1; text-align: left; }
+        .file-preview-box .file-name { font-size: 0.82rem; font-weight: 600; color: #0f172a; }
+        .file-preview-box .file-size { font-size: 0.72rem; color: #64748b; }
+        .file-remove-btn { background: none; border: none; cursor: pointer; color: #94a3b8; font-size: 1.1rem; padding: 0.2rem 0.4rem; border-radius: 4px; }
+        .file-remove-btn:hover { color: #dc2626; background: #fee2e2; }
+        .spec-file-link { display: inline-flex; align-items: center; gap: 0.3rem; font-size: 0.78rem; color: #2563eb; text-decoration: none; font-weight: 500; }
+        .spec-file-link:hover { text-decoration: underline; }
+    </style>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20,400,0,0">
 </head>
 <body>
@@ -325,6 +348,7 @@
                                         <th>Department</th>
                                         <th>Allocated Date</th>
                                         <th>Status</th>
+                                        <th>Invoice</th>
                                         <th style="text-align:right; min-width:210px">Actions</th>
                                     </tr>
                                 </thead>
@@ -363,6 +387,28 @@
                             <label class="form-label">Reason</label>
                             <textarea class="form-control" id="proc-reason" rows="4" placeholder="Explain why this procurement is needed based on business requirements..." required></textarea>
                         </div>
+                        <div class="form-group">
+                            <label class="form-label">
+                                Resource Specification / Intent File
+                                <span style="font-size:0.75rem; color:#64748b; font-weight:400;"> (Optional — PDF, DOC, DOCX, PNG, JPG · max 5 MB)</span>
+                            </label>
+                            <div class="file-upload-zone" id="proc-file-zone" onclick="document.getElementById('proc-spec-file').click()">
+                                <span class="material-symbols-outlined">upload_file</span>
+                                <p>Drag &amp; drop your file here or <strong style="color:var(--primary-color,#3b82f6)">browse</strong></p>
+                                <p style="font-size:0.72rem; margin-top:0.3rem;">Supports: PDF, DOC, DOCX, PNG, JPG</p>
+                                <input type="file" id="proc-spec-file" accept=".pdf,.doc,.docx,.png,.jpg,.jpeg" style="display:none" onchange="app.onProcFileSelected(event)">
+                            </div>
+                            <div id="proc-file-preview" style="display:none">
+                                <div class="file-preview-box">
+                                    <span class="material-symbols-outlined file-icon">description</span>
+                                    <div class="file-info">
+                                        <div class="file-name" id="proc-file-name"></div>
+                                        <div class="file-size" id="proc-file-size"></div>
+                                    </div>
+                                    <button type="button" class="file-remove-btn" title="Remove file" onclick="app.removeProcFile()">✕</button>
+                                </div>
+                            </div>
+                        </div>
                         <button type="submit" class="btn-primary">Submit Procurement Request</button>
                     </form>
                 </div>
@@ -381,6 +427,8 @@
                                 <th>Qty</th>
                                 <th>Date Submitted</th>
                                 <th>Status</th>
+                                <th>Spec File</th>
+                                <th>Invoice</th>
                             </tr>
                         </thead>
                         <tbody id="procurements-tbody">

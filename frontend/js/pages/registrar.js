@@ -157,6 +157,10 @@ const regApp = {
                 actionCol = statusBadge;
             }
 
+            const specCell = p.specFileName
+                ? `<a href="javascript:void(0)" class="spec-file-link" onclick="regApp.previewSpecFile('${p.id}')"><span class="material-symbols-outlined" style="font-size:1rem">visibility</span>${p.specFileName}</a>`
+                : `<span style="color:#cbd5e1; font-size:0.78rem">—</span>`;
+
             const tr = document.createElement('tr');
             tr.innerHTML = `
                 <td class="td-id">${p.id}</td>
@@ -164,10 +168,15 @@ const regApp = {
                 <td>${p.resourceType}</td>
                 <td>${p.quantity}</td>
                 <td style="font-size:0.75rem; color:#64748b">${p.justification}</td>
+                <td>${specCell}</td>
                 <td style="text-align:right">${actionCol}</td>
             `;
             tbody.appendChild(tr);
         });
+    },
+
+    previewSpecFile: function(procId) {
+        Store.previewProcurementFile(procId, 'spec');
     },
 
     acceptProcurement: async function(id) {

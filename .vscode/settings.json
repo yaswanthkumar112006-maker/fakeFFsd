@@ -1,0 +1,11 @@
+{
+    "claudeCode.useTerminal": true,
+    "liveServer.settings.root": "/frontend",
+    "liveServer.settings.ignoreFiles": [
+        ".vscode/**",
+        "backend/**",
+        "node_modules/**",
+        "**/*.scss",
+        "**/*.sass"
+    ]
+}

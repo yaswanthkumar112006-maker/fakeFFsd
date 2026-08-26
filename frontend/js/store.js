@@ -16,6 +16,11 @@ class DataStore {
             resourceCatalog: [],
             currentUser: null
         };
+        // In-memory only (never persisted to localStorage) cache of file blobs keyed by
+        // procurement id. localStorage has a tight per-origin quota (Safari especially, ~5MB)
+        // which multi-MB base64 file data-URLs blow through easily; keeping them here instead
+        // means every page always sees fresh, complete file data regardless of quota pressure.
+        this._procurementFileCache = new Map();
         this.init();
     }
 
@@ -30,7 +35,70 @@ class DataStore {
     }
 
     saveData(data) {
-        localStorage.setItem('rx_data', JSON.stringify(data));
+        this._cacheProcurementFiles(data.procurements);
+        try {
+            localStorage.setItem('rx_data', JSON.stringify(this._stripFileBlobs(data)));
+        } catch (err) {
+            console.error('Unable to persist app data to localStorage:', err);
+        }
+    }
+
+    // Merges into the cache rather than overwriting — callers sometimes pass procurement
+    // records sourced from the (blob-stripped) localStorage snapshot, and those must never
+    // clobber a real file already captured from a fresh API response.
+    _cacheProcurementFiles(procurements) {
+        (procurements || []).forEach(p => {
+            if (!p || !p.id) return;
+            if (p.specFileDataUrl) {
+                this._procurementFileCache.set(p.id, {
+                    ...this._procurementFileCache.get(p.id),
+                    specFileName: p.specFileName,
+                    specFileType: p.specFileType,
+                    specFileDataUrl: p.specFileDataUrl,
+                });
+            }
+            if (p.invoiceFileDataUrl) {
+                this._procurementFileCache.set(p.id, {
+                    ...this._procurementFileCache.get(p.id),
+                    invoiceFileName: p.invoiceFileName,
+                    invoiceFileType: p.invoiceFileType,
+                    invoiceFileDataUrl: p.invoiceFileDataUrl,
+                });
+            }
+        });
+    }
+
+    _stripFileBlobs(data) {
+        const strip = (arr, fields) => Array.isArray(arr)
+            ? arr.map(item => {
+                const copy = { ...item };
+                fields.forEach(f => { if (copy[f]) copy[f] = null; });
+                return copy;
+            })
+            : arr;
+        return {
+            ...data,
+            procurements: strip(data.procurements, ['specFileDataUrl', 'invoiceFileDataUrl']),
+        };
+    }
+
+    // Looks up a procurement's spec/invoice file, preferring the fresh in-memory cache
+    // (populated from API responses) over the localStorage snapshot, which never holds
+    // the actual file bytes. kind is 'spec' or 'invoice'.
+    getProcurementFile(procId, kind) {
+        const cached = this._procurementFileCache.get(procId);
+        const source = cached || (this.getData().procurements || []).find(p => p.id === procId) || {};
+        const nameKey = kind === 'spec' ? 'specFileName' : 'invoiceFileName';
+        const typeKey = kind === 'spec' ? 'specFileType' : 'invoiceFileType';
+        const urlKey = kind === 'spec' ? 'specFileDataUrl' : 'invoiceFileDataUrl';
+        if (!source[urlKey]) return null;
+        return { name: source[nameKey], type: source[typeKey], dataUrl: source[urlKey] };
+    }
+
+    previewProcurementFile(procId, kind) {
+        const file = this.getProcurementFile(procId, kind);
+        if (!file) return;
+        this.openFilePreview(file.dataUrl, file.name, file.type);
     }
 
     getCurrentUser() {
@@ -264,7 +332,9 @@ class DataStore {
     }
 
     async fetchProcurements(params = {}) {
-        return this.api(`/procurements${this.buildQuery(params)}`);
+        const result = await this.api(`/procurements${this.buildQuery(params)}`);
+        this._cacheProcurementFiles(result);
+        return result;
     }
 
     async createProcurement(payload) {
@@ -431,10 +501,16 @@ class DataStore {
         return result;
     }
 
-    async logPurchase(id, vendor, invoice) {
+    async logPurchase(id, vendor, invoice, invoiceFile) {
+        const body = { vendor, invoice };
+        if (invoiceFile) {
+            body.invoiceFileName = invoiceFile.name;
+            body.invoiceFileType = invoiceFile.type;
+            body.invoiceFileDataUrl = invoiceFile.dataUrl;
+        }
         const result = await this.api(`/procurements/${id}/log-purchase`, {
             method: 'POST',
-            body: { vendor, invoice }
+            body
         });
         await this.sync();
         return result;
@@ -521,6 +597,110 @@ class DataStore {
                 container.removeChild(toast);
             }
         }, 3000);
+    }
+
+    openFilePreview(dataUrl, fileName, fileType) {
+        if (!dataUrl) return;
+        const modal = this._getFilePreviewModal();
+        const title = modal.querySelector('.rx-fp-title');
+        const body = modal.querySelector('.rx-fp-body');
+        const downloadBtn = modal.querySelector('.rx-fp-download');
+
+        title.textContent = fileName || 'Attached File';
+        downloadBtn.href = dataUrl;
+        downloadBtn.download = fileName || 'download';
+
+        const type = (fileType || '').toLowerCase();
+        body.innerHTML = '';
+        if (type.startsWith('image/')) {
+            const img = document.createElement('img');
+            img.className = 'rx-fp-image';
+            img.src = dataUrl;
+            img.alt = fileName || 'Preview';
+            body.appendChild(img);
+        } else if (type === 'application/pdf') {
+            const iframe = document.createElement('iframe');
+            iframe.className = 'rx-fp-iframe';
+            iframe.src = dataUrl;
+            iframe.title = fileName || 'Preview';
+            body.appendChild(iframe);
+        } else {
+            body.innerHTML = `
+                <div class="rx-fp-unsupported">
+                    <span class="material-symbols-outlined">description</span>
+                    <p>Preview isn't available for this file type.</p>
+                    <p class="rx-fp-hint">Use the Download button below to save and open it.</p>
+                </div>`;
+        }
+
+        modal.classList.add('open');
+        document.body.style.overflow = 'hidden';
+    }
+
+    closeFilePreview() {
+        const modal = document.getElementById('rx-file-preview-modal');
+        if (modal) modal.classList.remove('open');
+        document.body.style.overflow = '';
+    }
+
+    _getFilePreviewModal() {
+        let modal = document.getElementById('rx-file-preview-modal');
+        if (modal) return modal;
+
+        this._injectFilePreviewStyles();
+
+        modal = document.createElement('div');
+        modal.id = 'rx-file-preview-modal';
+        modal.className = 'rx-fp-overlay';
+        modal.innerHTML = `
+            <div class="rx-fp-dialog">
+                <div class="rx-fp-header">
+                    <span class="rx-fp-title"></span>
+                    <div class="rx-fp-actions">
+                        <a class="rx-fp-download" download title="Download file">
+                            <span class="material-symbols-outlined">download</span> Download
+                        </a>
+                        <button type="button" class="rx-fp-close" title="Close" onclick="Store.closeFilePreview()">
+                            <span class="material-symbols-outlined">close</span>
+                        </button>
+                    </div>
+                </div>
+                <div class="rx-fp-body"></div>
+            </div>`;
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) this.closeFilePreview();
+        });
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') this.closeFilePreview();
+        });
+        document.body.appendChild(modal);
+        return modal;
+    }
+
+    _injectFilePreviewStyles() {
+        if (document.getElementById('rx-fp-styles')) return;
+        const style = document.createElement('style');
+        style.id = 'rx-fp-styles';
+        style.textContent = `
+            .rx-fp-overlay { display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.6); z-index: 10000; align-items: center; justify-content: center; padding: 1.5rem; }
+            .rx-fp-overlay.open { display: flex; }
+            .rx-fp-dialog { background: #fff; border-radius: 12px; width: min(900px, 100%); height: min(85vh, 900px); display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.3); }
+            .rx-fp-header { display: flex; align-items: center; justify-content: space-between; padding: 0.85rem 1.1rem; border-bottom: 1px solid #e2e8f0; }
+            .rx-fp-title { font-weight: 600; font-size: 0.95rem; color: #0f172a; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+            .rx-fp-actions { display: flex; align-items: center; gap: 0.5rem; flex-shrink: 0; }
+            .rx-fp-download { display: inline-flex; align-items: center; gap: 0.3rem; font-size: 0.82rem; font-weight: 600; color: #fff; background: #2563eb; border-radius: 6px; padding: 0.4rem 0.75rem; text-decoration: none; }
+            .rx-fp-download:hover { background: #1d4ed8; }
+            .rx-fp-download .material-symbols-outlined { font-size: 1.1rem; }
+            .rx-fp-close { background: none; border: none; cursor: pointer; color: #64748b; display: flex; align-items: center; padding: 0.3rem; border-radius: 6px; }
+            .rx-fp-close:hover { background: #f1f5f9; color: #0f172a; }
+            .rx-fp-body { flex: 1; overflow: auto; background: #f8fafc; display: flex; align-items: center; justify-content: center; }
+            .rx-fp-iframe { width: 100%; height: 100%; border: none; }
+            .rx-fp-image { max-width: 100%; max-height: 100%; object-fit: contain; }
+            .rx-fp-unsupported { text-align: center; color: #64748b; padding: 2rem; }
+            .rx-fp-unsupported .material-symbols-outlined { font-size: 3rem; color: #94a3b8; }
+            .rx-fp-unsupported .rx-fp-hint { font-size: 0.82rem; color: #94a3b8; }
+        `;
+        document.head.appendChild(style);
     }
 
     filterTable(inputEl, tbodyId) {
