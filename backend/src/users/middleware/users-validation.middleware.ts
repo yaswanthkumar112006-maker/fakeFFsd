@@ -1,12 +1,15 @@
 import { BadRequestException, Injectable, NestMiddleware } from '@nestjs/common';
 import { NextFunction, Request, Response } from 'express';
 import { ROLES } from '../../common/roles';
+import { UsersFileLoggerService } from './users-file-logger';
 
 const USER_ID_PATTERN = /^[A-Za-z0-9_-]{1,64}$/;
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 @Injectable()
 export class UsersValidationMiddleware implements NestMiddleware {
+  constructor(private readonly fileLogger: UsersFileLoggerService) {}
+
   use(req: Request, res: Response, next: NextFunction): void {
     const body = req.body || {};
 
@@ -15,16 +18,16 @@ export class UsersValidationMiddleware implements NestMiddleware {
       const isCreateEmployee = url.endsWith('/create-employee');
 
       if (isCreateEmployee) {
-        requireText(body.name, 'Name', 100);
-        requireEmail(body.email);
+        this.requireText(req, body.name, 'Name', 100);
+        this.requireEmail(req, body.email);
       } else {
         // Standard user creation
-        requireUserId(body.id);
-        requireText(body.name, 'Name', 100);
-        requireEmail(body.email);
+        this.requireUserId(req, body.id);
+        this.requireText(req, body.name, 'Name', 100);
+        this.requireEmail(req, body.email);
 
         if (typeof body.password !== 'string' || body.password.length < 8) {
-          throw new BadRequestException('Password must be a string and at least 8 characters long.');
+          this.reject(req, 'Password must be a string and at least 8 characters long.');
         }
 
         const role = typeof body.role === 'string' ? body.role.trim() : '';
@@ -32,7 +35,8 @@ export class UsersValidationMiddleware implements NestMiddleware {
           (allowed) => allowed.toLowerCase() === role.toLowerCase(),
         );
         if (!matchedRole) {
-          throw new BadRequestException(
+          this.reject(
+            req,
             `Invalid role: "${body.role ?? ''}". Allowed values: ${ROLES.join(', ')}.`,
           );
         }
@@ -43,35 +47,52 @@ export class UsersValidationMiddleware implements NestMiddleware {
     if (req.method === 'PATCH' || req.method === 'DELETE') {
       const userId = extractUserIdFromUrl(req);
       if (!userId) {
-        throw new BadRequestException('User ID parameter is required.');
+        this.reject(req, 'User ID parameter is required.');
       }
       if (!USER_ID_PATTERN.test(userId)) {
-        throw new BadRequestException(`Invalid User ID: "${userId}".`);
+        this.reject(req, `Invalid User ID: "${userId}".`);
       }
     }
 
     next();
   }
-}
 
-function requireText(value: unknown, label: string, maxLength: number): void {
-  if (typeof value !== 'string' || value.trim() === '') {
-    throw new BadRequestException(`${label} is required and cannot be empty.`);
+  private requireText(req: Request, value: unknown, label: string, maxLength: number): void {
+    if (typeof value !== 'string' || value.trim() === '') {
+      this.reject(req, `${label} is required and cannot be empty.`);
+    }
+    if (value.length > maxLength) {
+      this.reject(req, `${label} must be ${maxLength} characters or fewer.`);
+    }
   }
-  if (value.length > maxLength) {
-    throw new BadRequestException(`${label} must be ${maxLength} characters or fewer.`);
-  }
-}
 
-function requireEmail(value: unknown): void {
-  if (typeof value !== 'string' || !EMAIL_PATTERN.test(value)) {
-    throw new BadRequestException('A valid email address is required.');
+  private requireEmail(req: Request, value: unknown): void {
+    if (typeof value !== 'string' || !EMAIL_PATTERN.test(value)) {
+      this.reject(req, 'A valid email address is required.');
+    }
   }
-}
 
-function requireUserId(value: unknown): void {
-  if (typeof value !== 'string' || !USER_ID_PATTERN.test(value)) {
-    throw new BadRequestException('ID is required and must contain alphanumeric characters, dashes, or underscores only.');
+  private requireUserId(req: Request, value: unknown): void {
+    if (typeof value !== 'string' || !USER_ID_PATTERN.test(value)) {
+      this.reject(req, 'ID is required and must contain alphanumeric characters, dashes, or underscores only.');
+    }
+  }
+
+  private reject(req: Request, message: string): never {
+    const context = (req as any).context || {};
+    this.fileLogger.logError(
+      [
+        new Date().toISOString(),
+        'ERROR',
+        req.method,
+        req.originalUrl,
+        400,
+        `role=${context.role || 'unknown'}`,
+        `user=${context.userId || 'anonymous'}`,
+        message,
+      ].join(' | '),
+    );
+    throw new BadRequestException(message);
   }
 }
 

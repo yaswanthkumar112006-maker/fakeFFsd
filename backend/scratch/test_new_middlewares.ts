@@ -82,7 +82,15 @@ async function runMiddlewareTests() {
   });
   const employeeToken = employeeLogin.body.access_token;
 
-  if (!adminToken || !employeeToken) {
+  const ownerLogin = await makeRequest({
+    name: 'Owner Login',
+    method: 'POST',
+    path: '/api/auth/login',
+    body: { email: 'owner@resourcex.com', password: 'password' }
+  });
+  const ownerToken = ownerLogin.body.access_token;
+
+  if (!adminToken || !employeeToken || !ownerToken) {
     console.error('[ERROR] Authentication tokens could not be retrieved. Ensure server is running.');
     process.exit(1);
   }
@@ -90,6 +98,7 @@ async function runMiddlewareTests() {
 
   const adminHeaders = { 'Authorization': `Bearer ${adminToken}` };
   const employeeHeaders = { 'Authorization': `Bearer ${employeeToken}` };
+  const ownerHeaders = { 'Authorization': `Bearer ${ownerToken}` };
 
   let passed = 0;
   let failed = 0;
@@ -281,14 +290,81 @@ async function runMiddlewareTests() {
   }
 
   // ==========================================
-  // --- 5. RATE LIMITER VERIFICATION ---
+  // --- 5. NEWLY MERGED MODULES TESTS ---
+  // ==========================================
+
+  // Organizations Validation - missing employeeId
+  try {
+    const res = await makeRequest({
+      name: 'Approve Org Missing Employee ID',
+      method: 'PATCH',
+      path: '/api/organizations/ORG-001/approve',
+      headers: ownerHeaders,
+      body: {}
+    });
+    if (res.status === 400 && res.body.message && res.body.message.includes('employeeId is required')) {
+      console.log('[PASS] Organizations - Validation Middleware correctly blocked missing employeeId: Status 400');
+      passed++;
+    } else {
+      console.error('[FAIL] Organizations - Validation Middleware did not block missing employeeId:', res.status, res.body);
+      failed++;
+    }
+  } catch (e: any) {
+    console.error('[ERROR] Organizations validation test failed:', e.message);
+    failed++;
+  }
+
+  // Notifications Validation - missing ID
+  try {
+    const res = await makeRequest({
+      name: 'Notifications PATCH Missing ID',
+      method: 'PATCH',
+      path: '/api/notifications/null',
+      headers: employeeHeaders,
+      body: { read: true }
+    });
+    if (res.status === 400 && res.body.message && res.body.message.includes('Notification ID parameter is required')) {
+      console.log('[PASS] Notifications - Validation Middleware correctly blocked missing ID: Status 400');
+      passed++;
+    } else {
+      console.error('[FAIL] Notifications - Validation Middleware did not block missing ID:', res.status, res.body);
+      failed++;
+    }
+  } catch (e: any) {
+    console.error('[ERROR] Notifications validation test failed:', e.message);
+    failed++;
+  }
+
+  // Analytics Validation - missing stock ID
+  try {
+    const res = await makeRequest({
+      name: 'Analytics Stock Threshold PATCH Missing ID',
+      method: 'PATCH',
+      path: '/api/analytics/stock-thresholds/null/5',
+      headers: employeeHeaders,
+      body: {}
+    });
+    if (res.status === 400 && res.body.message && res.body.message.includes('Stock threshold ID parameter is required')) {
+      console.log('[PASS] Analytics - Validation Middleware correctly blocked missing ID: Status 400');
+      passed++;
+    } else {
+      console.error('[FAIL] Analytics - Validation Middleware did not block missing ID:', res.status, res.body);
+      failed++;
+    }
+  } catch (e: any) {
+    console.error('[ERROR] Analytics validation test failed:', e.message);
+    failed++;
+  }
+
+  // ==========================================
+  // --- 6. RATE LIMITER VERIFICATION ---
   // ==========================================
   console.log('[LOG] Testing Users Rate Limiter middleware (firing 65 requests fast)...');
   let rateLimitedUsers = false;
   try {
     for (let i = 0; i < 65; i++) {
       const res = await makeRequest({
-        name: `Rate Limit Test Request ${i}`,
+        name: `Rate Limit Users Request ${i}`,
         method: 'GET',
         path: '/api/users',
         headers: adminHeaders
@@ -315,7 +391,7 @@ async function runMiddlewareTests() {
   try {
     for (let i = 0; i < 65; i++) {
       const res = await makeRequest({
-        name: `Rate Limit Test Request ${i}`,
+        name: `Rate Limit Profile Request ${i}`,
         method: 'GET',
         path: '/api/profile/me',
         headers: employeeHeaders
@@ -337,8 +413,35 @@ async function runMiddlewareTests() {
     failed++;
   }
 
+  console.log('[LOG] Testing Organizations Rate Limiter middleware (firing 65 requests fast)...');
+  let rateLimitedOrganizations = false;
+  try {
+    for (let i = 0; i < 65; i++) {
+      const res = await makeRequest({
+        name: `Rate Limit Organizations Request ${i}`,
+        method: 'GET',
+        path: '/api/organizations/public',
+        headers: employeeHeaders
+      });
+      if (res.status === 429) {
+        rateLimitedOrganizations = true;
+        break;
+      }
+    }
+    if (rateLimitedOrganizations) {
+      console.log('[PASS] Organizations - Security Rate Limiter triggered: Status 429');
+      passed++;
+    } else {
+      console.error('[FAIL] Organizations - Security Rate Limiter did not trigger after 60+ requests.');
+      failed++;
+    }
+  } catch (e: any) {
+    console.error('[ERROR] Organizations Rate Limiter test failed:', e.message);
+    failed++;
+  }
+
   // ==========================================
-  // --- 6. LOG FILE CREATION AND ERROR TRIGGERS ---
+  // --- 7. LOG FILE CREATION AND ERROR TRIGGERS ---
   // ==========================================
   console.log('[LOG] Triggering errors to verify module-scoped exception filters...');
   try {
@@ -374,6 +477,37 @@ async function runMiddlewareTests() {
       headers: employeeHeaders,
       body: { currentPassword: '' }
     });
+    // Trigger Organizations error
+    await makeRequest({
+      name: 'Trigger Organizations Exception',
+      method: 'PATCH',
+      path: '/api/organizations/ORG-INVALID/approve',
+      headers: adminHeaders,
+      body: { employeeId: 'E1' }
+    });
+    // Trigger Notifications error
+    await makeRequest({
+      name: 'Trigger Notifications Exception',
+      method: 'PATCH',
+      path: '/api/notifications/NOT-FOUND',
+      headers: employeeHeaders,
+      body: { read: true }
+    });
+    // Trigger Analytics error
+    await makeRequest({
+      name: 'Trigger Analytics Exception',
+      method: 'PATCH',
+      path: '/api/analytics/stock-thresholds/NOT-FOUND/5',
+      headers: employeeHeaders,
+      body: {}
+    });
+    // Trigger Platform Analytics access entry
+    await makeRequest({
+      name: 'Trigger Platform Analytics Access Entry',
+      method: 'GET',
+      path: '/api/platform-analytics',
+      headers: adminHeaders
+    });
   } catch (e) {
     // ignore
   }
@@ -391,7 +525,15 @@ async function runMiddlewareTests() {
     'users-access.log',
     'users-error.log',
     'profile-access.log',
-    'profile-error.log'
+    'profile-error.log',
+    'analytics-access.log',
+    'analytics-error.log',
+    'platform-analytics-access.log',
+    'platform-analytics-error.log',
+    'organizations-access.log',
+    'organizations-error.log',
+    'notifications-access.log',
+    'notifications-error.log'
   ];
 
   let logsPassed = true;
@@ -416,11 +558,11 @@ async function runMiddlewareTests() {
   }
 
   console.log('\n=== MIDDLEWARE VERIFICATION SUMMARY ===');
-  console.log(`Passed: ${passed} / 11`);
-  console.log(`Failed: ${failed} / 11`);
+  console.log(`Passed: ${passed} / 15`);
+  console.log(`Failed: ${failed} / 15`);
 
   if (failed === 0) {
-    console.log('\n[SUCCESS] Profile and all other module middlewares are correctly modularized and functional!');
+    console.log('\n[SUCCESS] All module middlewares (including new ones) are correctly modularized and functional!');
   } else {
     console.error('\n[FAILURE] Some middleware tests failed. Check log outputs above.');
     process.exit(1);
