@@ -7,7 +7,8 @@ import {
   Patch,
   Post,
   Req,
-  Query
+  Query,
+  UseFilters
 } from '@nestjs/common';
 import {
   ApiBody,
@@ -24,11 +25,13 @@ import { ApiRoleHeaders, ApiStandardErrorResponses } from '../common/swagger';
 import { UsersService } from './users.service';
 import { CreateUserDto, UpdateUserDto } from './dto/user.dto';
 import { Public } from '../auth/public.decorator';
+import { UsersExceptionFilter } from './filters/users-exception.filter';
 
 @ApiTags('users')
 @ApiRoleHeaders()
 @ApiStandardErrorResponses()
 @Controller('users')
+@UseFilters(UsersExceptionFilter)
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
