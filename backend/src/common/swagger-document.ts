@@ -8,7 +8,7 @@ export function buildSwaggerConfig() {
       'Demo-exact NestJS backend for the ResourceX frontend. All authorization is role-based through JWT Bearer tokens. Log in via /api/auth/login to get your token and include it as a Bearer authorization header.',
     )
     .setVersion('1.0.0')
-    .addServer('/api', 'API base path')
+    .addServer('/', 'API base path')
     .addBearerAuth(
       {
         type: 'http',
