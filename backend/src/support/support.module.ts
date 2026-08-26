@@ -1,43 +1,37 @@
-import { MiddlewareConsumer, Module, NestModule, RequestMethod } from '@nestjs/common';
+import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { SupportService } from './support.service';
 import { SupportController } from './support.controller';
 import { DataModule } from '../data/data.module';
-import { LoggingMiddleware } from '../common/middleware/logging.middleware';
+import { SupportLoggingMiddleware } from './middleware/support-logging.middleware';
 import {
-  RateLimitMiddleware,
-  SecurityMiddleware,
-} from '../common/middleware/security.middleware';
-import { SupportRouterMiddleware } from '../common/middleware/support.middleware';
-import { singleFileUpload } from '../common/middleware/upload.middleware';
-import { ServiceExceptionFilter } from '../common/middleware/error-handling.filter';
+  SupportRateLimitMiddleware,
+  SupportSecurityHeadersMiddleware,
+} from './middleware/support-security.middleware';
+import { SupportValidationMiddleware } from './middleware/support-validation.middleware';
+import { SupportFileLoggerService } from './middleware/support-file-logger';
+import { SupportExceptionFilter } from './filters/support-exception.filter';
 
 @Module({
   imports: [DataModule],
   controllers: [SupportController],
-  // ServiceExceptionFilter is listed as a provider (not only passed to @UseFilters
-  // on the controller) so Nest's DI container can resolve its file-logger dependency.
-  providers: [SupportService, ServiceExceptionFilter],
+  // SupportFileLoggerService is the shared singleton every middleware/filter below
+  // injects. SupportExceptionFilter is listed here too (not just passed to
+  // @UseFilters()) so Nest's DI container can resolve its own constructor dependency.
+  providers: [SupportService, SupportFileLoggerService, SupportExceptionFilter],
 })
 export class SupportModule implements NestModule {
-  // Router-level middleware: scoped to this module's routes via forRoutes, not
-  // registered globally in main.ts. Order is deliberate — see the comments below.
+  // Router-level middleware: scoped to this module's routes only (via forRoutes),
+  // not registered globally. Order matters — logging goes first so every request is
+  // recorded even if a later middleware rejects it; security headers apply to every
+  // response; rate-limiting turns away abusive callers before validation work runs.
   configure(consumer: MiddlewareConsumer) {
-    // 1. Logging     — record every request, including ones rejected further down.
-    // 2. Security    — protective headers on every response.
-    // 3. Rate limit  — turn abusive callers away before doing any parsing work.
     consumer
-      .apply(LoggingMiddleware, SecurityMiddleware, RateLimitMiddleware)
+      .apply(
+        SupportLoggingMiddleware,
+        SupportSecurityHeadersMiddleware,
+        SupportRateLimitMiddleware,
+        SupportValidationMiddleware,
+      )
       .forRoutes(SupportController);
-
-    // 4. File upload — multer, for the optional attachment on POST /api/support.
-    //    Registered before the validator so that req.body is populated for
-    //    multipart/form-data too, letting step 5 validate JSON and multipart alike.
-    consumer
-      .apply(singleFileUpload('attachment'))
-      .forRoutes({ path: 'support', method: RequestMethod.POST });
-
-    // 5. Router-level validation — POST body fields, and the reply/status pair on
-    //    PATCH /api/support/:id/resolve.
-    consumer.apply(SupportRouterMiddleware).forRoutes(SupportController);
   }
 }

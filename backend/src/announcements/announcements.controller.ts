@@ -1,13 +1,15 @@
-import { Controller, Get, Post, Patch, Body, Param, Req } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Body, Param, Req, UseFilters } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { AnnouncementsService } from './announcements.service';
 import { Roles } from '../common/roles.decorator';
 import { RequestContext } from '../common/roles';
 import { CreateAnnouncementDto } from './dto/announcement.dto';
+import { CommunicationsExceptionFilter } from './filters/communications-exception.filter';
 
 @ApiTags('Announcements')
 @ApiBearerAuth()
 @Controller('announcements')
+@UseFilters(CommunicationsExceptionFilter)
 export class AnnouncementsController {
   constructor(private readonly announcementsService: AnnouncementsService) {}
 
