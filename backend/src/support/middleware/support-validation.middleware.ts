@@ -1,30 +1,21 @@
 import { BadRequestException, Injectable, NestMiddleware } from '@nestjs/common';
 import { NextFunction, Request, Response } from 'express';
-import { TicketStatus } from '../domain';
+import { TicketStatus } from '../../common/domain';
 
-/**
- * Canonical ticket states, matching the TicketStatus union in common/domain and the
- * @IsIn list on ResolveTicketDto. These three lists have to agree — when they didn't,
- * every possible resolve payload was rejected: this middleware demanded uppercase
- * "RESOLVED" while the DTO's ValidationPipe demanded "Resolved".
- */
+// Canonical ticket states, matching the TicketStatus union in common/domain and the
+// @IsIn list on ResolveTicketDto.
 const ALLOWED_STATUSES: TicketStatus[] = ['Open', 'In Progress', 'Resolved'];
 
 const MAX_TITLE_LENGTH = 200;
 const MAX_TEXT_LENGTH = 5000;
 
-/**
- * Router-level middleware for the Support API (/api/support).
- *
- *   GET    /                 — list tickets (nothing to validate)
- *   POST   /                 — create a ticket: title + description required
- *   PATCH  /:id/resolve      — resolve/reply: reply required, status optional
- *
- * Runs after the upload middleware, so req.body is already populated for both JSON
- * and multipart/form-data submissions and one validation path covers both.
- */
+// Router-level validation middleware for the Support API (/api/support).
+//
+//   GET    /                 — list tickets (nothing to validate)
+//   POST   /                 — create a ticket: title + description required
+//   PATCH  /:id/resolve      — resolve/reply: reply required, status optional
 @Injectable()
-export class SupportRouterMiddleware implements NestMiddleware {
+export class SupportValidationMiddleware implements NestMiddleware {
   use(req: Request, res: Response, next: NextFunction): void {
     const body = req.body || {};
 
@@ -41,15 +32,11 @@ export class SupportRouterMiddleware implements NestMiddleware {
 
       requireText(body.reply, 'Reply', MAX_TEXT_LENGTH);
 
-      // status is optional — the service defaults it to 'Resolved'. Only validate
-      // it when the caller actually sent one.
       if (body.status !== undefined && body.status !== null && body.status !== '') {
         if (typeof body.status !== 'string') {
           throw new BadRequestException('Status must be a string.');
         }
 
-        // Accept any casing the caller sends and normalise to the canonical value,
-        // so "RESOLVED" and "resolved" both reach the DTO as "Resolved".
         const match = ALLOWED_STATUSES.find(
           (allowed) => allowed.toLowerCase() === body.status.trim().toLowerCase(),
         );
@@ -68,7 +55,6 @@ export class SupportRouterMiddleware implements NestMiddleware {
   }
 }
 
-/** Require a non-empty string within a length bound, or reject with a clear message. */
 function requireText(value: unknown, label: string, maxLength: number): void {
   if (typeof value !== 'string' || value.trim() === '') {
     throw new BadRequestException(`${label} is required and cannot be empty.`);
@@ -78,10 +64,8 @@ function requireText(value: unknown, label: string, maxLength: number): void {
   }
 }
 
-/**
- * Middleware runs before the router matches a route, so req.params is empty here.
- * Read the id out of the URL instead: /api/support/:id/resolve.
- */
+// Middleware runs before the router matches a route, so req.params is empty here.
+// Read the id out of the URL instead: /api/support/:id/resolve.
 function extractTicketId(req: Request): string | null {
   const url = (req.originalUrl || req.url || '').split('?')[0];
   const parts = url.split('/').filter(Boolean);

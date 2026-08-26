@@ -2,32 +2,33 @@ import { Injectable } from '@nestjs/common';
 import { appendFile, mkdir, rename } from 'fs/promises';
 import { join } from 'path';
 
-// Scoped to the Procurements module only — writes every access/error line straight
-// to its own log file the moment it happens (no in-memory buffering, so nothing is
-// ever lost if the process crashes). Log files are rotated daily: when the date
-// changes, the current file is renamed to procurements-access-YYYY-MM-DD.log and a
-// fresh one is started — the "regular interval" at which log data is managed.
+// Scoped to the Announcements (Communications) module only — writes every
+// access/error line straight to its own log file the moment it happens (no
+// in-memory buffering, so nothing is ever lost if the process crashes). Log files
+// are rotated daily: when the date changes, the current file is renamed to
+// communications-access-YYYY-MM-DD.log and a fresh one is started — the "regular
+// interval" at which log data is managed.
 @Injectable()
-export class ProcurementFileLoggerService {
+export class CommunicationsFileLoggerService {
   private static readonly LOG_DIR = join(process.cwd(), 'logs');
   private static readonly ACCESS_LOG_FILE = join(
-    ProcurementFileLoggerService.LOG_DIR,
-    'procurements-access.log',
+    CommunicationsFileLoggerService.LOG_DIR,
+    'communications-access.log',
   );
   private static readonly ERROR_LOG_FILE = join(
-    ProcurementFileLoggerService.LOG_DIR,
-    'procurements-error.log',
+    CommunicationsFileLoggerService.LOG_DIR,
+    'communications-error.log',
   );
 
   private dirReadyPromise: Promise<void> | null = null;
-  private currentDate = ProcurementFileLoggerService.today();
+  private currentDate = CommunicationsFileLoggerService.today();
 
   logAccess(line: string): void {
-    void this.writeLine(ProcurementFileLoggerService.ACCESS_LOG_FILE, line);
+    void this.writeLine(CommunicationsFileLoggerService.ACCESS_LOG_FILE, line);
   }
 
   logError(line: string): void {
-    void this.writeLine(ProcurementFileLoggerService.ERROR_LOG_FILE, line);
+    void this.writeLine(CommunicationsFileLoggerService.ERROR_LOG_FILE, line);
   }
 
   private static today(): string {
@@ -36,24 +37,23 @@ export class ProcurementFileLoggerService {
 
   private ensureLogDir(): Promise<void> {
     if (!this.dirReadyPromise) {
-      this.dirReadyPromise = mkdir(ProcurementFileLoggerService.LOG_DIR, {
+      this.dirReadyPromise = mkdir(CommunicationsFileLoggerService.LOG_DIR, {
         recursive: true,
       }).then(() => undefined);
     }
     return this.dirReadyPromise;
   }
 
-  /** Roll access/error logs to a date-stamped archive when the day changes. */
   private async rotateIfNeeded(): Promise<void> {
-    const today = ProcurementFileLoggerService.today();
+    const today = CommunicationsFileLoggerService.today();
     if (today === this.currentDate) return;
 
     const stamp = this.currentDate;
     this.currentDate = today;
 
     for (const file of [
-      ProcurementFileLoggerService.ACCESS_LOG_FILE,
-      ProcurementFileLoggerService.ERROR_LOG_FILE,
+      CommunicationsFileLoggerService.ACCESS_LOG_FILE,
+      CommunicationsFileLoggerService.ERROR_LOG_FILE,
     ]) {
       try {
         await rename(file, file.replace(/\.log$/, `-${stamp}.log`));
@@ -69,8 +69,7 @@ export class ProcurementFileLoggerService {
       await this.rotateIfNeeded();
       await appendFile(file, line + '\n', 'utf8');
     } catch (err) {
-      // Never let a logging failure break a request — surface it on stderr instead.
-      console.error(`[procurements] failed to write log file ${file}:`, err);
+      console.error(`[communications] failed to write log file ${file}:`, err);
     }
   }
 }

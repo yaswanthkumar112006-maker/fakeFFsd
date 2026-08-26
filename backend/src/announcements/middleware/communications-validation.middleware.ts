@@ -1,31 +1,23 @@
 import { BadRequestException, Injectable, NestMiddleware } from '@nestjs/common';
 import { NextFunction, Request, Response } from 'express';
-import { AnnouncementType } from '../domain';
+import { AnnouncementType } from '../../common/domain';
 
-/** Must stay in step with the AnnouncementType union and CreateAnnouncementDto's @IsIn list. */
-const ALLOWED_TYPES: AnnouncementType[] = [
-  'Maintenance',
-  'New Feature',
-  'Policy',
-  'General',
-  'Subscription',
-];
+// Must stay in step with the AnnouncementType union and CreateAnnouncementDto's @IsIn list.
+const ALLOWED_TYPES: AnnouncementType[] = ['Maintenance', 'New Feature', 'Policy', 'General'];
 
 const MAX_TITLE_LENGTH = 200;
 const MAX_MESSAGE_LENGTH = 5000;
 
-/**
- * Router-level middleware for the Communications API (/api/announcements).
- *
- *   GET   /                — list announcements (nothing to validate)
- *   POST  /                — broadcast: title, message, type and targetOrgId required
- *   PATCH /:id/reply       — admin reply: reply body required
- *
- * A broadcast fans out to every organisation when targetOrgId is 'ALL', so a
- * malformed payload is worth stopping at the door rather than part-way through.
- */
+// Router-level validation middleware for the Communications API (/api/announcements).
+//
+//   GET   /                — list announcements (nothing to validate)
+//   POST  /                — broadcast: title, message, type and targetOrgId required
+//   PATCH /:id/reply       — admin reply: reply body required
+//
+// A broadcast fans out to every organisation when targetOrgId is 'ALL', so a
+// malformed payload is worth stopping at the door rather than part-way through.
 @Injectable()
-export class CommunicationsRouterMiddleware implements NestMiddleware {
+export class CommunicationsValidationMiddleware implements NestMiddleware {
   use(req: Request, res: Response, next: NextFunction): void {
     const body = req.body || {};
 
@@ -33,8 +25,6 @@ export class CommunicationsRouterMiddleware implements NestMiddleware {
       requireText(body.title, 'Title', MAX_TITLE_LENGTH);
       requireText(body.message, 'Message', MAX_MESSAGE_LENGTH);
 
-      // Normalise casing so 'general' and 'General' are both accepted, then hand the
-      // canonical value to the DTO's @IsIn check.
       const type = typeof body.type === 'string' ? body.type.trim() : '';
       const matchedType = ALLOWED_TYPES.find(
         (allowed) => allowed.toLowerCase() === type.toLowerCase(),
@@ -69,7 +59,7 @@ function requireText(value: unknown, label: string, maxLength: number): void {
   }
 }
 
-/** req.params is empty in middleware, so read the id from the URL: /api/announcements/:id/reply. */
+// req.params is empty in middleware, so read the id from the URL: /api/announcements/:id/reply.
 function extractAnnouncementId(req: Request): string | null {
   const url = (req.originalUrl || req.url || '').split('?')[0];
   const parts = url.split('/').filter(Boolean);

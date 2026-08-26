@@ -1,39 +1,22 @@
 import { HttpException, HttpStatus, Injectable, NestMiddleware } from '@nestjs/common';
 import { NextFunction, Request, Response } from 'express';
-import { ServiceFileLoggerService } from './service-file-logger';
+import { CommunicationsFileLoggerService } from './communications-file-logger';
 
-/**
- * Security middleware (part 1) — hardens every response on the Support,
- * Communications and Maintenance routes with the standard protective headers.
- */
+// Security middleware (part 1) — hardens every response on the Announcements routes
+// with the standard protective headers.
 @Injectable()
-export class SecurityMiddleware implements NestMiddleware {
+export class CommunicationsSecurityHeadersMiddleware implements NestMiddleware {
   use(req: Request, res: Response, next: NextFunction): void {
-    // Stop browsers from MIME-sniffing a response away from the declared type.
     res.setHeader('X-Content-Type-Options', 'nosniff');
-
-    // Clickjacking protection.
     res.setHeader('X-Frame-Options', 'DENY');
-
-    // Legacy XSS filter, still honoured by older browsers.
     res.setHeader('X-XSS-Protection', '1; mode=block');
-
-    // Don't leak the current URL to third parties.
     res.setHeader('Referrer-Policy', 'no-referrer');
-
-    // Turn off browser features these APIs never need.
     res.setHeader('Permissions-Policy', 'geolocation=(), microphone=(), camera=()');
-
     res.setHeader(
       'Content-Security-Policy',
       "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:;",
     );
-
-    // Ticket / announcement / maintenance payloads are per-user and must not be
-    // held in a shared cache.
     res.setHeader('Cache-Control', 'no-store');
-
-    // Don't advertise the server stack.
     res.removeHeader('X-Powered-By');
 
     next();
@@ -49,21 +32,14 @@ interface Bucket {
   resetAt: number;
 }
 
-/**
- * Security middleware (part 2) — a fixed-window, in-memory rate limiter.
- *
- * Guards these endpoints against double-submits and runaway scripts: a burst of
- * announcement broadcasts or repeated scrap calls would otherwise mutate shared
- * state on every hit. Per-process by design — this app has no shared cache tier,
- * and per-process limiting is sufficient at this scope.
- */
+// Security middleware (part 2) — a fixed-window, in-memory rate limiter. A broadcast
+// fans out to every organisation, so throttling repeat sends matters here specifically.
 @Injectable()
-export class RateLimitMiddleware implements NestMiddleware {
+export class CommunicationsRateLimitMiddleware implements NestMiddleware {
   private readonly buckets = new Map<string, Bucket>();
   private readonly sweepTimer: NodeJS.Timeout;
 
-  constructor(private readonly fileLogger: ServiceFileLoggerService) {
-    // Keep the bucket map from growing without bound as callers come and go.
+  constructor(private readonly fileLogger: CommunicationsFileLoggerService) {
     this.sweepTimer = setInterval(() => {
       const now = Date.now();
       for (const [key, bucket] of this.buckets) {
@@ -86,10 +62,7 @@ export class RateLimitMiddleware implements NestMiddleware {
     bucket.count += 1;
 
     res.setHeader('X-RateLimit-Limit', String(MAX_REQUESTS_PER_WINDOW));
-    res.setHeader(
-      'X-RateLimit-Remaining',
-      String(Math.max(0, MAX_REQUESTS_PER_WINDOW - bucket.count)),
-    );
+    res.setHeader('X-RateLimit-Remaining', String(Math.max(0, MAX_REQUESTS_PER_WINDOW - bucket.count)));
 
     if (bucket.count > MAX_REQUESTS_PER_WINDOW) {
       const retryAfterSeconds = Math.ceil((bucket.resetAt - now) / 1000);
@@ -100,14 +73,14 @@ export class RateLimitMiddleware implements NestMiddleware {
           new Date().toISOString(),
           'ERROR',
           req.method,
-          req.originalUrl || req.url,
+          req.originalUrl,
           HttpStatus.TOO_MANY_REQUESTS,
           `Rate limit exceeded (${bucket.count}/${MAX_REQUESTS_PER_WINDOW} per ${WINDOW_MS / 1000}s)`,
         ].join(' | '),
       );
 
       throw new HttpException(
-        'Too many requests — please slow down and try again shortly.',
+        'Too many announcement requests — please slow down and try again shortly.',
         HttpStatus.TOO_MANY_REQUESTS,
       );
     }
@@ -115,8 +88,6 @@ export class RateLimitMiddleware implements NestMiddleware {
     next();
   }
 
-  // Guards run after middleware, so req.context isn't populated here yet. The raw
-  // bearer token is still a stable per-user key, which is what actually matters.
   private resolveKey(req: Request): string {
     return req.headers.authorization || req.ip || 'anonymous';
   }

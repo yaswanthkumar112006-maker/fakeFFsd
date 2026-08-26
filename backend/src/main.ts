@@ -7,7 +7,6 @@ import * as express from 'express';
 import { AppModule } from './app.module';
 import { createSwaggerDocument } from './common/swagger-document';
 import { SwaggerModule } from '@nestjs/swagger';
-import { CentralErrorFilter } from './common/middleware/error-handling.filter';
 
 async function bootstrap() {
   // Disable built-in body parser so we can set a custom size limit
@@ -27,9 +26,6 @@ async function bootstrap() {
       forbidNonWhitelisted: false,
     }),
   );
-
-  // 5. Error handling middleware — catches all exceptions, logs to logs/error.log
-  app.useGlobalFilters(new CentralErrorFilter());
 
   const document = createSwaggerDocument(app);
   SwaggerModule.setup('api/docs', app, document);

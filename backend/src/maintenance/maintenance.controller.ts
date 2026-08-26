@@ -1,14 +1,16 @@
-import { Controller, Get, Param, Post, Req } from '@nestjs/common';
+import { Controller, Get, Param, Post, Req, UseFilters } from '@nestjs/common';
 import { ApiOkResponse, ApiOperation, ApiParam, ApiTags } from '@nestjs/swagger';
 import { Roles } from '../common/roles.decorator';
 import { MaintenanceHistoryResponseDto, ResourceResponseDto } from '../common/swagger-models';
 import { ApiRoleHeaders, ApiStandardErrorResponses } from '../common/swagger';
 import { MaintenanceService } from './maintenance.service';
+import { MaintenanceExceptionFilter } from './filters/maintenance-exception.filter';
 
 @ApiTags('maintenance')
 @ApiRoleHeaders()
 @ApiStandardErrorResponses()
 @Controller('maintenance')
+@UseFilters(MaintenanceExceptionFilter)
 export class MaintenanceController {
   constructor(private readonly maintenanceService: MaintenanceService) {}
 
