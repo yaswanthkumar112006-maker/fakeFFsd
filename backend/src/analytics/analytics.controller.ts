@@ -1,4 +1,4 @@
-import { BadRequestException, Controller, Get, Patch, Param, Req } from '@nestjs/common';
+import { BadRequestException, Controller, Get, Patch, Param, Req, UseFilters } from '@nestjs/common';
 import { ApiOkResponse, ApiOperation, ApiParam, ApiTags } from '@nestjs/swagger';
 import { AnalyticsService } from './analytics.service';
 import {
@@ -9,11 +9,13 @@ import {
 } from '../common/swagger-models';
 import { ApiRoleHeaders, ApiStandardErrorResponses } from '../common/swagger';
 import { UpdateStockThresholdParamDto } from './dto/stock-threshold.dto';
+import { AnalyticsExceptionFilter } from './filters/analytics-exception.filter';
 
 @ApiTags('analytics')
 @ApiRoleHeaders()
 @ApiStandardErrorResponses()
 @Controller('analytics')
+@UseFilters(AnalyticsExceptionFilter)
 export class AnalyticsController {
   constructor(private readonly analyticsService: AnalyticsService) {}
 

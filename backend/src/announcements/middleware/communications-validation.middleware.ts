@@ -1,6 +1,7 @@
 import { BadRequestException, Injectable, NestMiddleware } from '@nestjs/common';
 import { NextFunction, Request, Response } from 'express';
 import { AnnouncementType } from '../../common/domain';
+import { CommunicationsFileLoggerService } from './communications-file-logger';
 
 // Must stay in step with the AnnouncementType union and CreateAnnouncementDto's @IsIn list.
 const ALLOWED_TYPES: AnnouncementType[] = ['Maintenance', 'New Feature', 'Policy', 'General'];
@@ -16,46 +17,69 @@ const MAX_MESSAGE_LENGTH = 5000;
 //
 // A broadcast fans out to every organisation when targetOrgId is 'ALL', so a
 // malformed payload is worth stopping at the door rather than part-way through.
+// Runs before Nest resolves a controller, so CommunicationsExceptionFilter isn't in
+// scope for anything thrown here — self-logs via reject() so a rejection is still
+// captured in communications-error.log either way.
 @Injectable()
 export class CommunicationsValidationMiddleware implements NestMiddleware {
+  constructor(private readonly fileLogger: CommunicationsFileLoggerService) {}
+
   use(req: Request, res: Response, next: NextFunction): void {
     const body = req.body || {};
 
     if (req.method === 'POST') {
-      requireText(body.title, 'Title', MAX_TITLE_LENGTH);
-      requireText(body.message, 'Message', MAX_MESSAGE_LENGTH);
+      this.requireText(req, body.title, 'Title', MAX_TITLE_LENGTH);
+      this.requireText(req, body.message, 'Message', MAX_MESSAGE_LENGTH);
 
       const type = typeof body.type === 'string' ? body.type.trim() : '';
       const matchedType = ALLOWED_TYPES.find(
         (allowed) => allowed.toLowerCase() === type.toLowerCase(),
       );
       if (!matchedType) {
-        throw new BadRequestException(
+        this.reject(
+          req,
           `Invalid announcement type: "${body.type ?? ''}". Allowed values: ${ALLOWED_TYPES.join(', ')}.`,
         );
       }
       body.type = matchedType;
 
-      requireText(body.targetOrgId, 'Target organisation', 64);
+      this.requireText(req, body.targetOrgId, 'Target organisation', 64);
     }
 
     if (req.method === 'PATCH') {
       if (!extractAnnouncementId(req)) {
-        throw new BadRequestException('Announcement ID parameter is required.');
+        this.reject(req, 'Announcement ID parameter is required.');
       }
-      requireText(body.reply, 'Reply', MAX_MESSAGE_LENGTH);
+      this.requireText(req, body.reply, 'Reply', MAX_MESSAGE_LENGTH);
     }
 
     next();
   }
-}
 
-function requireText(value: unknown, label: string, maxLength: number): void {
-  if (typeof value !== 'string' || value.trim() === '') {
-    throw new BadRequestException(`${label} is required and cannot be empty.`);
+  private requireText(req: Request, value: unknown, label: string, maxLength: number): void {
+    if (typeof value !== 'string' || value.trim() === '') {
+      this.reject(req, `${label} is required and cannot be empty.`);
+    }
+    if ((value as string).length > maxLength) {
+      this.reject(req, `${label} must be ${maxLength} characters or fewer.`);
+    }
   }
-  if (value.length > maxLength) {
-    throw new BadRequestException(`${label} must be ${maxLength} characters or fewer.`);
+
+  private reject(req: Request, message: string): never {
+    const context = (req as any).context || {};
+    this.fileLogger.logError(
+      [
+        new Date().toISOString(),
+        'ERROR',
+        req.method,
+        req.originalUrl,
+        400,
+        `role=${context.role || 'unknown'}`,
+        `user=${context.userId || 'anonymous'}`,
+        message,
+      ].join(' | '),
+    );
+    throw new BadRequestException(message);
   }
 }
 
