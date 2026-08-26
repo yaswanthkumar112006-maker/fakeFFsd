@@ -1,15 +1,17 @@
-import { Body, Controller, Get, Param, Patch, Post, Query, Req } from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Post, Query, Req, UseFilters } from '@nestjs/common';
 import { ApiBody, ApiCreatedResponse, ApiOkResponse, ApiOperation, ApiParam, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { Roles } from '../common/roles.decorator';
 import { RequestResponseDto } from '../common/swagger-models';
 import { ApiRoleHeaders, ApiStandardErrorResponses } from '../common/swagger';
 import { RequestsService } from './requests.service';
 import { AllocateRequestDto, CreateRequestDto, UpdateRequestDto } from './dto/request.dto';
+import { RequestsExceptionFilter } from './filters/requests-exception.filter';
 
 @ApiTags('requests')
 @ApiRoleHeaders()
 @ApiStandardErrorResponses()
 @Controller('requests')
+@UseFilters(RequestsExceptionFilter)
 export class RequestsController {
   constructor(private readonly requestsService: RequestsService) {}
 
