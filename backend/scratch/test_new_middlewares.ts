@@ -235,10 +235,56 @@ async function runMiddlewareTests() {
   }
 
   // ==========================================
-  // --- 4. RATE LIMITER VERIFICATION ---
+  // --- 4. PROFILE MODULE TESTS (New) ---
+  // ==========================================
+  
+  // Profile Update - Invalid Email
+  try {
+    const res = await makeRequest({
+      name: 'Update Profile with Invalid Email',
+      method: 'PATCH',
+      path: '/api/profile/me',
+      headers: employeeHeaders,
+      body: { email: 'invalid-email-address' }
+    });
+    if (res.status === 400 && res.body.message && res.body.message.includes('valid email address is required')) {
+      console.log('[PASS] Profile - Validation Middleware correctly blocked invalid email: Status 400');
+      passed++;
+    } else {
+      console.error('[FAIL] Profile - Validation Middleware did not block invalid email correctly:', res.status, res.body);
+      failed++;
+    }
+  } catch (e: any) {
+    console.error('[ERROR] Profile email validation test failed:', e.message);
+    failed++;
+  }
+
+  // Profile Password Update - Short New Password
+  try {
+    const res = await makeRequest({
+      name: 'Update Profile Password with Short Password',
+      method: 'POST',
+      path: '/api/profile/me/password',
+      headers: employeeHeaders,
+      body: { currentPassword: 'password', newPassword: '123' }
+    });
+    if (res.status === 400 && res.body.message && res.body.message.includes('New password must be')) {
+      console.log('[PASS] Profile - Validation Middleware correctly blocked short new password: Status 400');
+      passed++;
+    } else {
+      console.error('[FAIL] Profile - Validation Middleware did not block short new password correctly:', res.status, res.body);
+      failed++;
+    }
+  } catch (e: any) {
+    console.error('[ERROR] Profile password validation test failed:', e.message);
+    failed++;
+  }
+
+  // ==========================================
+  // --- 5. RATE LIMITER VERIFICATION ---
   // ==========================================
   console.log('[LOG] Testing Users Rate Limiter middleware (firing 65 requests fast)...');
-  let rateLimited = false;
+  let rateLimitedUsers = false;
   try {
     for (let i = 0; i < 65; i++) {
       const res = await makeRequest({
@@ -248,11 +294,11 @@ async function runMiddlewareTests() {
         headers: adminHeaders
       });
       if (res.status === 429) {
-        rateLimited = true;
+        rateLimitedUsers = true;
         break;
       }
     }
-    if (rateLimited) {
+    if (rateLimitedUsers) {
       console.log('[PASS] Users - Security Rate Limiter triggered: Status 429');
       passed++;
     } else {
@@ -260,12 +306,39 @@ async function runMiddlewareTests() {
       failed++;
     }
   } catch (e: any) {
-    console.error('[ERROR] Rate Limiter test failed:', e.message);
+    console.error('[ERROR] Users Rate Limiter test failed:', e.message);
+    failed++;
+  }
+
+  console.log('[LOG] Testing Profile Rate Limiter middleware (firing 65 requests fast)...');
+  let rateLimitedProfile = false;
+  try {
+    for (let i = 0; i < 65; i++) {
+      const res = await makeRequest({
+        name: `Rate Limit Test Request ${i}`,
+        method: 'GET',
+        path: '/api/profile/me',
+        headers: employeeHeaders
+      });
+      if (res.status === 429) {
+        rateLimitedProfile = true;
+        break;
+      }
+    }
+    if (rateLimitedProfile) {
+      console.log('[PASS] Profile - Security Rate Limiter triggered: Status 429');
+      passed++;
+    } else {
+      console.error('[FAIL] Profile - Security Rate Limiter did not trigger after 60+ requests.');
+      failed++;
+    }
+  } catch (e: any) {
+    console.error('[ERROR] Profile Rate Limiter test failed:', e.message);
     failed++;
   }
 
   // ==========================================
-  // --- 5. LOG FILE CREATION AND ERROR TRIGGERS ---
+  // --- 6. LOG FILE CREATION AND ERROR TRIGGERS ---
   // ==========================================
   console.log('[LOG] Triggering errors to verify module-scoped exception filters...');
   try {
@@ -293,6 +366,14 @@ async function runMiddlewareTests() {
       headers: adminHeaders,
       body: { name: 'New Name' }
     });
+    // Trigger Profile error (password update with missing fields)
+    await makeRequest({
+      name: 'Trigger Profile Exception',
+      method: 'POST',
+      path: '/api/profile/me/password',
+      headers: employeeHeaders,
+      body: { currentPassword: '' }
+    });
   } catch (e) {
     // ignore
   }
@@ -308,7 +389,9 @@ async function runMiddlewareTests() {
     'communications-access.log',
     'communications-error.log',
     'users-access.log',
-    'users-error.log'
+    'users-error.log',
+    'profile-access.log',
+    'profile-error.log'
   ];
 
   let logsPassed = true;
@@ -333,11 +416,11 @@ async function runMiddlewareTests() {
   }
 
   console.log('\n=== MIDDLEWARE VERIFICATION SUMMARY ===');
-  console.log(`Passed: ${passed} / 8`);
-  console.log(`Failed: ${failed} / 8`);
+  console.log(`Passed: ${passed} / 11`);
+  console.log(`Failed: ${failed} / 11`);
 
   if (failed === 0) {
-    console.log('\n[SUCCESS] Users and all other module middlewares are correctly modularized and functional!');
+    console.log('\n[SUCCESS] Profile and all other module middlewares are correctly modularized and functional!');
   } else {
     console.error('\n[FAILURE] Some middleware tests failed. Check log outputs above.');
     process.exit(1);

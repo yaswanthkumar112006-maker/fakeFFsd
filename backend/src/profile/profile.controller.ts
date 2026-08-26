@@ -1,14 +1,16 @@
-import { Body, Controller, Get, Patch, Post, Req } from '@nestjs/common';
+import { Body, Controller, Get, Patch, Post, Req, UseFilters } from '@nestjs/common';
 import { ApiBody, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { ProfileService } from './profile.service';
 import { UserResponseDto } from '../common/swagger-models';
 import { ApiRoleHeaders, ApiStandardErrorResponses } from '../common/swagger';
 import { UpdatePasswordDto, UpdateProfileDto } from './dto/profile.dto';
+import { ProfileExceptionFilter } from './filters/profile-exception.filter';
 
 @ApiTags('profile')
 @ApiRoleHeaders()
 @ApiStandardErrorResponses()
 @Controller('profile')
+@UseFilters(ProfileExceptionFilter)
 export class ProfileController {
   constructor(private readonly profileService: ProfileService) {}
 
