@@ -381,6 +381,9 @@ const staffApp = {
                     <div style="text-align:right; font-size:0.875rem;">
                         <div>Vendor: <strong>${p.vendor || 'N/A'}</strong></div>
                         <div>Invoice: <strong>${p.invoice || 'N/A'}</strong></div>
+                        <div style="margin-top:0.25rem;">${p.invoiceFileName
+                            ? `<a href="javascript:void(0)" class="spec-file-link" onclick="staffApp.previewInvoiceFile('${p.id}')"><span class="material-symbols-outlined" style="font-size:1rem">visibility</span>${p.invoiceFileName}</a>`
+                            : ''}</div>
                     </div>
                 </div>
                 
@@ -574,6 +577,11 @@ const staffApp = {
             let statusBadge = `<span class="badge ${res.status.toLowerCase()}">${res.status}</span>`;
             if (res.status === 'Available') statusBadge = `<span class="badge allocated">${res.status}</span>`;
 
+            const srcProc = res.procurementId ? (Store.getData().procurements || []).find(p => p.id === res.procurementId) : null;
+            const invoiceFileCell = srcProc && srcProc.invoiceFileName
+                ? `<a href="javascript:void(0)" class="spec-file-link" onclick="staffApp.previewInvoiceFile('${srcProc.id}')"><span class="material-symbols-outlined" style="font-size:1rem">visibility</span>${srcProc.invoiceFileName}</a>`
+                : `<span style="color:#cbd5e1; font-size:0.78rem">—</span>`;
+
             tr.innerHTML = `
                 <td class="td-id">${res.id}</td>
                 <td style="font-weight: 500">${res.name || res.type}</td>
@@ -584,6 +592,7 @@ const staffApp = {
                 <td>${statusBadge}</td>
                 <td>${res.vendor || 'N/A'}</td>
                 <td>${res.invoice || 'N/A'}</td>
+                <td>${invoiceFileCell}</td>
                 <td style="text-align:right; white-space:nowrap;">
                     <button class="btn-secondary" style="font-size:0.75rem; margin-right:4px;" onclick="staffApp.openEditResourceModal('${res.id}')">Edit</button>
                     ${res.status !== 'Scrapped' ? `<button class="btn-danger" style="font-size:0.75rem" onclick="staffApp.scrapResource('${res.id}')">Scrap</button>` : ''}
@@ -591,6 +600,10 @@ const staffApp = {
             `;
             tbody.appendChild(tr);
         });
+    },
+
+    previewInvoiceFile: function (procId) {
+        Store.previewProcurementFile(procId, 'invoice');
     },
 
     scrapResource: async function (resId) {
@@ -980,6 +993,8 @@ const staffApp = {
     },
 
     // 5. Procurement Tasks
+    _invoiceFiles: {}, // procId -> { name, size, type, dataUrl }
+
     renderProcurementTasks: function () {
         const tbody = document.querySelector('#proctask-tbody tbody');
         if (!tbody) return;
@@ -999,7 +1014,9 @@ const staffApp = {
                 <td>${p.quantity}</td>
                 <td>
                     <input type="text" class="form-control" style="margin-bottom:0.25rem; font-size:0.75rem" placeholder="Vendor Name" id="vend-${p.id}">
-                    <input type="text" class="form-control" style="font-size:0.75rem" placeholder="Invoice Number" id="inv-${p.id}">
+                    <input type="text" class="form-control" style="margin-bottom:0.25rem; font-size:0.75rem" placeholder="Invoice Number" id="inv-${p.id}">
+                    <input type="file" style="font-size:0.72rem; width:100%" accept=".pdf,.doc,.docx,.png,.jpg,.jpeg" id="invfile-${p.id}" onchange="staffApp.onInvoiceFileSelected(event, '${p.id}')">
+                    <div id="invfile-name-${p.id}" style="font-size:0.72rem; color:#16a34a; margin-top:0.15rem;"></div>
                 </td>
                 <td style="text-align:right; vertical-align:middle">
                     <button class="btn-primary" onclick="staffApp.logPurchase('${p.id}')">Log Purchase</button>
@@ -1009,12 +1026,41 @@ const staffApp = {
         });
     },
 
+    onInvoiceFileSelected: function (event, procId) {
+        const file = event.target.files[0];
+        event.target.value = '';
+        if (!file) return;
+
+        const ALLOWED = ['application/pdf', 'application/msword',
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            'image/png', 'image/jpeg'];
+        const MAX_MB = 5;
+
+        if (!ALLOWED.includes(file.type)) {
+            Store.showToast('❌ Unsupported file type. Please upload PDF, DOC, DOCX, PNG or JPG.', 'error');
+            return;
+        }
+        if (file.size > MAX_MB * 1024 * 1024) {
+            Store.showToast(`❌ File too large. Maximum size is ${MAX_MB} MB.`, 'error');
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            this._invoiceFiles[procId] = { name: file.name, size: file.size, type: file.type, dataUrl: e.target.result };
+            const label = document.getElementById('invfile-name-' + procId);
+            if (label) label.textContent = file.name;
+        };
+        reader.readAsDataURL(file);
+    },
+
     logPurchase: async function (id) {
         const vendorInput = document.getElementById('vend-' + id);
         const invoiceInput = document.getElementById('inv-' + id);
 
         const vendor = vendorInput ? vendorInput.value.trim() : '';
         const invoice = invoiceInput ? invoiceInput.value.trim() : '';
+        const invoiceFile = this._invoiceFiles[id];
 
         if (!vendor || !invoice) {
             Store.showToast("Please provide both Vendor Name and Invoice Number before logging purchase.", "error");
@@ -1038,13 +1084,19 @@ const staffApp = {
             return;
         }
 
+        if (!invoiceFile) {
+            Store.showToast("⚠️ Please attach the invoice file before logging the purchase.", "error");
+            return;
+        }
+
         const proc = this.getDepartmentProcurement(id, 'Approved');
         if (!proc) {
             Store.showToast("You can only log purchases for your department.", "error");
             return;
         }
 
-        await Store.logPurchase(id, vendor, invoice);
+        await Store.logPurchase(id, vendor, invoice, invoiceFile);
+        delete this._invoiceFiles[id];
 
         Store.showToast(`Purchase logged for Invoice ${invoice}. Assets are now pending Serial Registration.`, "success");
         this.renderProcurementTasks();

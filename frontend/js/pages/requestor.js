@@ -1,4 +1,6 @@
 const app = {
+    _procSpecFile: null, // { name, size, type, dataUrl }
+
     state: {
         departments: [],
         resourceCatalog: [],
@@ -27,6 +29,96 @@ const app = {
         this.renderResources();
         this.renderProcurements();
         this.renderProcurementStatus();
+        this.initFileUpload();
+    },
+
+    initFileUpload: function() {
+        const zone = document.getElementById('proc-file-zone');
+        if (!zone) return;
+
+        // Drag-and-drop handlers
+        zone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            zone.classList.add('dragover');
+        });
+        zone.addEventListener('dragleave', () => zone.classList.remove('dragover'));
+        zone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            zone.classList.remove('dragover');
+            const file = e.dataTransfer?.files[0];
+            if (file) this._readProcFile(file);
+        });
+    },
+
+    onProcFileSelected: function(event) {
+        const file = event.target.files[0];
+        if (file) this._readProcFile(file);
+        // Reset input so same file can be re-selected
+        event.target.value = '';
+    },
+
+    _readProcFile: function(file) {
+        const ALLOWED = ['application/pdf', 'application/msword',
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            'image/png', 'image/jpeg'];
+        const MAX_MB = 5;
+
+        if (!ALLOWED.includes(file.type)) {
+            Store.showToast('❌ Unsupported file type. Please upload PDF, DOC, DOCX, PNG or JPG.', 'error');
+            return;
+        }
+        if (file.size > MAX_MB * 1024 * 1024) {
+            Store.showToast(`❌ File too large. Maximum size is ${MAX_MB} MB.`, 'error');
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            this._procSpecFile = {
+                name: file.name,
+                size: file.size,
+                type: file.type,
+                dataUrl: e.target.result
+            };
+            // Clear any warning border
+            const zone = document.getElementById('proc-file-zone');
+            if (zone) zone.style.borderColor = '';
+            this._showProcFilePreview();
+        };
+        reader.readAsDataURL(file);
+    },
+
+    _showProcFilePreview: function() {
+        const zone = document.getElementById('proc-file-zone');
+        const preview = document.getElementById('proc-file-preview');
+        const nameEl = document.getElementById('proc-file-name');
+        const sizeEl = document.getElementById('proc-file-size');
+
+        if (!this._procSpecFile || !zone || !preview) return;
+
+        zone.style.display = 'none';
+        preview.style.display = 'block';
+        if (nameEl) nameEl.textContent = this._procSpecFile.name;
+        if (sizeEl) {
+            const kb = (this._procSpecFile.size / 1024).toFixed(1);
+            sizeEl.textContent = kb < 1024 ? `${kb} KB` : `${(kb / 1024).toFixed(2)} MB`;
+        }
+    },
+
+    removeProcFile: function() {
+        this._procSpecFile = null;
+        const zone = document.getElementById('proc-file-zone');
+        const preview = document.getElementById('proc-file-preview');
+        if (zone) zone.style.display = '';
+        if (preview) preview.style.display = 'none';
+    },
+
+    previewSpecFile: function(procId) {
+        Store.previewProcurementFile(procId, 'spec');
+    },
+
+    previewInvoiceFile: function(procId) {
+        Store.previewProcurementFile(procId, 'invoice');
     },
 
     refreshData: async function() {
@@ -242,6 +334,13 @@ const app = {
             return;
         }
 
+        // Spec file is required
+        if (!this._procSpecFile) {
+            Store.showToast("⚠️ Please attach a Resource Specification / Intent File before submitting.", "warning");
+            document.getElementById('proc-file-zone').style.borderColor = '#f59e0b';
+            return;
+        }
+
         // Fix 2: Validate quantity > available inventory (procurement only needed when stock is insufficient)
         const availability = await Store.fetchResourceAvailability(dept, type);
         const availableCount = Number(availability?.availableCount || 0);
@@ -257,7 +356,7 @@ const app = {
         const newId = `PRC-${Math.floor(1000 + Math.random() * 9000)}`;
         const dateStr = new Date().toLocaleDateString('en-US', {month: 'short', day: 'numeric', year:'numeric'});
 
-        await Store.createProcurement({
+        const procPayload = {
             id: newId,
             item: type,
             resourceType: type,
@@ -269,15 +368,26 @@ const app = {
             status: "Pending Approval",
             priority: "Normal",
             date: dateStr,
-            justification: reason
-        });
-        await this.refreshData();
+            justification: reason,
+            specFileName: this._procSpecFile.name,
+            specFileType: this._procSpecFile.type,
+            specFileDataUrl: this._procSpecFile.dataUrl
+        };
 
-        Store.showToast("Procurement Request Submitted Successfully! ID: " + newId, "success");
-        document.getElementById('procurementForm').reset();
-        
-        this.renderProcurements();
+        try {
+            await Store.createProcurement(procPayload);
+            await this.refreshData();
+
+            Store.showToast("Procurement Request Submitted Successfully! ID: " + newId, "success");
+            document.getElementById('procurementForm').reset();
+            this.removeProcFile();
+            this.renderProcurements();
+        } catch (err) {
+            console.error('Procurement submit error:', err);
+            Store.showToast("❌ Failed to submit: " + (err.message || "Unknown error. Please try again."), "error");
+        }
     },
+
 
     renderDashboard: function() {
         const user = Store.getCurrentUser();
@@ -402,6 +512,14 @@ const app = {
             else if (proc.status === 'Pending Approval') statusBadge = `<span class="badge pending">${proc.status}</span>`;
             else if (proc.status === 'Rejected') statusBadge = `<span class="badge" style="background:#fee2e2; color:#b91c1c">${proc.status}</span>`;
 
+            const specCell = proc.specFileName
+                ? `<a href="javascript:void(0)" class="spec-file-link" onclick="app.previewSpecFile('${proc.id}')"><span class="material-symbols-outlined" style="font-size:1rem">visibility</span>${proc.specFileName}</a>`
+                : `<span style="color:#cbd5e1; font-size:0.78rem">—</span>`;
+
+            const invoiceCell = proc.invoiceFileName
+                ? `<a href="javascript:void(0)" class="spec-file-link" onclick="app.previewInvoiceFile('${proc.id}')"><span class="material-symbols-outlined" style="font-size:1rem">visibility</span>${proc.invoiceFileName}</a>`
+                : `<span style="color:#cbd5e1; font-size:0.78rem">—</span>`;
+
             const tr = document.createElement('tr');
             tr.innerHTML = `
                 <td class="td-id">${proc.id}</td>
@@ -409,6 +527,8 @@ const app = {
                 <td>${String(proc.quantity).padStart(2, '0')}</td>
                 <td>${proc.date}</td>
                 <td>${statusBadge}</td>
+                <td>${specCell}</td>
+                <td>${invoiceCell}</td>
             `;
             tbody.appendChild(tr);
         });
@@ -509,6 +629,11 @@ const app = {
                 actions = `<button class="btn-primary" style="font-size:0.75rem" onclick="app.confirmRepairedAllocation('${res.id}')">Confirm Allocation</button>`;
             }
 
+            const srcProc = res.procurementId ? (this.state.procurements || []).find(p => p.id === res.procurementId) : null;
+            const invoiceCell = srcProc && srcProc.invoiceFileName
+                ? `<a href="javascript:void(0)" class="spec-file-link" onclick="app.previewInvoiceFile('${srcProc.id}')"><span class="material-symbols-outlined" style="font-size:1rem">visibility</span>${srcProc.invoiceFileName}</a>`
+                : `<span style="color:#cbd5e1; font-size:0.78rem">—</span>`;
+
             const tr = document.createElement('tr');
             tr.innerHTML = `
                 <td class="td-id">${res.id}</td>
@@ -516,6 +641,7 @@ const app = {
                 <td>${res.department}</td>
                 <td>${res.date}</td>
                 <td>${statusBadge}</td>
+                <td>${invoiceCell}</td>
                 <td style="text-align:right">${actions}</td>
             `;
             tbody.appendChild(tr);

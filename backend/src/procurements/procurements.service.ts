@@ -4,6 +4,7 @@ import { RequestContext } from '../common/roles';
 import { DataService } from '../data/data.service';
 import {
   CreateProcurementDto,
+  LogPurchaseDto,
   ProcurementRegistrationResourceDto,
   UpdateProcurementDto,
 } from './dto/procurement.dto';
@@ -139,7 +140,7 @@ export class ProcurementsService {
     return this.dataService.updateProcurement(id, { status: 'Rejected' });
   }
 
-  logPurchase(id: string, vendor: string, invoice: string, context: RequestContext): ProcurementRecord {
+  logPurchase(id: string, dto: LogPurchaseDto, context: RequestContext): ProcurementRecord {
     const procurement = this.dataService.getProcurementById(id);
     if (!procurement) {
       throw new NotFoundException(`Procurement with ID ${id} not found.`);
@@ -151,8 +152,11 @@ export class ProcurementsService {
 
     return this.dataService.updateProcurement(id, {
       status: 'Fulfilled',
-      vendor,
-      invoice,
+      vendor: dto.vendor,
+      invoice: dto.invoice,
+      invoiceFileName: dto.invoiceFileName,
+      invoiceFileType: dto.invoiceFileType,
+      invoiceFileDataUrl: dto.invoiceFileDataUrl,
     });
   }
 
@@ -185,6 +189,7 @@ export class ProcurementsService {
         date: new Date().toLocaleDateString('en-US'),
         vendor: procurement.vendor,
         invoice: procurement.invoice,
+        procurementId: procurement.id,
       });
     });
 

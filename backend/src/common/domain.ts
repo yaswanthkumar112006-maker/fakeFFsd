@@ -141,6 +141,8 @@ export interface ResourceRecord {
   date?: string;
   vendor?: string;
   invoice?: string;
+  /** Source procurement, used to look up its invoice file without duplicating the file blob per resource */
+  procurementId?: string;
   location?: string;
   returnRequestedBy?: string;
   returnRequestedById?: string;
@@ -168,6 +170,14 @@ export interface ProcurementRecord {
   justification: string;
   vendor?: string;
   invoice?: string;
+  /** Resource specification / intent file — stored as a base64 data-URL */
+  specFileName?: string;
+  specFileType?: string;
+  specFileDataUrl?: string;
+  /** Invoice file logged by Staff at purchase time — stored as a base64 data-URL */
+  invoiceFileName?: string;
+  invoiceFileType?: string;
+  invoiceFileDataUrl?: string;
 }
 
 export interface NotificationRecord {
