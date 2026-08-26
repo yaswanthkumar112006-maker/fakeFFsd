@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Patch, Post, Query, Req } from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Post, Query, Req, UseFilters } from '@nestjs/common';
 import { ApiBody, ApiCreatedResponse, ApiOkResponse, ApiOperation, ApiParam, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { Roles } from '../common/roles.decorator';
 import {
@@ -9,11 +9,13 @@ import {
 import { ApiRoleHeaders, ApiStandardErrorResponses } from '../common/swagger';
 import { ResourcesService } from './resources.service';
 import { CreateResourceDto, UpdateResourceDto, UpdateCatalogDto } from './dto/resource.dto';
+import { ResourcesExceptionFilter } from './filters/resources-exception.filter';
 
 @ApiTags('resources')
 @ApiRoleHeaders()
 @ApiStandardErrorResponses()
 @Controller('resources')
+@UseFilters(ResourcesExceptionFilter)
 export class ResourcesController {
   constructor(private readonly resourcesService: ResourcesService) { }
 

@@ -1,15 +1,17 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, Req } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, Req, UseFilters } from '@nestjs/common';
 import { ApiBody, ApiCreatedResponse, ApiOkResponse, ApiOperation, ApiParam, ApiTags } from '@nestjs/swagger';
 import { Roles } from '../common/roles.decorator';
 import { DepartmentResponseDto, SuccessResponseDto } from '../common/swagger-models';
 import { ApiRoleHeaders, ApiStandardErrorResponses } from '../common/swagger';
 import { DepartmentsService } from './departments.service';
 import { CreateDepartmentDto, UpdateDepartmentDto } from './dto/department.dto';
+import { DepartmentsExceptionFilter } from './filters/departments-exception.filter';
 
 @ApiTags('departments')
 @ApiRoleHeaders()
 @ApiStandardErrorResponses()
 @Controller('departments')
+@UseFilters(DepartmentsExceptionFilter)
 export class DepartmentsController {
   constructor(private readonly departmentsService: DepartmentsService) {}
 
