@@ -78,7 +78,8 @@ const app = {
                 name: file.name,
                 size: file.size,
                 type: file.type,
-                dataUrl: e.target.result
+                dataUrl: e.target.result,
+                rawFile: file
             };
             // Clear any warning border
             const zone = document.getElementById('proc-file-zone');
@@ -371,7 +372,8 @@ const app = {
             justification: reason,
             specFileName: this._procSpecFile.name,
             specFileType: this._procSpecFile.type,
-            specFileDataUrl: this._procSpecFile.dataUrl
+            specFileDataUrl: this._procSpecFile.dataUrl,
+            rawFile: this._procSpecFile.rawFile
         };
 
         try {

@@ -78,7 +78,7 @@ export class ProcurementFileValidationMiddleware implements NestMiddleware {
         return;
       }
 
-      const files = (req.files || {}) as Record<string, Express.Multer.File[]>;
+      const files = ((req as any).files || {}) as Record<string, any[]>;
       const uploaded = FILE_FIELDS.map(({ field, nameKey, typeKey, dataUrlKey }) => files[field]?.[0]
         ? { file: files[field][0], nameKey, typeKey, dataUrlKey }
         : null,
@@ -107,14 +107,14 @@ export class ProcurementFileValidationMiddleware implements NestMiddleware {
     });
   }
 
-  private toMessage(err: unknown): string {
-    if (err instanceof multer.MulterError) {
+  private toMessage(err: any): string {
+    if (err && (err.name === 'MulterError' || err.code === 'LIMIT_FILE_SIZE')) {
       if (err.code === 'LIMIT_FILE_SIZE') {
         return `${err.field} exceeds the maximum allowed size of ${MAX_FILE_MB}MB.`;
       }
       return `${err.field ? `${err.field}: ` : ''}${err.message}`;
     }
-    return (err as Error)?.message || 'Invalid file upload.';
+    return err?.message || 'Invalid file upload.';
   }
 
   private reject(req: Request, message: string): BadRequestException {
