@@ -357,24 +357,61 @@ async function runMiddlewareTests() {
     failed++;
   }
 
-  // Procurements Validation - invalid file data url format
+  // Procurements Validation - multer rejects an unsupported multipart file type.
+  // The file-upload middleware now parses real multipart/form-data uploads via multer
+  // instead of validating base64 data-URL strings in a JSON body, so this exercises the
+  // new transport with a disallowed MIME type using the platform's global fetch/FormData.
   try {
-    const res = await makeRequest({
-      name: 'Create Procurement with Invalid File Format',
+    const form = new FormData();
+    form.set('resourceType', 'Server Blades v2');
+    form.set('quantity', '1');
+    form.set('department', 'IT Services');
+    form.set('justification', 'Multer file-type validation test');
+    form.set('specFile', new Blob(['not a real spec doc'], { type: 'text/plain' }), 'notes.txt');
+
+    const res = await fetch(`${BASE_URL}/api/procurements`, {
       method: 'POST',
-      path: '/api/procurements',
       headers: employeeHeaders,
-      body: { specFileDataUrl: 'invalid-base64-url' }
+      body: form,
     });
-    if (res.status === 400 && res.body.message && res.body.message.includes('not a valid base64 data URL')) {
-      console.log('[PASS] Procurements - Validation Middleware correctly blocked invalid file format: Status 400');
+    const body: any = await res.json().catch(() => ({}));
+    if (res.status === 400 && body.message && body.message.includes('unsupported file type')) {
+      console.log('[PASS] Procurements - Multer Validation correctly blocked unsupported file type: Status 400');
       passed++;
     } else {
-      console.error('[FAIL] Procurements - Validation Middleware did not block invalid file format:', res.status, res.body);
+      console.error('[FAIL] Procurements - Multer Validation did not block unsupported file type:', res.status, body);
       failed++;
     }
   } catch (e: any) {
-    console.error('[ERROR] Procurements validation test failed:', e.message);
+    console.error('[ERROR] Procurements multer validation test failed:', e.message);
+    failed++;
+  }
+
+  // Procurements Validation - multer rejects a file over the 5MB limit
+  try {
+    const oversized = new Uint8Array(5 * 1024 * 1024 + 1024);
+    const form = new FormData();
+    form.set('resourceType', 'Server Blades v2');
+    form.set('quantity', '1');
+    form.set('department', 'IT Services');
+    form.set('justification', 'Multer file-size validation test');
+    form.set('specFile', new Blob([oversized], { type: 'application/pdf' }), 'huge-spec.pdf');
+
+    const res = await fetch(`${BASE_URL}/api/procurements`, {
+      method: 'POST',
+      headers: employeeHeaders,
+      body: form,
+    });
+    const body: any = await res.json().catch(() => ({}));
+    if (res.status === 400 && body.message && body.message.includes('exceeds the maximum allowed size')) {
+      console.log('[PASS] Procurements - Multer Validation correctly blocked oversized file: Status 400');
+      passed++;
+    } else {
+      console.error('[FAIL] Procurements - Multer Validation did not block oversized file:', res.status, body);
+      failed++;
+    }
+  } catch (e: any) {
+    console.error('[ERROR] Procurements multer size validation test failed:', e.message);
     failed++;
   }
 

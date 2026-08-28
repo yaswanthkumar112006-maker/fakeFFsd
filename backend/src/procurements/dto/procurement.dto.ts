@@ -20,6 +20,11 @@ export class CreateProcurementDto {
   item?: string;
 
   @ApiProperty({ example: 10 })
+  // multipart/form-data (the file-upload middleware's transport now that it runs
+  // through multer) delivers every field, including this one, as a string — @Type
+  // coerces it back to a number before @IsInt/@Min run. A no-op for plain JSON
+  // requests, where it already arrives as a number.
+  @Type(() => Number)
   @IsInt()
   @Min(1)
   quantity!: number;

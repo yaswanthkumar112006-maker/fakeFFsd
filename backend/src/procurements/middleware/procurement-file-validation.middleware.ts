@@ -1,12 +1,15 @@
 import { BadRequestException, Injectable, NestMiddleware } from '@nestjs/common';
 import { NextFunction, Request, Response } from 'express';
+import multer from 'multer';
 import { ProcurementFileLoggerService } from './procurement-file-logger';
 
-// Router-level file-upload middleware for the Procurements module. The frontend sends
-// attachments (resource spec at creation, invoice at log-purchase) as base64 data-URLs
-// embedded in the JSON body rather than multipart/form-data, so this validates those
-// fields server-side before they ever reach a DTO/controller — never trust the client's
-// own MIME/size checks alone.
+// Router-level file-upload middleware for the Procurements module. Attachments (resource
+// spec at creation, invoice at log-purchase) arrive as real multipart/form-data uploads —
+// multer parses them in memory and enforces the MIME/size checks below before the request
+// ever reaches a DTO/controller, never trusting the client's own checks alone. Once a file
+// clears validation it's folded back into the same specFileName/Type/DataUrl (and
+// invoiceFileName/Type/DataUrl) body fields CreateProcurementDto/LogPurchaseDto already
+// declare, so nothing downstream of this middleware has to know multipart was involved.
 const ALLOWED_MIME_TYPES = [
   'application/pdf',
   'application/msword',
@@ -15,54 +18,73 @@ const ALLOWED_MIME_TYPES = [
   'image/jpeg',
 ];
 const MAX_FILE_BYTES = 5 * 1024 * 1024; // 5MB — matches the frontend's own upload limit
-const DATA_URL_PATTERN = /^data:([^;]+);base64,([A-Za-z0-9+/=]+)$/;
-const FILE_FIELDS = ['specFileDataUrl', 'invoiceFileDataUrl'];
+const MAX_FILE_MB = MAX_FILE_BYTES / (1024 * 1024);
 
-function base64ByteLength(payload: string): number {
-  const padding = payload.endsWith('==') ? 2 : payload.endsWith('=') ? 1 : 0;
-  return (payload.length * 3) / 4 - padding;
-}
+const FILE_FIELDS: Array<{ field: string; nameKey: string; typeKey: string; dataUrlKey: string }> = [
+  { field: 'specFile', nameKey: 'specFileName', typeKey: 'specFileType', dataUrlKey: 'specFileDataUrl' },
+  { field: 'invoiceFile', nameKey: 'invoiceFileName', typeKey: 'invoiceFileType', dataUrlKey: 'invoiceFileDataUrl' },
+];
+
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: MAX_FILE_BYTES },
+  fileFilter: (_req, file, cb) => {
+    if (!ALLOWED_MIME_TYPES.includes(file.mimetype)) {
+      cb(
+        new BadRequestException(
+          `${file.fieldname} has unsupported file type "${file.mimetype}". Allowed: ${ALLOWED_MIME_TYPES.join(', ')}.`,
+        ),
+      );
+      return;
+    }
+    cb(null, true);
+  },
+}).fields(FILE_FIELDS.map(({ field }) => ({ name: field, maxCount: 1 })));
 
 @Injectable()
 export class ProcurementFileValidationMiddleware implements NestMiddleware {
   constructor(private readonly fileLogger: ProcurementFileLoggerService) { }
 
   use(req: Request, res: Response, next: NextFunction): void {
-    const body = req.body || {};
-
-    for (const field of FILE_FIELDS) {
-      const value = body[field];
-      if (value === undefined || value === null || value === '') continue;
-
-      if (typeof value !== 'string') {
-        this.reject(req, `${field} must be a base64 data URL string.`);
+    // multer only engages for multipart/form-data requests — any other content type
+    // (or a request with no files at all) passes through untouched, since every file
+    // field above is optional.
+    upload(req, res, (err: unknown) => {
+      if (err) {
+        // multer invokes this callback asynchronously (after streaming the multipart
+        // body), so a throw here would escape Express's try/catch around the initial
+        // synchronous use() call and crash the process instead of producing a 400.
+        // next(err) is the correct way to hand an async middleware error to Express.
+        next(this.reject(req, this.toMessage(err)));
+        return;
       }
 
-      const match = (value as string).match(DATA_URL_PATTERN);
-      if (!match) {
-        this.reject(req, `${field} is not a valid base64 data URL.`);
+      const files = (req.files || {}) as Record<string, Express.Multer.File[]>;
+      for (const { field, nameKey, typeKey, dataUrlKey } of FILE_FIELDS) {
+        const file = files[field]?.[0];
+        if (!file) continue;
+
+        (req.body as Record<string, unknown>)[nameKey] = file.originalname;
+        (req.body as Record<string, unknown>)[typeKey] = file.mimetype;
+        (req.body as Record<string, unknown>)[dataUrlKey] =
+          `data:${file.mimetype};base64,${file.buffer.toString('base64')}`;
       }
 
-      const [, mimeType, base64Payload] = match as RegExpMatchArray;
-      if (!ALLOWED_MIME_TYPES.includes(mimeType)) {
-        this.reject(
-          req,
-          `${field} has unsupported file type "${mimeType}". Allowed: ${ALLOWED_MIME_TYPES.join(', ')}.`,
-        );
-      }
-
-      if (base64ByteLength(base64Payload) > MAX_FILE_BYTES) {
-        this.reject(
-          req,
-          `${field} exceeds the maximum allowed size of ${MAX_FILE_BYTES / (1024 * 1024)}MB.`,
-        );
-      }
-    }
-
-    next();
+      next();
+    });
   }
 
-  private reject(req: Request, message: string): never {
+  private toMessage(err: unknown): string {
+    if (err instanceof multer.MulterError) {
+      if (err.code === 'LIMIT_FILE_SIZE') {
+        return `${err.field} exceeds the maximum allowed size of ${MAX_FILE_MB}MB.`;
+      }
+      return `${err.field ? `${err.field}: ` : ''}${err.message}`;
+    }
+    return (err as Error)?.message || 'Invalid file upload.';
+  }
+
+  private reject(req: Request, message: string): BadRequestException {
     const context = (req as any).context || {};
     this.fileLogger.logError(
       [
@@ -76,6 +98,6 @@ export class ProcurementFileValidationMiddleware implements NestMiddleware {
         message,
       ].join(' | '),
     );
-    throw new BadRequestException(message);
+    return new BadRequestException(message);
   }
 }
