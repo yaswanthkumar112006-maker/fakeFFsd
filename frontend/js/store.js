@@ -138,8 +138,12 @@ class DataStore {
         };
 
         if (options.body !== undefined) {
-            config.headers['Content-Type'] = 'application/json';
-            config.body = JSON.stringify(options.body);
+            if (options.body instanceof FormData) {
+                config.body = options.body;
+            } else {
+                config.headers['Content-Type'] = 'application/json';
+                config.body = JSON.stringify(options.body);
+            }
         }
 
         const res = await fetch(`${apiBase}${path}`, config);
@@ -347,7 +351,18 @@ class DataStore {
     }
 
     async createProcurement(payload) {
-        const result = await this.api('/procurements', { method: 'POST', body: payload });
+        let body = payload;
+        if (payload && payload.rawFile) {
+            const formData = new FormData();
+            Object.entries(payload).forEach(([key, value]) => {
+                if (key !== 'rawFile' && key !== 'specFileDataUrl') {
+                    formData.append(key, value);
+                }
+            });
+            formData.append('specFile', payload.rawFile);
+            body = formData;
+        }
+        const result = await this.api('/procurements', { method: 'POST', body });
         await this.sync();
         return result;
     }
@@ -511,11 +526,20 @@ class DataStore {
     }
 
     async logPurchase(id, vendor, invoice, invoiceFile) {
-        const body = { vendor, invoice };
-        if (invoiceFile) {
-            body.invoiceFileName = invoiceFile.name;
-            body.invoiceFileType = invoiceFile.type;
-            body.invoiceFileDataUrl = invoiceFile.dataUrl;
+        let body;
+        if (invoiceFile && invoiceFile.rawFile) {
+            const formData = new FormData();
+            formData.append('vendor', vendor);
+            formData.append('invoice', invoice);
+            formData.append('invoiceFile', invoiceFile.rawFile);
+            body = formData;
+        } else {
+            body = { vendor, invoice };
+            if (invoiceFile) {
+                body.invoiceFileName = invoiceFile.name;
+                body.invoiceFileType = invoiceFile.type;
+                body.invoiceFileDataUrl = invoiceFile.dataUrl;
+            }
         }
         const result = await this.api(`/procurements/${id}/log-purchase`, {
             method: 'POST',

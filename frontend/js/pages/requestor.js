@@ -78,7 +78,8 @@ const app = {
                 name: file.name,
                 size: file.size,
                 type: file.type,
-                dataUrl: e.target.result
+                dataUrl: e.target.result,
+                rawFile: file
             };
             // Clear any warning border
             const zone = document.getElementById('proc-file-zone');
@@ -341,17 +342,7 @@ const app = {
             return;
         }
 
-        // Fix 2: Validate quantity > available inventory (procurement only needed when stock is insufficient)
-        const availability = await Store.fetchResourceAvailability(dept, type);
-        const availableCount = Number(availability?.availableCount || 0);
 
-        if (qty <= availableCount) {
-            Store.showToast(
-                `❌ Procurement not needed — ${availableCount} unit(s) of "${type}" already available in inventory. Use "Request Resource" instead.`,
-                "error"
-            );
-            return;
-        }
 
         const newId = `PRC-${Math.floor(1000 + Math.random() * 9000)}`;
         const dateStr = new Date().toLocaleDateString('en-US', {month: 'short', day: 'numeric', year:'numeric'});
@@ -371,7 +362,8 @@ const app = {
             justification: reason,
             specFileName: this._procSpecFile.name,
             specFileType: this._procSpecFile.type,
-            specFileDataUrl: this._procSpecFile.dataUrl
+            specFileDataUrl: this._procSpecFile.dataUrl,
+            rawFile: this._procSpecFile.rawFile
         };
 
         try {

@@ -82,7 +82,7 @@ const deptApp = {
         }
         const reader = new FileReader();
         reader.onload = (e) => {
-            this._dhProcSpecFile = { name: file.name, size: file.size, type: file.type, dataUrl: e.target.result };
+            this._dhProcSpecFile = { name: file.name, size: file.size, type: file.type, dataUrl: e.target.result, rawFile: file };
             // Clear any warning border
             const zone = document.getElementById('dh-proc-file-zone');
             if (zone) zone.style.borderColor = '';
@@ -437,7 +437,8 @@ const deptApp = {
             justification: reason,
             specFileName: this._dhProcSpecFile.name,
             specFileType: this._dhProcSpecFile.type,
-            specFileDataUrl: this._dhProcSpecFile.dataUrl
+            specFileDataUrl: this._dhProcSpecFile.dataUrl,
+            rawFile: this._dhProcSpecFile.rawFile
         };
 
         try {

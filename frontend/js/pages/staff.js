@@ -1047,7 +1047,7 @@ const staffApp = {
 
         const reader = new FileReader();
         reader.onload = (e) => {
-            this._invoiceFiles[procId] = { name: file.name, size: file.size, type: file.type, dataUrl: e.target.result };
+            this._invoiceFiles[procId] = { name: file.name, size: file.size, type: file.type, dataUrl: e.target.result, rawFile: file };
             const label = document.getElementById('invfile-name-' + procId);
             if (label) label.textContent = file.name;
         };
