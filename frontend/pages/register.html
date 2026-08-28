@@ -55,8 +55,24 @@
                     <input type="text" class="form-control" id="orgName" required placeholder="Acme Corp">
                 </div>
                 <div class="col-md-6 mb-3">
+                    <label class="form-label">Your Name (System Admin)</label>
+                    <input type="text" class="form-control" id="adminName" required placeholder="Jordan Smith">
+                </div>
+                <div class="col-md-6 mb-3">
                     <label class="form-label">Admin Email</label>
                     <input type="email" class="form-control" id="adminEmail" required placeholder="admin@acme.com">
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Password</label>
+                    <input type="password" class="form-control" id="password" required placeholder="Create a password" minlength="8">
+                    <div class="form-text">At least 8 characters, with an uppercase letter, a number, and a symbol.</div>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Confirm Password</label>
+                    <input type="password" class="form-control" id="confirmPassword" required placeholder="Re-enter your password">
+                </div>
+                <div class="col-md-6 mb-3" id="passwordErrorWrap" style="display:none;">
+                    <div class="alert alert-danger py-2 px-3 mb-0" id="passwordError"></div>
                 </div>
             </div>
 
