@@ -331,6 +331,26 @@ a {
   color: var(--status-rejected-text);
 }
 
+/* Hyphenated variants used by owner.js/employee.js/admin.js — see
+   css/components/badge.css for why these need the extra .badge.badge-x
+   specificity rather than a bare .badge-x selector. */
+.badge.badge-success {
+  background-color: var(--status-allocated);
+  color: var(--status-allocated-text);
+}
+.badge.badge-pending {
+  background-color: var(--status-pending);
+  color: var(--status-pending-text);
+}
+.badge.badge-rejected {
+  background-color: var(--status-rejected);
+  color: var(--status-rejected-text);
+}
+.badge.badge-secondary {
+  background-color: #e2e8f0;
+  color: #475569;
+}
+
 
 /* Data Table Section */
 .data-section {

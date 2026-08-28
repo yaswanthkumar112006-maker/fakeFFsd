@@ -26,7 +26,6 @@ const adminApp = {
         this.bindNav();
         this.renderUsers();
         this.renderDepartments();
-        this.renderRolesMatrix();
         this.renderSubscription();
         await this.renderSupportTickets();
         await this.renderAdminAnnouncements();
@@ -656,71 +655,6 @@ const adminApp = {
                 Store.showToast(err.message || "Failed to remove resource type.", "error");
             }
         });
-    },
-
-    // 3. Roles and Perms Matrix
-    renderRolesMatrix: function () {
-        const tbody = document.getElementById('matrix-tbody');
-        if (!tbody) return;
-        tbody.innerHTML = '';
-
-        const db = Store.getData();
-        const matrix = db.permissionsMatrix;
-        if (!matrix) return; // safety
-
-        const roles = ['Requestor', 'Dept Head', 'Registrar', 'Staff', 'System Admin'];
-
-        // Populate table
-        Object.keys(matrix).forEach(perm => {
-            const tr = document.createElement('tr');
-            let colsHtml = `<td style="font-weight:600">${perm}</td>`;
-
-            roles.forEach(role => {
-                const isChecked = matrix[perm].includes(role) ? 'checked' : '';
-                const isDisabled = role === 'System Admin' ? 'disabled' : '';
-                colsHtml += `
-                    <td>
-                        <input type="checkbox" class="checkbox-custom perm-checkbox" 
-                            data-perm="${perm}" data-role="${role}" 
-                            ${isChecked} ${isDisabled}>
-                    </td>
-                `;
-            });
-
-            tr.innerHTML = colsHtml;
-            tbody.appendChild(tr);
-        });
-    },
-
-    savePermissions: function () {
-        const checkboxes = document.querySelectorAll('.perm-checkbox');
-        const db = Store.getData();
-        const newMatrix = {};
-
-        Object.keys(db.permissionsMatrix).forEach(k => newMatrix[k] = []);
-
-        checkboxes.forEach(cb => {
-            if (cb.checked) {
-                const perm = cb.getAttribute('data-perm');
-                const role = cb.getAttribute('data-role');
-                if (!newMatrix[perm]) newMatrix[perm] = [];
-                newMatrix[perm].push(role);
-            }
-        });
-
-        Store.updatePermissionsMatrix(newMatrix)
-            .then(() => {
-                this.renderRolesMatrix();
-                Store.showToast("Permissions updated", "success");
-            });
-    },
-
-    resetPermissions: function () {
-        Store.resetPermissionsMatrix()
-            .then(() => {
-                this.renderRolesMatrix();
-                Store.showToast("Matrix reset to defaults", "warning");
-            });
     },
 
     renderSubscription: function () {

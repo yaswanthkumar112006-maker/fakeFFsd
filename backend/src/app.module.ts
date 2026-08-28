@@ -4,7 +4,6 @@ import { DataModule } from './data/data.module';
 import { RolesGuard } from './common/roles.guard';
 import { UsersModule } from './users/users.module';
 import { DepartmentsModule } from './departments/departments.module';
-import { PermissionsModule } from './permissions/permissions.module';
 import { RequestsModule } from './requests/requests.module';
 import { ResourcesModule } from './resources/resources.module';
 import { ProcurementsModule } from './procurements/procurements.module';
@@ -35,7 +34,6 @@ import { SubscriptionsModule } from './subscriptions/subscriptions.module';
     InvoicesModule,
     SubscriptionsModule,
     DepartmentsModule,
-    PermissionsModule,
     RequestsModule,
     ResourcesModule,
     ProcurementsModule,

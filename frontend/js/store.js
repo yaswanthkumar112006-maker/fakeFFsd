@@ -11,7 +11,6 @@ class DataStore {
             notifications: [],
             maintenanceHistory: [],
             returnHistory: [],
-            permissionsMatrix: {},
             stockThresholds: [],
             resourceCatalog: [],
             currentUser: null
@@ -171,7 +170,6 @@ class DataStore {
             notifications: '/notifications',
             maintenanceHistory: '/maintenance/history',
             returnHistory: '/returns/history',
-            permissionsMatrix: '/permissionsMatrix',
             stockThresholds: '/analytics/stock',
             resourceCatalog: '/resources/catalog'
         };
@@ -326,6 +324,18 @@ class DataStore {
         return entry ? [...entry.resourceTypes] : [];
     }
 
+    async renameResourceCatalogType(department, oldType, newType) {
+        const currentTypes = this.getDepartmentResourceTypes(department);
+        const updatedTypes = currentTypes.map(t => t === oldType ? newType : t);
+        return this.updateResourceCatalog(department, updatedTypes);
+    }
+
+    async removeResourceCatalogType(department, type) {
+        const currentTypes = this.getDepartmentResourceTypes(department);
+        const updatedTypes = currentTypes.filter(t => t !== type);
+        return this.updateResourceCatalog(department, updatedTypes);
+    }
+
     async createResource(payload) {
         const result = await this.api('/resources', { method: 'POST', body: payload });
         await this.sync();
@@ -373,22 +383,6 @@ class DataStore {
 
     async updateNotification(id, payload) {
         const result = await this.api(`/notifications/${id}`, { method: 'PATCH', body: payload });
-        await this.sync();
-        return result;
-    }
-
-    async fetchPermissionsMatrix() {
-        return this.api('/permissionsMatrix');
-    }
-
-    async updatePermissionsMatrix(payload) {
-        const result = await this.api('/permissionsMatrix', { method: 'POST', body: payload });
-        await this.sync();
-        return result;
-    }
-
-    async resetPermissionsMatrix() {
-        const result = await this.api('/permissionsMatrix/reset', { method: 'POST' });
         await this.sync();
         return result;
     }

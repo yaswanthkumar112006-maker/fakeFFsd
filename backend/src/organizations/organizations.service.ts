@@ -1,8 +1,7 @@
 import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
 import { DataService } from '../data/data.service';
 import { RegisterOrgDto } from './dto/organization.dto';
-import { OrganizationRecord, OrganizationStatus } from '../common/domain';
-import { randomBytes } from 'crypto';
+import { OrganizationRecord, OrganizationStatus, UserRecord } from '../common/domain';
 
 @Injectable()
 export class OrganizationsService {
@@ -20,7 +19,7 @@ export class OrganizationsService {
 
   register(payload: RegisterOrgDto): OrganizationRecord {
     // Basic validations
-    if (!payload.name || !payload.adminEmail || !payload.subscriptionPlanId) {
+    if (!payload.name || !payload.adminName || !payload.adminEmail || !payload.password || !payload.subscriptionPlanId) {
       throw new BadRequestException('Missing required fields for organization registration.');
     }
 
@@ -28,6 +27,12 @@ export class OrganizationsService {
     const plans = this.dataService.getSubscriptionPlans();
     if (!plans.some(p => p.id === payload.subscriptionPlanId)) {
       throw new BadRequestException('Invalid subscription plan ID.');
+    }
+
+    // adminEmail becomes this org's System Admin login below, so it has to be unique
+    // across the whole platform the same way any other user's email would be.
+    if (this.dataService.getUserByEmail(payload.adminEmail)) {
+      throw new BadRequestException('An account with this email already exists.');
     }
 
     const orgId = `ORG-${Date.now()}`;
@@ -39,6 +44,22 @@ export class OrganizationsService {
       status: 'Pending',
       revenueGenerated: 0
     };
+
+    // Registering an organization also provisions its first user: the System Admin
+    // who filled out this form, logging in with the password they just chose (an
+    // Owner still has to approve the organization itself before it's usable — see
+    // approveOrganization/updateStatus — but the account exists from this point on).
+    const adminUser: UserRecord = {
+      id: `SA-${orgId}`,
+      organizationId: orgId,
+      name: payload.adminName,
+      email: payload.adminEmail,
+      password: payload.password,
+      role: 'System Admin',
+      status: 'Active',
+      preferences: { notifications: true },
+    };
+    this.dataService.insertUser(adminUser);
 
     return this.dataService.insertOrganization(newOrg);
   }
