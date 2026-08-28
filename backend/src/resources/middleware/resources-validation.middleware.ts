@@ -26,8 +26,8 @@ export class ResourcesValidationMiddleware implements NestMiddleware {
         if (isCatalogUpdate) {
           // catalog update: requires department (string) and types (non-empty array)
           this.requireText(req, body.department, 'Department', 100);
-          if (!Array.isArray(body.types) || body.types.length === 0) {
-            this.reject(req, 'Types must be a non-empty array.');
+          if (!Array.isArray(body.resourceTypes) || body.resourceTypes.length === 0) {
+            this.reject(req, 'resourceTypes must be a non-empty array.');
           }
         } else {
           // standard resource creation

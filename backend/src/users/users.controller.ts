@@ -55,8 +55,8 @@ export class UsersController {
   @ApiOperation({ summary: 'Create a new user' })
   @ApiCreatedResponse({ description: 'User created successfully.', type: UserResponseDto })
   @ApiResponse({ status: 403, description: 'Only System Admin can create users.' })
-  create(@Body() dto: CreateUserDto) {
-    return this.usersService.create(dto);
+  create(@Req() req: any, @Body() dto: CreateUserDto) {
+    return this.usersService.create(req.context, dto);
   }
 
   @Post('create-employee')
@@ -72,8 +72,8 @@ export class UsersController {
   @ApiOperation({ summary: 'Update a user' })
   @ApiParam({ name: 'id', example: 'U4' })
   @ApiOkResponse({ description: 'User updated successfully.', type: UserResponseDto })
-  update(@Param('id') id: string, @Body() dto: UpdateUserDto) {
-    return this.usersService.update(id, dto);
+  update(@Req() req: any, @Param('id') id: string, @Body() dto: UpdateUserDto) {
+    return this.usersService.update(id, dto, req.context);
   }
 
   @Delete(':id')
@@ -81,21 +81,21 @@ export class UsersController {
   @ApiOperation({ summary: 'Deactivate a user' })
   @ApiParam({ name: 'id', example: 'U4' })
   @ApiOkResponse({ description: 'User deactivated successfully.', type: UserResponseDto })
-  remove(@Param('id') id: string) {
-    return this.usersService.deactivate(id);
+  remove(@Req() req: any, @Param('id') id: string) {
+    return this.usersService.deactivate(id, req.context);
   }
 
   @Patch(':id/suspend')
   @Roles('System Admin', 'Owner')
   @ApiOperation({ summary: 'Suspend a user account' })
-  suspendUser(@Param('id') id: string) {
-    return this.usersService.updateStatus(id, 'Suspended');
+  suspendUser(@Req() req: any, @Param('id') id: string) {
+    return this.usersService.updateStatus(id, 'Suspended', req.context);
   }
 
   @Patch(':id/reactivate')
   @Roles('System Admin', 'Owner')
   @ApiOperation({ summary: 'Reactivate a user account' })
-  reactivateUser(@Param('id') id: string) {
-    return this.usersService.updateStatus(id, 'Active');
+  reactivateUser(@Req() req: any, @Param('id') id: string) {
+    return this.usersService.updateStatus(id, 'Active', req.context);
   }
 }

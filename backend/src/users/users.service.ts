@@ -31,7 +31,7 @@ export class UsersService {
       return users;
     }
     if (context.role === 'System Admin' || context.role === 'Guest') {
-      return users;
+      return users.filter((u) => u.organizationId === context.organizationId);
     }
 
     const actingUser = context.userId ? this.dataService.getUserById(context.userId) : undefined;
@@ -59,27 +59,42 @@ export class UsersService {
     return this.dataService.insertUser(user);
   }
 
-  create(payload: CreateUserDto): UserRecord {
+  create(context: RequestContext, payload: CreateUserDto): UserRecord {
     const users = this.dataService.getUsers();
     const newId = `U${users.length + 1}_${Date.now()}`;
     const user: UserRecord = {
       id: newId,
       ...payload,
+      organizationId: context.organizationId || 'ORG-001',
       status: payload.status || 'Active',
       preferences: { notifications: true }
     };
     return this.dataService.insertUser(user);
   }
 
-  update(id: string, payload: UpdateUserDto): UserRecord {
+  update(id: string, payload: UpdateUserDto, context: RequestContext): UserRecord {
+    this.getScopedUser(id, context);
     return this.dataService.updateUser(id, payload);
   }
 
-  deactivate(id: string): UserRecord {
+  deactivate(id: string, context: RequestContext): UserRecord {
+    this.getScopedUser(id, context);
     return this.dataService.updateUser(id, { status: 'Inactive' });
   }
 
-  updateStatus(id: string, status: 'Active' | 'Suspended') {
+  updateStatus(id: string, status: 'Active' | 'Suspended', context: RequestContext) {
+    this.getScopedUser(id, context);
     return this.dataService.updateUser(id, { status });
+  }
+
+  private getScopedUser(id: string, context: RequestContext): UserRecord {
+    const user = this.dataService.getUserById(id);
+    if (!user) {
+      throw new NotFoundException(`User with ID ${id} not found.`);
+    }
+    if (context.role !== 'Owner' && context.organizationId && user.organizationId !== context.organizationId) {
+      throw new NotFoundException(`User with ID ${id} not found.`);
+    }
+    return user;
   }
 }

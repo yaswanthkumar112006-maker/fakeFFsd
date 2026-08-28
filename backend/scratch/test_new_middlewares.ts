@@ -823,6 +823,110 @@ async function runMiddlewareTests() {
   }
 
   // ==========================================
+  // --- 6A. INVOICES MODULE TESTS ---
+  // ==========================================
+  console.log('[LOG] Testing Invoices Security Headers middleware...');
+  try {
+    const res = await makeRequest({
+      name: 'Get Invoices Security Headers',
+      method: 'GET',
+      path: '/api/invoices',
+      headers: adminHeaders
+    });
+    const xFrame = res.headers['x-frame-options'];
+    const xContent = res.headers['x-content-type-options'];
+    if (xFrame === 'DENY' && xContent === 'nosniff') {
+      console.log('[PASS] Invoices - Security Headers injected correctly (DENY & nosniff)');
+      passed++;
+    } else {
+      console.error('[FAIL] Invoices - Security Headers missing/invalid:', res.headers);
+      failed++;
+    }
+  } catch (e: any) {
+    console.error('[ERROR] Invoices Security Headers test failed:', e.message);
+    failed++;
+  }
+
+  console.log('[LOG] Testing Invoices Rate Limiter middleware (firing 65 requests fast)...');
+  let rateLimitedInvoices = false;
+  try {
+    for (let i = 0; i < 65; i++) {
+      const res = await makeRequest({
+        name: `Rate Limit Invoices Request ${i}`,
+        method: 'GET',
+        path: '/api/invoices',
+        headers: adminHeaders
+      });
+      if (res.status === 429) {
+        rateLimitedInvoices = true;
+        break;
+      }
+    }
+    if (rateLimitedInvoices) {
+      console.log('[PASS] Invoices - Security Rate Limiter triggered: Status 429');
+      passed++;
+    } else {
+      console.error('[FAIL] Invoices - Security Rate Limiter did not trigger after 60+ requests.');
+      failed++;
+    }
+  } catch (e: any) {
+    console.error('[ERROR] Invoices Rate Limiter test failed:', e.message);
+    failed++;
+  }
+
+  // ==========================================
+  // --- 6B. SUBSCRIPTIONS MODULE TESTS ---
+  // ==========================================
+  console.log('[LOG] Testing Subscriptions Security Headers middleware...');
+  try {
+    const res = await makeRequest({
+      name: 'Get Subscriptions Security Headers',
+      method: 'GET',
+      path: '/api/subscriptions/plans',
+      headers: employeeHeaders
+    });
+    const xFrame = res.headers['x-frame-options'];
+    const xContent = res.headers['x-content-type-options'];
+    if (xFrame === 'DENY' && xContent === 'nosniff') {
+      console.log('[PASS] Subscriptions - Security Headers injected correctly (DENY & nosniff)');
+      passed++;
+    } else {
+      console.error('[FAIL] Subscriptions - Security Headers missing/invalid:', res.headers);
+      failed++;
+    }
+  } catch (e: any) {
+    console.error('[ERROR] Subscriptions Security Headers test failed:', e.message);
+    failed++;
+  }
+
+  console.log('[LOG] Testing Subscriptions Rate Limiter middleware (firing 65 requests fast)...');
+  let rateLimitedSubscriptions = false;
+  try {
+    for (let i = 0; i < 65; i++) {
+      const res = await makeRequest({
+        name: `Rate Limit Subscriptions Request ${i}`,
+        method: 'GET',
+        path: '/api/subscriptions/plans',
+        headers: employeeHeaders
+      });
+      if (res.status === 429) {
+        rateLimitedSubscriptions = true;
+        break;
+      }
+    }
+    if (rateLimitedSubscriptions) {
+      console.log('[PASS] Subscriptions - Security Rate Limiter triggered: Status 429');
+      passed++;
+    } else {
+      console.error('[FAIL] Subscriptions - Security Rate Limiter did not trigger after 60+ requests.');
+      failed++;
+    }
+  } catch (e: any) {
+    console.error('[ERROR] Subscriptions Rate Limiter test failed:', e.message);
+    failed++;
+  }
+
+  // ==========================================
   // --- 7. LOG FILE CREATION AND ERROR TRIGGERS ---
   // ==========================================
   console.log('[LOG] Triggering errors to verify module-scoped exception filters...');
@@ -944,6 +1048,20 @@ async function runMiddlewareTests() {
       path: '/api/returns/RES-INVALID-ID%/process',
       headers: employeeHeaders
     });
+    // Trigger Invoices error (request invoices with unauthorized user role 'Staff')
+    await makeRequest({
+      name: 'Trigger Invoices Exception',
+      method: 'GET',
+      path: '/api/invoices',
+      headers: employeeHeaders
+    });
+    // Trigger Subscriptions error (request plans with invalid method POST)
+    await makeRequest({
+      name: 'Trigger Subscriptions Exception',
+      method: 'POST',
+      path: '/api/subscriptions/plans',
+      headers: employeeHeaders
+    });
   } catch (e) {
     // ignore
   }
@@ -977,7 +1095,11 @@ async function runMiddlewareTests() {
     'requests-access.log',
     'requests-error.log',
     'returns-access.log',
-    'returns-error.log'
+    'returns-error.log',
+    'invoices-access.log',
+    'invoices-error.log',
+    'subscriptions-access.log',
+    'subscriptions-error.log'
   ];
 
   let logsPassed = true;
@@ -1002,8 +1124,8 @@ async function runMiddlewareTests() {
   }
 
   console.log('\n=== MIDDLEWARE VERIFICATION SUMMARY ===');
-  console.log(`Passed: ${passed} / 30`);
-  console.log(`Failed: ${failed} / 30`);
+  console.log(`Passed: ${passed} / 34`);
+  console.log(`Failed: ${failed} / 34`);
 
   if (failed === 0) {
     console.log('\n[SUCCESS] All module middlewares (including new ones) are correctly modularized and functional!');
