@@ -342,17 +342,7 @@ const app = {
             return;
         }
 
-        // Fix 2: Validate quantity > available inventory (procurement only needed when stock is insufficient)
-        const availability = await Store.fetchResourceAvailability(dept, type);
-        const availableCount = Number(availability?.availableCount || 0);
 
-        if (qty <= availableCount) {
-            Store.showToast(
-                `❌ Procurement not needed — ${availableCount} unit(s) of "${type}" already available in inventory. Use "Request Resource" instead.`,
-                "error"
-            );
-            return;
-        }
 
         const newId = `PRC-${Math.floor(1000 + Math.random() * 9000)}`;
         const dateStr = new Date().toLocaleDateString('en-US', {month: 'short', day: 'numeric', year:'numeric'});
