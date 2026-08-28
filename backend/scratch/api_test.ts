@@ -140,27 +140,6 @@ async function runTests() {
       headers: { 'x-user-role': 'System Admin' },
     },
 
-    // --- 4. PERMISSIONS MODULE (3 endpoints) ---
-    {
-      name: 'Permissions - Get Matrix',
-      method: 'GET',
-      path: '/api/permissionsMatrix',
-      headers: { 'x-user-role': 'System Admin' },
-    },
-    {
-      name: 'Permissions - Update Matrix',
-      method: 'POST',
-      path: '/api/permissionsMatrix',
-      headers: { 'x-user-role': 'System Admin' },
-      body: { matrix: { 'Request Resources': ['Requestor'] } },
-    },
-    {
-      name: 'Permissions - Reset Matrix',
-      method: 'POST',
-      path: '/api/permissionsMatrix/reset',
-      headers: { 'x-user-role': 'System Admin' },
-    },
-
     // --- 5. RESOURCES MODULE (9 endpoints) ---
     {
       name: 'Resources - Get Catalog',

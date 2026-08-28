@@ -213,8 +213,6 @@ export interface ReturnHistoryRecord {
   department: string;
 }
 
-export type PermissionsMatrixRecord = Record<string, Role[]>;
-
 export interface StockThresholdRecord {
   id: string;
   organizationId: string;
@@ -278,7 +276,6 @@ export interface AppState {
   notifications: NotificationRecord[];
   maintenanceHistory: MaintenanceHistoryRecord[];
   returnHistory: ReturnHistoryRecord[];
-  permissionsMatrix: PermissionsMatrixRecord;
   stockThresholds: StockThresholdRecord[];
   resourceCatalog: DepartmentResourceCatalogRecord[];
 }

@@ -16,7 +16,6 @@ import {
   StockThresholdRecord,
   MaintenanceHistoryRecord,
   ReturnHistoryRecord,
-  PermissionsMatrixRecord,
   DepartmentResourceCatalogRecord,
 } from '../common/domain';
 
@@ -321,21 +320,5 @@ export class DataService {
       this.state.resourceCatalog.push(entry);
     }
     return this.clone(entry);
-  }
-
-  // --- PERMISSIONS MATRIX CRUD ---
-
-  getPermissionsMatrix(): PermissionsMatrixRecord {
-    return this.clone(this.state.permissionsMatrix);
-  }
-
-  updatePermissions(matrix: PermissionsMatrixRecord): PermissionsMatrixRecord {
-    this.state.permissionsMatrix = this.clone(matrix);
-    return this.clone(this.state.permissionsMatrix);
-  }
-
-  resetPermissions(): PermissionsMatrixRecord {
-    this.state.permissionsMatrix = this.clone(this.initialState.permissionsMatrix);
-    return this.clone(this.state.permissionsMatrix);
   }
 }
