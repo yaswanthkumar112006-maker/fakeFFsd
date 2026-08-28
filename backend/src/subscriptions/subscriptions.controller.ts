@@ -1,10 +1,12 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get, UseFilters } from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { DataService } from '../data/data.service';
 import { Public } from '../auth/public.decorator';
+import { SubscriptionsExceptionFilter } from './filters/subscriptions-exception.filter';
 
 @ApiTags('subscriptions')
 @Controller('subscriptions')
+@UseFilters(SubscriptionsExceptionFilter)
 export class SubscriptionsController {
   constructor(private readonly dataService: DataService) {}
 

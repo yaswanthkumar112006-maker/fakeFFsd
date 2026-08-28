@@ -1,14 +1,16 @@
-import { Body, Controller, Get, Post, Req } from '@nestjs/common';
+import { Body, Controller, Get, Post, Req, UseFilters } from '@nestjs/common';
 import { ApiBody, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Roles } from '../common/roles.decorator';
 import { ApiRoleHeaders, ApiStandardErrorResponses } from '../common/swagger';
 import { PermissionsService } from './permissions.service';
 import { UpdatePermissionsMatrixDto } from './dto/permissions-matrix.dto';
+import { PermissionsExceptionFilter } from './filters/permissions-exception.filter';
 
 @ApiTags('permissionsMatrix')
 @ApiRoleHeaders()
 @ApiStandardErrorResponses()
 @Controller('permissionsMatrix')
+@UseFilters(PermissionsExceptionFilter)
 export class PermissionsController {
   constructor(private readonly permissionsService: PermissionsService) {}
 
