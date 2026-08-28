@@ -324,6 +324,18 @@ class DataStore {
         return entry ? [...entry.resourceTypes] : [];
     }
 
+    async renameResourceCatalogType(department, oldType, newType) {
+        const currentTypes = this.getDepartmentResourceTypes(department);
+        const updatedTypes = currentTypes.map(t => t === oldType ? newType : t);
+        return this.updateResourceCatalog(department, updatedTypes);
+    }
+
+    async removeResourceCatalogType(department, type) {
+        const currentTypes = this.getDepartmentResourceTypes(department);
+        const updatedTypes = currentTypes.filter(t => t !== type);
+        return this.updateResourceCatalog(department, updatedTypes);
+    }
+
     async createResource(payload) {
         const result = await this.api('/resources', { method: 'POST', body: payload });
         await this.sync();
