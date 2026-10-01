@@ -5,7 +5,6 @@ Organizations often allocate & manage assets such as laptops, projectors, router
 This project provides a **centralized web-based system** to allocate & manage the complete lifecycle of organizational resources with **role-based dashboards**.
 
 ---
-
 # System Overview
 
 The system manages the full lifecycle of resources:
