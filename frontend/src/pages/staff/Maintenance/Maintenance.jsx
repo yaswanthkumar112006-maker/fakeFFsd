@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '../../context/AuthContext';
-import staffApi from '../../services/staffApi';
+import { useAuth } from '../../../context/AuthContext';
+import staffApi from '../../../services/staffApi';
 
 export const Maintenance = () => {
   const { user, showToast } = useAuth();
@@ -23,27 +23,22 @@ export const Maintenance = () => {
         staffApi.getMaintenanceHistory().catch(() => []),
       ]);
       setQueue(queueData || []);
-
-      // Filter history for current department or related resources
-      const deptHistory = (historyData || []).filter((log) => {
-        return log.department === userDept || !log.department;
-      });
-      setHistory(deptHistory);
+      setHistory(historyData || []);
     } catch (err) {
-      showToast('Failed to load maintenance data: ' + err.message, 'error');
+      showToast('Failed to load maintenance records: ' + err.message, 'error');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleAccept = async (resId) => {
+  const handleSendToMaintenance = async (resId) => {
     setActionLoadingMap((prev) => ({ ...prev, [resId]: true }));
     try {
-      await staffApi.acceptMaintenance(resId);
-      showToast('Maintenance accepted. Resource is now under maintenance.', 'success');
+      await staffApi.sendToMaintenance(resId);
+      showToast(`Resource ${resId} placed into Under Maintenance`, 'success');
       await loadMaintenanceData();
     } catch (err) {
-      showToast(err.message || 'Failed to accept maintenance', 'error');
+      showToast(err.message || 'Failed to update resource status', 'error');
     } finally {
       setActionLoadingMap((prev) => ({ ...prev, [resId]: false }));
     }
@@ -52,8 +47,8 @@ export const Maintenance = () => {
   const handleMarkRepaired = async (resId) => {
     setActionLoadingMap((prev) => ({ ...prev, [resId]: true }));
     try {
-      await staffApi.repairMaintenance(resId);
-      showToast('Resource marked as repaired. User notified.', 'success');
+      await staffApi.markRepaired(resId);
+      showToast(`Resource ${resId} repaired and returned to Available inventory!`, 'success');
       await loadMaintenanceData();
     } catch (err) {
       showToast(err.message || 'Failed to mark repaired', 'error');
@@ -63,55 +58,57 @@ export const Maintenance = () => {
   };
 
   const handleMarkScrap = async (resId) => {
-    setActionLoadingMap((prev) => ({ ...prev, [resId]: true }));
-    try {
-      await staffApi.scrapMaintenance(resId);
-      showToast('Resource marked as scrap. User notified.', 'error');
-      await loadMaintenanceData();
-    } catch (err) {
-      showToast(err.message || 'Failed to mark scrap', 'error');
-    } finally {
-      setActionLoadingMap((prev) => ({ ...prev, [resId]: false }));
+    if (window.confirm(`Permanently scrap resource ${resId}?`)) {
+      setActionLoadingMap((prev) => ({ ...prev, [resId]: true }));
+      try {
+        await staffApi.markScrap(resId);
+        showToast(`Resource ${resId} decommissioned and marked as Scrapped.`, 'error');
+        await loadMaintenanceData();
+      } catch (err) {
+        showToast(err.message || 'Failed to scrap resource', 'error');
+      } finally {
+        setActionLoadingMap((prev) => ({ ...prev, [resId]: false }));
+      }
     }
   };
 
   return (
     <div id="maintenance-view" className="view-section active">
-      <h1 className="page-title">Maintenance Management</h1>
-      <p className="page-subtitle">Track and resolve active repair tickets.</p>
+      <h1 className="page-title">Maintenance & Repairs</h1>
+      <p className="page-subtitle">Track damaged or returned equipment needing service or repairs.</p>
 
-      {/* Active Repair Queue */}
       <div className="data-section">
         <div className="data-section-header">
-          <div className="data-section-title">Active Repair Queue</div>
+          <div className="data-section-title">Maintenance Work Queue</div>
         </div>
         <table className="table">
           <thead>
             <tr>
               <th>Code</th>
+              <th>Asset</th>
               <th>Type</th>
-              <th>Allocated To</th>
-              <th>Issue/Status</th>
+              <th>S/N</th>
+              <th>Reported Issue / Condition</th>
+              <th>Status</th>
               <th style={{ textAlign: 'right' }}>Actions</th>
             </tr>
           </thead>
-          <tbody id="maint-tbody">
+          <tbody id="maintenance-tbody">
             {loading ? (
               <tr>
-                <td colSpan="5" style={{ textAlign: 'center', color: '#94a3b8', padding: '2rem' }}>
-                  Loading active repair queue...
+                <td colSpan="7" style={{ textAlign: 'center', color: '#94a3b8', padding: '2rem' }}>
+                  Loading maintenance items...
                 </td>
               </tr>
             ) : queue.length === 0 ? (
               <tr>
-                <td colSpan="5" style={{ textAlign: 'center', color: '#94a3b8', padding: '2rem' }}>
-                  No active maintenance tickets in queue
+                <td colSpan="7" style={{ textAlign: 'center', color: '#94a3b8', padding: '2rem' }}>
+                  No resources currently in maintenance queue
                 </td>
               </tr>
             ) : (
               queue.map((res) => {
-                const isUnderMaint = res.status === 'Maintenance';
-                const statusText = isUnderMaint ? 'Under Maintenance' : res.status;
+                const isUnderMaintenance = res.status === 'Under Maintenance';
                 const isBusy = actionLoadingMap[res.id];
 
                 return (
@@ -119,31 +116,39 @@ export const Maintenance = () => {
                     <td>
                       <div className="td-id">{res.id}</div>
                     </td>
+                    <td style={{ fontWeight: 500 }}>{res.name || res.type}</td>
                     <td>{res.type}</td>
-                    <td>{res.assignedTo || 'None'}</td>
                     <td>
-                      <span className="badge pending">{statusText}</span>
+                      <span
+                        style={{
+                          fontFamily: 'monospace',
+                          fontSize: '0.8rem',
+                          background: '#f1f5f9',
+                          padding: '2px 4px',
+                          borderRadius: '4px',
+                        }}
+                      >
+                        {res.serialNumber || 'N/A'}
+                      </span>
                     </td>
-                    <td style={{ textAlign: 'right' }}>
-                      {res.status === 'Maintenance Requested' ? (
-                        <>
-                          <button
-                            className="btn-primary"
-                            style={{ fontSize: '0.75rem', marginRight: '4px' }}
-                            onClick={() => handleAccept(res.id)}
-                            disabled={isBusy}
-                          >
-                            Accept
-                          </button>
-                          <button
-                            className="btn-danger"
-                            style={{ fontSize: '0.75rem' }}
-                            onClick={() => handleMarkScrap(res.id)}
-                            disabled={isBusy}
-                          >
-                            Reject &rarr; Scrap
-                          </button>
-                        </>
+                    <td>{res.condition || 'Needs Maintenance'}</td>
+                    <td>
+                      <span
+                        className={`badge ${isUnderMaintenance ? 'under-maintenance' : 'in-maintenance'}`}
+                      >
+                        {res.status}
+                      </span>
+                    </td>
+                    <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
+                      {!isUnderMaintenance ? (
+                        <button
+                          className="btn-primary"
+                          style={{ fontSize: '0.75rem' }}
+                          onClick={() => handleSendToMaintenance(res.id)}
+                          disabled={isBusy}
+                        >
+                          Send to Maintenance
+                        </button>
                       ) : (
                         <>
                           <button

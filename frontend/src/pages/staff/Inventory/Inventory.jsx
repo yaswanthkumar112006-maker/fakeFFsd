@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '../../context/AuthContext';
-import staffApi from '../../services/staffApi';
-import AddResourceModal from '../../components/staff/AddResourceModal';
-import EditResourceModal from '../../components/staff/EditResourceModal';
+import { useAuth } from '../../../context/AuthContext';
+import staffApi from '../../../services/staffApi';
+import AddResourceModal from '../../../components/staff/AddResourceModal';
+import EditResourceModal from '../../../components/staff/EditResourceModal';
 
 export const Inventory = () => {
   const { user, showToast, openFilePreview } = useAuth();

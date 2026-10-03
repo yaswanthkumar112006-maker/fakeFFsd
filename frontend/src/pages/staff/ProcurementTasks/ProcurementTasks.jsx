@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '../../context/AuthContext';
-import staffApi from '../../services/staffApi';
+import { useAuth } from '../../../context/AuthContext';
+import staffApi from '../../../services/staffApi';
 
 export const ProcurementTasks = () => {
   const { user, showToast } = useAuth();
@@ -30,75 +30,61 @@ export const ProcurementTasks = () => {
 
   const handleFileChange = (e, procId) => {
     const file = e.target.files[0];
-    e.target.value = '';
-    if (!file) return;
-
-    const ALLOWED = [
-      'application/pdf',
-      'application/msword',
-      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-      'image/png',
-      'image/jpeg',
-    ];
-    const MAX_MB = 5;
-
-    if (!ALLOWED.includes(file.type)) {
-      showToast('❌ Unsupported file type. Please upload PDF, DOC, DOCX, PNG or JPG.', 'error');
-      return;
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (uploadEvent) => {
+        setFileMap((prev) => ({
+          ...prev,
+          [procId]: {
+            name: file.name,
+            type: file.type,
+            dataUrl: uploadEvent.target.result,
+          },
+        }));
+      };
+      reader.readAsDataURL(file);
     }
-    if (file.size > MAX_MB * 1024 * 1024) {
-      showToast(`❌ File too large. Maximum size is ${MAX_MB} MB.`, 'error');
-      return;
-    }
-
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      setFileMap((prev) => ({
-        ...prev,
-        [procId]: {
-          name: file.name,
-          size: file.size,
-          type: file.type,
-          dataUrl: event.target.result,
-          rawFile: file,
-        },
-      }));
-    };
-    reader.readAsDataURL(file);
   };
 
   const handleLogPurchase = async (procId) => {
-    const vendor = (vendorMap[procId] || '').trim();
-    const invoice = (invoiceMap[procId] || '').trim();
-    const invoiceFile = fileMap[procId];
+    const vendor = vendorMap[procId]?.trim();
+    const invoice = invoiceMap[procId]?.trim();
+    const file = fileMap[procId];
 
     if (!vendor || !invoice) {
-      showToast('Please provide both Vendor Name and Invoice Number before logging purchase.', 'error');
-      return;
-    }
-
-    const vendorRegex = /^[a-zA-Z0-9\s.-]+$/;
-    const invoiceRegex = /^[0-9]+$/;
-
-    if (!vendorRegex.test(vendor)) {
-      showToast('Vendor Name can only contain characters and numbers.', 'error');
-      return;
-    }
-
-    if (!invoiceRegex.test(invoice)) {
-      showToast('Invoice Number can only contain numbers.', 'error');
-      return;
-    }
-
-    if (!invoiceFile) {
-      showToast('⚠️ Please attach the invoice file before logging the purchase.', 'error');
+      showToast('Please enter both Vendor Name and Invoice Number.', 'error');
       return;
     }
 
     setSubmittingMap((prev) => ({ ...prev, [procId]: true }));
     try {
-      await staffApi.logPurchase(procId, vendor, invoice, invoiceFile);
-      showToast(`Purchase logged for Invoice ${invoice}. Assets are now pending Serial Registration.`, 'success');
+      await staffApi.logPurchase(procId, {
+        vendor,
+        invoice,
+        invoiceFileName: file?.name || null,
+        invoiceFileType: file?.type || null,
+        invoiceFileDataUrl: file?.dataUrl || null,
+      });
+
+      showToast(`Purchase logged successfully for Task ${procId}! Forwarded for Serial Registration.`, 'success');
+
+      // Clear local state for this task
+      setVendorMap((prev) => {
+        const next = { ...prev };
+        delete next[procId];
+        return next;
+      });
+      setInvoiceMap((prev) => {
+        const next = { ...prev };
+        delete next[procId];
+        return next;
+      });
+      setFileMap((prev) => {
+        const next = { ...prev };
+        delete next[procId];
+        return next;
+      });
+
       await loadProcurementTasks();
     } catch (err) {
       showToast(err.message || 'Failed to log purchase', 'error');
@@ -108,31 +94,36 @@ export const ProcurementTasks = () => {
   };
 
   return (
-    <div id="proc-tasks-view" className="view-section active">
-      <h1 className="page-title">Procurement Fulfillment</h1>
-      <p className="page-subtitle">Process Registrar-approved purchases by logging vendor and invoice data.</p>
+    <div id="procurement-view" className="view-section active">
+      <h1 className="page-title">Procurement Fulfillment Tasks</h1>
+      <p className="page-subtitle">
+        Execute approved purchasing orders, attach invoices, and submit for serial registration.
+      </p>
 
       <div className="data-section">
-        <table className="table" id="proctask-tbody">
+        <div className="data-section-header">
+          <div className="data-section-title">Pending Orders to Fulfill</div>
+        </div>
+        <table className="table">
           <thead>
             <tr>
-              <th>Task ID / Type</th>
-              <th>Qty Found</th>
-              <th>Vendor & Invoice</th>
+              <th>Task ID & Type</th>
+              <th>Qty</th>
+              <th>Vendor Details & Invoice Attachment</th>
               <th style={{ textAlign: 'right' }}>Action</th>
             </tr>
           </thead>
-          <tbody>
+          <tbody id="procurement-tbody">
             {loading ? (
               <tr>
                 <td colSpan="4" style={{ textAlign: 'center', color: '#94a3b8', padding: '2rem' }}>
-                  Loading procurement fulfillment tasks...
+                  Loading procurement tasks...
                 </td>
               </tr>
             ) : tasks.length === 0 ? (
               <tr>
                 <td colSpan="4" style={{ textAlign: 'center', color: '#94a3b8', padding: '2rem' }}>
-                  No approved procurement tasks pending fulfillment
+                  No pending procurement fulfillment tasks for your department
                 </td>
               </tr>
             ) : (

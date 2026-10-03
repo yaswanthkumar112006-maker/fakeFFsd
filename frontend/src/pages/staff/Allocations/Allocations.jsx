@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useAuth } from '../../context/AuthContext';
-import staffApi from '../../services/staffApi';
+import { useAuth } from '../../../context/AuthContext';
+import staffApi from '../../../services/staffApi';
 
 export const Allocations = () => {
   const { user, showToast } = useAuth();
@@ -10,8 +10,6 @@ export const Allocations = () => {
   const [openDropdownId, setOpenDropdownId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [allocatingMap, setAllocatingMap] = useState({});
-
-  const dropdownContainerRef = useRef(null);
 
   useEffect(() => {
     loadAllocationsData();

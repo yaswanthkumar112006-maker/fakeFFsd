@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext';
-import staffApi from '../../services/staffApi';
+import { useAuth } from '../../../context/AuthContext';
+import staffApi from '../../../services/staffApi';
 
 export const ResourceRegistration = () => {
   const { user, showToast, openFilePreview } = useAuth();
@@ -24,119 +24,120 @@ export const ResourceRegistration = () => {
         staffApi.getFulfilledProcurements(userDept),
         staffApi.getResources({ department: userDept }).catch(() => []),
       ]);
+
       const fulfilled = allProc || [];
       setProcurements(fulfilled);
       setExistingResources(allRes || []);
 
-      // Initialize row state for each procurement
-      const initRows = {};
+      // Initialize rows for each procurement based on quantity
+      const newRowsMap = {};
       fulfilled.forEach((p) => {
-        const qty = parseInt(p.quantity) || 1;
         const rows = [];
+        const qty = parseInt(p.quantity, 10) || 1;
         for (let i = 0; i < qty; i++) {
-          const cleanId = p.id.replace(/[^a-zA-Z0-9]/g, '');
-          const newCode = `RES-${cleanId}-${String(i + 1).padStart(2, '0')}`;
           rows.push({
-            code: newCode,
-            model: '',
+            id: generateUniqueCode(p.resourceType, (allRes || []).concat(getAllLocalGenerated(newRowsMap))),
+            model: p.resourceType || '',
             serialNumber: '',
-            location: '',
-            condition: 'New',
+            location: 'Main Store',
+            condition: 'Good',
             status: 'Available',
           });
         }
-        initRows[p.id] = rows;
+        newRowsMap[p.id] = rows;
       });
-      setRowsMap(initRows);
+      setRowsMap(newRowsMap);
     } catch (err) {
-      showToast('Failed to load registration data: ' + err.message, 'error');
+      showToast('Failed to load pending registrations: ' + err.message, 'error');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleRowChange = (procId, index, field, value) => {
+  const getAllLocalGenerated = (map) => {
+    const list = [];
+    Object.values(map).forEach((arr) => {
+      arr.forEach((r) => list.push({ id: r.id }));
+    });
+    return list;
+  };
+
+  const generateUniqueCode = (typeStr, currentList) => {
+    const prefix = (typeStr || 'RES').substring(0, 3).toUpperCase();
+    const existingIds = (currentList || []).map((r) => r.id);
+    let counter = 1;
+    let code = `${prefix}-${String(counter).padStart(3, '0')}`;
+    while (existingIds.includes(code)) {
+      counter++;
+      code = `${prefix}-${String(counter).padStart(3, '0')}`;
+    }
+    return code;
+  };
+
+  const handleRowChange = (procId, rowIndex, field, value) => {
     setRowsMap((prev) => {
-      const rows = [...(prev[procId] || [])];
-      rows[index] = { ...rows[index], [field]: value };
-      return { ...prev, [procId]: rows };
+      const currentRows = [...(prev[procId] || [])];
+      currentRows[rowIndex] = {
+        ...currentRows[rowIndex],
+        [field]: value,
+      };
+      return { ...prev, [procId]: currentRows };
     });
   };
 
-  const handlePreviewInvoice = (p) => {
-    if (p.invoiceFileDataUrl) {
-      openFilePreview(p.invoiceFileDataUrl, p.invoiceFileName, p.invoiceFileType);
+  const handlePreviewInvoice = (proc) => {
+    if (proc.invoiceFileDataUrl) {
+      openFilePreview(proc.invoiceFileDataUrl, proc.invoiceFileName, proc.invoiceFileType);
     } else {
-      showToast('Invoice file preview not available', 'warning');
+      showToast('Invoice file is not available for preview.', 'warning');
     }
   };
 
-  const handleSubmitBatch = async (p) => {
+  const handleRegisterBatch = async (p) => {
     const rows = rowsMap[p.id] || [];
     const userDept = user?.department || 'IT Services';
 
-    const modelRegex = /^[a-zA-Z0-9\s.-]+$/;
-    const snRegex = /^[a-zA-Z0-9_.-]+$/;
-
-    const existingSerials = new Set((existingResources || []).map((r) => String(r.serialNumber || '').toLowerCase()));
-    const batchSerials = new Set();
-    const newResources = [];
-
+    // Validate fields
     for (let i = 0; i < rows.length; i++) {
-      const row = rows[i];
-      const model = (row.model || '').trim();
-      const sn = (row.serialNumber || '').trim();
-      const loc = (row.location || '').trim();
-
-      if (!model || !sn || !loc) {
-        showToast('Please fully complete all fields for every row in this batch.', 'error');
+      const r = rows[i];
+      if (!r.id?.trim() || !r.model?.trim() || !r.serialNumber?.trim()) {
+        showToast(`Row #${i + 1}: Please fill in Resource Code, Model Name, and Serial Number.`, 'error');
         return;
       }
-      if (!modelRegex.test(model)) {
-        showToast('Model can only contain letters, numbers, spaces, dots, and hyphens.', 'error');
-        return;
-      }
-      if (!snRegex.test(sn)) {
-        showToast('Serial Number can only contain letters, numbers, dots, hyphens, and underscores.', 'error');
-        return;
-      }
-
-      const normalizedSn = sn.toLowerCase();
-      if (existingSerials.has(normalizedSn) || batchSerials.has(normalizedSn)) {
-        showToast('Serial numbers must be unique across inventory and this batch.', 'error');
-        return;
-      }
-      batchSerials.add(normalizedSn);
-
-      newResources.push({
-        id: row.code,
-        code: row.code,
-        name: model,
-        type: p.resourceType,
-        department: userDept,
-        serialNumber: sn,
-        location: loc,
-        status: row.status || 'Available',
-        condition: row.condition || 'New',
-        assignedTo: 'None',
-        vendor: p.vendor || '',
-        invoice: p.invoice || '',
-        procurementId: p.id,
-        date: new Date().toLocaleDateString('en-US'),
-      });
     }
 
     setSubmittingMap((prev) => ({ ...prev, [p.id]: true }));
     try {
-      await staffApi.registerProcurement(p.id, newResources);
+      const newResources = [];
 
-      // Auto-create allocation request if requested by a Requestor
-      const isRequestor = p.requesterRole === 'Requestor' || (p.requestedById && !p.requestedById.startsWith('HEAD'));
-      if (p.requestedById && isRequestor) {
-        const allocationReqId = `REQ-PRC-${p.id.replace(/[^a-zA-Z0-9]/g, '')}`;
-        const dateStr = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+      for (const row of rows) {
+        const payload = {
+          id: row.id.trim(),
+          name: row.model.trim(),
+          type: p.resourceType || row.model.trim(),
+          department: userDept,
+          location: row.location || 'Main Store',
+          status: 'Available',
+          condition: row.condition || 'Good',
+          serialNumber: row.serialNumber.trim(),
+          vendor: p.vendor || 'Direct Purchase',
+          invoice: p.invoice || 'N/A',
+          procurementId: p.id,
+        };
+
+        const created = await staffApi.addResource(payload);
+        newResources.push(created);
+      }
+
+      // Mark procurement as Registered
+      await staffApi.markProcurementRegistered(p.id);
+
+      // Auto-allocation request creation if linked to a request
+      if (p.requestId || p.requestedById) {
         try {
-          await staffApi.createRequest({
+          const dateStr = new Date().toISOString().split('T')[0];
+          const allocationReqId = `REQ-${Date.now().toString().slice(-4)}`;
+          await staffApi.createAllocationRequest({
             id: allocationReqId,
             department: userDept,
             resourceType: p.resourceType || p.item,
@@ -256,87 +257,84 @@ export const ResourceRegistration = () => {
                   </div>
                 </div>
 
-                <table className="table" style={{ background: '#f8fafc', borderRadius: '8px', marginBottom: '1.5rem' }}>
-                  <thead>
-                    <tr>
-                      <th>Code</th>
-                      <th>Model</th>
-                      <th>
-                        S/N <span style={{ color: '#ef4444' }}>*</span>
-                      </th>
-                      <th>Location</th>
-                      <th>Condition</th>
-                      <th>Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {rows.map((row, idx) => (
-                      <tr key={`${p.id}-row-${idx}`}>
-                        <td>
-                          <input type="text" className="form-control" value={row.code} readOnly />
-                        </td>
-                        <td>
-                          <input
-                            type="text"
-                            className="form-control"
-                            placeholder="Model"
-                            value={row.model}
-                            onChange={(e) => handleRowChange(p.id, idx, 'model', e.target.value)}
-                          />
-                        </td>
-                        <td>
-                          <input
-                            type="text"
-                            className="form-control"
-                            placeholder="Serial Number"
-                            value={row.serialNumber}
-                            onChange={(e) => handleRowChange(p.id, idx, 'serialNumber', e.target.value)}
-                          />
-                        </td>
-                        <td>
-                          <input
-                            type="text"
-                            className="form-control"
-                            placeholder="Location"
-                            value={row.location}
-                            onChange={(e) => handleRowChange(p.id, idx, 'location', e.target.value)}
-                          />
-                        </td>
-                        <td>
-                          <select
-                            className="form-control"
-                            value={row.condition}
-                            onChange={(e) => handleRowChange(p.id, idx, 'condition', e.target.value)}
-                          >
-                            <option value="New">New</option>
-                            <option value="Good">Good</option>
-                            <option value="Average">Average</option>
-                            <option value="Bad">Bad</option>
-                          </select>
-                        </td>
-                        <td>
-                          <select
-                            className="form-control"
-                            value={row.status}
-                            onChange={(e) => handleRowChange(p.id, idx, 'status', e.target.value)}
-                          >
-                            <option value="Available">Available</option>
-                            <option value="Maintenance">Maintenance</option>
-                            <option value="Scrapped">Scrapped</option>
-                          </select>
-                        </td>
+                <div className="table-responsive">
+                  <table className="table">
+                    <thead>
+                      <tr>
+                        <th>Resource Code</th>
+                        <th>Model / Name</th>
+                        <th>Serial Number</th>
+                        <th>Initial Location</th>
+                        <th>Condition</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody>
+                      {rows.map((row, index) => (
+                        <tr key={index}>
+                          <td>
+                            <input
+                              type="text"
+                              className="form-control"
+                              style={{ fontSize: '0.8rem', padding: '0.3rem 0.5rem' }}
+                              value={row.id}
+                              onChange={(e) => handleRowChange(p.id, index, 'id', e.target.value)}
+                            />
+                          </td>
+                          <td>
+                            <input
+                              type="text"
+                              className="form-control"
+                              style={{ fontSize: '0.8rem', padding: '0.3rem 0.5rem' }}
+                              value={row.model}
+                              onChange={(e) => handleRowChange(p.id, index, 'model', e.target.value)}
+                            />
+                          </td>
+                          <td>
+                            <input
+                              type="text"
+                              className="form-control"
+                              style={{ fontSize: '0.8rem', padding: '0.3rem 0.5rem' }}
+                              placeholder="e.g. SN-982347"
+                              value={row.serialNumber}
+                              onChange={(e) => handleRowChange(p.id, index, 'serialNumber', e.target.value)}
+                            />
+                          </td>
+                          <td>
+                            <input
+                              type="text"
+                              className="form-control"
+                              style={{ fontSize: '0.8rem', padding: '0.3rem 0.5rem' }}
+                              value={row.location}
+                              onChange={(e) => handleRowChange(p.id, index, 'location', e.target.value)}
+                            />
+                          </td>
+                          <td>
+                            <select
+                              className="form-control"
+                              style={{ fontSize: '0.8rem', padding: '0.3rem 0.5rem' }}
+                              value={row.condition}
+                              onChange={(e) => handleRowChange(p.id, index, 'condition', e.target.value)}
+                            >
+                              <option value="Good">Good</option>
+                              <option value="Fair">Fair</option>
+                            </select>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
 
-                <div style={{ textAlign: 'right' }}>
+                <div style={{ marginTop: '1.5rem', display: 'flex', justifyContent: 'flex-end' }}>
                   <button
                     className="btn-primary"
-                    onClick={() => handleSubmitBatch(p)}
+                    style={{ padding: '0.5rem 1.5rem', fontSize: '0.875rem' }}
+                    onClick={() => handleRegisterBatch(p)}
                     disabled={isSubmitting}
                   >
-                    {isSubmitting ? 'Registering...' : 'Submit & Register Assets'}
+                    {isSubmitting
+                      ? 'Registering...'
+                      : `Complete Registration (${rows.length} Items)`}
                   </button>
                 </div>
               </div>

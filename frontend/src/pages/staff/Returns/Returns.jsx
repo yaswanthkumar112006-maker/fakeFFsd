@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '../../context/AuthContext';
-import staffApi from '../../services/staffApi';
+import { useAuth } from '../../../context/AuthContext';
+import staffApi from '../../../services/staffApi';
 
 export const Returns = () => {
   const { user, showToast } = useAuth();
@@ -24,48 +24,20 @@ export const Returns = () => {
         staffApi.getReturnHistory().catch(() => []),
       ]);
       setPendingReturns(pendingList || []);
-
-      // Filter return history for department
-      const deptHistory = (historyList || []).filter((log) => {
-        return log.department === userDept || !log.department;
-      });
-      setReturnHistory(deptHistory);
+      setReturnHistory(historyList || []);
     } catch (err) {
-      showToast('Failed to load returns data: ' + err.message, 'error');
+      showToast('Failed to load returns: ' + err.message, 'error');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleConditionChange = (resId, condition) => {
-    setConditionMap((prev) => ({ ...prev, [resId]: condition }));
-  };
-
   const handleProcessReturn = async (resId) => {
-    const condition = conditionMap[resId];
-    if (!condition) {
-      showToast('Please inspect and select a condition before processing.', 'warning');
-      return;
-    }
-
+    const condition = conditionMap[resId] || 'Good';
     setProcessingMap((prev) => ({ ...prev, [resId]: true }));
     try {
       await staffApi.processReturn(resId, condition);
-      const newStatus = condition === 'Bad' ? 'Scrapped' : 'Available';
-
-      if (newStatus === 'Available') {
-        showToast('Return processed. Resource marked as Available.', 'success');
-      } else {
-        showToast('Return processed. Resource marked as Scrap.', 'error');
-      }
-
-      // Reset condition selection for this item
-      setConditionMap((prev) => {
-        const next = { ...prev };
-        delete next[resId];
-        return next;
-      });
-
+      showToast(`Resource ${resId} verified and processed as "${condition}".`, 'success');
       await loadReturnsData();
     } catch (err) {
       showToast(err.message || 'Failed to process return', 'error');
@@ -76,70 +48,87 @@ export const Returns = () => {
 
   return (
     <div id="returns-view" className="view-section active">
-      <h1 className="page-title">Return Management</h1>
-      <p className="page-subtitle">Inspect returned assets and update inventory availability.</p>
+      <h1 className="page-title">Resource Returns</h1>
+      <p className="page-subtitle">Inspect returned resources, record condition, and update stock status.</p>
 
-      {/* Pending Returns */}
       <div className="data-section">
         <div className="data-section-header">
-          <div className="data-section-title">Pending Returns</div>
+          <div className="data-section-title">Pending Return Verification</div>
         </div>
         <table className="table">
           <thead>
             <tr>
               <th>Code</th>
+              <th>Asset</th>
               <th>Type</th>
+              <th>S/N</th>
               <th>Returned By</th>
               <th>Return Date</th>
-              <th>Condition Inspection</th>
-              <th style={{ textAlign: 'right' }}>Actions</th>
+              <th>Verify Condition</th>
+              <th style={{ textAlign: 'right' }}>Action</th>
             </tr>
           </thead>
-          <tbody id="return-tbody">
+          <tbody id="returns-tbody">
             {loading ? (
               <tr>
-                <td colSpan="6" style={{ textAlign: 'center', color: '#94a3b8', padding: '2rem' }}>
+                <td colSpan="8" style={{ textAlign: 'center', color: '#94a3b8', padding: '2rem' }}>
                   Loading pending returns...
                 </td>
               </tr>
             ) : pendingReturns.length === 0 ? (
               <tr>
-                <td colSpan="6" style={{ textAlign: 'center', color: '#94a3b8', padding: '2rem' }}>
+                <td colSpan="8" style={{ textAlign: 'center', color: '#94a3b8', padding: '2rem' }}>
                   No pending returns in queue
                 </td>
               </tr>
             ) : (
               pendingReturns.map((res) => {
-                const selectedCond = conditionMap[res.id] || '';
                 const isProcessing = processingMap[res.id];
+                const selectedCondition = conditionMap[res.id] || 'Good';
 
                 return (
                   <tr key={res.id}>
                     <td>
                       <div className="td-id">{res.id}</div>
                     </td>
+                    <td style={{ fontWeight: 500 }}>{res.name || res.type}</td>
                     <td>{res.type}</td>
-                    <td>{res.assignedTo || 'Unknown'}</td>
-                    <td>{res.date || new Date().toLocaleDateString()}</td>
+                    <td>
+                      <span
+                        style={{
+                          fontFamily: 'monospace',
+                          fontSize: '0.8rem',
+                          background: '#f1f5f9',
+                          padding: '2px 4px',
+                          borderRadius: '4px',
+                        }}
+                      >
+                        {res.serialNumber || 'N/A'}
+                      </span>
+                    </td>
+                    <td>{res.allocatedTo || 'Unknown'}</td>
+                    <td>{res.returnDate || new Date().toISOString().split('T')[0]}</td>
                     <td>
                       <select
                         className="form-control"
-                        style={{ fontSize: '0.75rem', padding: '0.25rem' }}
-                        value={selectedCond}
-                        onChange={(e) => handleConditionChange(res.id, e.target.value)}
+                        style={{ padding: '0.25rem 0.5rem', fontSize: '0.8rem', width: 'auto' }}
+                        value={selectedCondition}
+                        onChange={(e) =>
+                          setConditionMap((prev) => ({ ...prev, [res.id]: e.target.value }))
+                        }
                       >
-                        <option value="">-- Inspect Condition --</option>
-                        <option value="Good">Good &rarr; Available</option>
-                        <option value="Average">Average &rarr; Available</option>
-                        <option value="Bad">Bad &rarr; Scrap</option>
+                        <option value="Good">Good (Ready for Use)</option>
+                        <option value="Fair">Fair (Usable)</option>
+                        <option value="Damaged">Damaged (Needs Maintenance)</option>
+                        <option value="Scrap">Scrap (Unusable / Write-off)</option>
                       </select>
                     </td>
                     <td style={{ textAlign: 'right' }}>
                       <button
                         className="btn-primary"
                         style={{ fontSize: '0.75rem' }}
-                        disabled={!selectedCond || isProcessing}
                         onClick={() => handleProcessReturn(res.id)}
+                        disabled={isProcessing}
                       >
                         {isProcessing ? 'Processing...' : 'Process Return'}
                       </button>
